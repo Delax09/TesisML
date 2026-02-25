@@ -7,4 +7,8 @@ Directorio del proyecto
 2. cd ml-backend
 3. pip install -r requirement.txt
 
+## Para ejecutar el Backend: 
+1. cd ml-backend
+2. uvicorn app.main:app --reload
+3. ir a este enlace http://localhost:8000/docs#/
 
