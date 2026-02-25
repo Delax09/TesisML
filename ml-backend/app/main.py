@@ -1,6 +1,10 @@
-from fastapi import FastAPI
-from app.core.config import settings
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.orm import Session
+from app.db.sessions import get_db
+from app.models.models import Empresa
+from app.schemas.schemas import EmpresaOut
+from app.core.config import settings
 
 app = FastAPI(title=settings.PROJECT_NAME)
 
@@ -17,7 +21,8 @@ app.add_middleware(
 def health_check():
     return {"status": "online", "project": settings.PROJECT_NAME}
 
-@app.get(f"{settings.API_V1_STR}/test-data")
-def test_data():
+@app.get(f"{settings.API_V1_STR}/empresas", response_model=list[EmpresaOut])
+def Obtener_empresa(db:Session = Depends(get_db)):
     # Ejemplo rápido de cómo usarías yfinance después
-    return {"message": "Aquí conectaremos con yfinance y tu modelo de ML"}
+    empresas = db.query(Empresa).all()
+    return empresas

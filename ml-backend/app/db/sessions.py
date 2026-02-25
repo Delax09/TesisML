@@ -1,12 +1,11 @@
 # app/db/session.py
-from sqlalchemy import create_all, create_engine
+from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-servidor = 'VICTUSFABIAN'
-base_datos = "AnalisisAcciones"
+from app.core.config import settings
 
-# Conexión a SQL Server local sin usuario/contraseña usando Windows Authentication
-SQLALCHEMY_DATABASE_URL = f"mssql+pyodbc://@{servidor}/{base_datos}?driver=ODBC+Driver+17+for+SQL+Server&trusted_connection=yes"
+# Usa la DATABASE_URL del archivo .env
+SQLALCHEMY_DATABASE_URL = settings.DATABASE_URL
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
