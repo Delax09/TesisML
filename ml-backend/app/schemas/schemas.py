@@ -30,6 +30,7 @@ class SectorUpdate(BaseModel):
 class SectorOut(SectorBase):
     """Esquema de salida para un sector."""
     IdSector: int = Field(..., description="ID único del sector")
+    NombreSector: str = Field(..., description="Nombre del sector")
 
     model_config = {"from_attributes": True}
 
@@ -60,6 +61,26 @@ class EmpresaUpdate(BaseModel):
 class EmpresaOut(EmpresaBase):
     """Esquema de salida para una empresa."""
     IdEmpresa: int = Field(..., description="ID único de la empresa")
+    NombreEmpresa: str = Field(..., description="Nombre de la empresa")
     FechaAgregado: datetime = Field(..., description="Fecha de creación del registro")
+
+    model_config = {"from_attributes": True}
+
+# ========================= Rol SCHEMAS =========================
+
+class RolBase(BaseModel):
+    NombreRol: str = Field(..., min_length=1, max_length=50, description="Nombre del rol")
+
+class RolCreate(RolBase):
+    pass
+
+class RolUpdate(BaseModel):
+    NombreRol: Optional[str] = Field(None, min_length=1, max_length=50, description="Nombre del rol")
+
+    model_config = {"from_attributes": True}
+
+class RolOut(RolBase):
+    IdRol: int = Field(..., description="Id unico de rol")
+    NombreRol: str = Field(..., description="Nombre del rol")
 
     model_config = {"from_attributes": True}
