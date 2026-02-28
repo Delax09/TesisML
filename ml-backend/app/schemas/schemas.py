@@ -84,3 +84,5 @@ class RolOut(RolBase):
     NombreRol: str = Field(..., description="Nombre del rol")
 
     model_config = {"from_attributes": True}
+
+# ========================= USUARIO SCHEMAS =========================

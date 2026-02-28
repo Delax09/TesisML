@@ -6,7 +6,7 @@ Punto de entrada de la aplicación con configuración centralizada.
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
-from app.routers import sectors_router, empresas_router
+from app.routers import (sectors_router, empresas_router,rols_router)
 
 # Crear aplicación FastAPI
 app = FastAPI(
@@ -27,7 +27,7 @@ app.add_middleware(
 # Registrar routers
 app.include_router(sectors_router)
 app.include_router(empresas_router)
-
+app.include_router(rols_router)
 
 @app.get("/")
 def health_check():
