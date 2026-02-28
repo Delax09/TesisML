@@ -4,7 +4,7 @@ Contiene la lógica de negocio separada de los endpoints.
 """
 
 from sqlalchemy.orm import Session
-from app.models.models import Sector, Empresa
+from app.models import Sector, Empresa
 from app.schemas.schemas import SectorCreate, SectorUpdate
 from app.exceptions import ResourceNotFoundError
 

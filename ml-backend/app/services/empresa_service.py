@@ -5,7 +5,7 @@ Contiene la lógica de negocio separada de los endpoints.
 
 from datetime import datetime
 from sqlalchemy.orm import Session
-from app.models.models import Empresa, Sector
+from app.models import Empresa, Sector
 from app.schemas.schemas import EmpresaCreate, EmpresaUpdate
 from app.exceptions import ResourceNotFoundError, DuplicateResourceError, InvalidDataError
 
