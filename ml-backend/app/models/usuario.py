@@ -9,7 +9,7 @@ class Usuario(Base):
     Nombre = Column(String(50), nullable=False)
     Apellido = Column(String(100), nullable=False)
     Email = Column(String(100), unique=True, nullable=False)
-    Contraseña = Column(String(255), nullable=False)
+    PasswordU = Column(String(255), nullable=False)
     IdRol = Column(Integer, ForeignKey("Rol.IdRol"))
 
     rol = relationship("Rol", back_populates="usuarios")

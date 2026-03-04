@@ -92,7 +92,7 @@ class UsuarioBase(BaseModel):
     Nombre: str =Field(..., min_length=1, max_length = 50, description = "Nombre de usuario")
     Apellido : str = Field(..., min_length = 1, max_length = 100, description = "Apellido de usuario")
     Email : str = Field(..., min_length = 1, max_length=100, description = "Correo electronico del usuario") #Unico
-    PasswordU : str = Field(..., min_length=1, max_length=255, description="Password del usuario")
+    PasswordU : str = Field(..., min_length=1, max_length=72, description="Password del usuario (máx 72 caracteres)")
     IdRol : int = Field(..., description="Id del rol del usuario")
 
 class UsuarioCreate(UsuarioBase):
@@ -100,12 +100,12 @@ class UsuarioCreate(UsuarioBase):
 
 class UsuarioUpdate(BaseModel):
     Email: Optional[str] = Field(None, min_length=1, max_length=100, description="Correo electronico del usuario")
-    PasswordU: Optional[str] = Field(None, min_length=1, max_length=255, description="Password del usuario")
+    PasswordU: Optional[str] = Field(None, min_length=1, max_length=72, description="Password del usuario (máx 72 caracteres)")
     IdRol: Optional[int] = Field(None, description="Id del rol del usuario")
     
     model_config = {"from_attributes": True}
 
-class UsuarioOut(UsuarioBase):
+class UsuarioOut(BaseModel):
     IdUsuario: int = Field(..., description="Id unico del usuario")
     Nombre: str = Field(..., description="Nombre del usuario")
     Apellido: str = Field(..., description="Apellido del usuario")
