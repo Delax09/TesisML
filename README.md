@@ -12,3 +12,8 @@ Directorio del proyecto
 2. uvicorn app.main:app --reload
 3. ir a este enlace http://localhost:8000/docs#/
 
+## Ejecutar el entorno virtual
+1. Cd ml-backend 
+2. Instalar dependencias del backend
+3. .\venv\Scripts\Activate.ps1 para activarlo 
+4. desactivar "deactivate"
