@@ -38,7 +38,6 @@ class UsuarioService:
         UsuarioService.validar_formato_email(usuario.Email)
         UsuarioService._validar_email_unico(db, usuario.Email)
         UsuarioService._validar_rol_existe(db, usuario.IdRol)
-        
         # Validar longitud de contraseña ANTES de hashearla
         UsuarioService.validar_largo_password(usuario.PasswordU)
         
