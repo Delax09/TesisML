@@ -17,3 +17,6 @@ Directorio del proyecto
 2. Instalar dependencias del backend
 3. .\venv\Scripts\Activate.ps1 para activarlo 
 4. desactivar "deactivate"
+
+## Para probar funciones sin tocar el codigo principal 
+1. https://colab.research.google.com/drive/1nRZ5uRr8XuEow-gzJJi4a7kGPRdw6ymv?usp=sharing 
