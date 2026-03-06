@@ -40,3 +40,44 @@ SPY,S&P 500 ETF Trust,ETF
 VOO,Vanguard S&P 500 ETF,ETF
 QQQ,Invesco QQQ Trust (Nasdaq 100),ETF
 NFLX,Netflix,Tecnologia
+TSM,Taiwan Semiconductor Manufactoring,Tecnologia
+ASML,ASML Holding,Tecnologia
+AVGO,Broadcom,Tecnologia
+CRM,Salesforce,Ciberseguridad
+PANW,Palo Alto Networks,Ciberseguridad
+SNOW,Snowflake,Ciberseguridad
+MELI,Mercado Libre,Ecommerce
+BABA,Alibaba Group,Ecommerce
+SQ ,Block,Ecommerce
+AMT,American Tower,Bienes Raices
+O,Realy Income,Bienes Raices
+CENCOSUD.SN,Cencosud,Consumo Masivo
+CHILE.SN,Banco de Chile,Finanzas
+ENELCHILE.SN,Enel Chile,Energia
+LVMUY,LVMH,Estilo de vida
+EL,Estee Lauder,Estilo de vida
+UPS,United Parcel Service,Logistica
+FDX,FedEx Corporation,Logistica
+CP,Canadian Pacific Kansas City,Logistica
+DHL.DE,DHL,Logistica
+SONY,Sony,Entretenimiento
+SPOT,Spotify,Entretenimiento
+TMUY,T Mobile US,Medio de comunicacion
+CMCSA,Comcast,Medio de comunicacion
+TM,Toyota Motor,Industriales y Aeroespaciales
+F,Ford Motor Company,Industriales y Aeroespaciales
+GM,General Motor,Industriales y Aeroespaciales
+RACE,Ferrari,Industriales y Aeroespaciales
+COPEC.SN,Empresas Copec,Energia
+FALABELLA.SN,Falabella,Consumo Masivo
+VAPORES.SN,Compañia Sud Americana de Vapores,Logistica
+BSANTANDER.SN,Banco Santander Chile,Finanzas
+UBER,Uber Technologies,Tecnologia
+SHOP,Shopify,Consumo Masivo
+CRWD,CrowdStrike,Ciberseguridad
+HMC,Honda Motor,Industriales y Aeroespaciales
+BMWYY,BMW,Industriales y Aeroespaciales
+WBD,Warner Bros Discovery,Entretenimiento
+PARA,Paramount Global,Entretenimiento
+MAR,Marriott International,Estilo de vida
+HLT,Hilton Worldwide,Estilo de vida
