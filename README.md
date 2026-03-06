@@ -18,5 +18,7 @@ Directorio del proyecto
 3. .\venv\Scripts\Activate.ps1 para activarlo 
 4. desactivar "deactivate"
 
-## Para probar funciones sin tocar el codigo principal 
-1. https://colab.research.google.com/drive/1nRZ5uRr8XuEow-gzJJi4a7kGPRdw6ymv?usp=sharing 
+## Links para investigar y probar
+1. google colab para puebas de funciones: https://colab.research.google.com/drive/1nRZ5uRr8XuEow-gzJJi4a7kGPRdw6ymv?usp=sharing
+2. Posible vista del proyecto: https://es.tradingview.com/
+3. Banco de chile inversiones 
