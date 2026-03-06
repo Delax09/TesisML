@@ -173,7 +173,7 @@ def TareaWorker(ticker, df_ticker, pe):
         'RSI': round(rsi, 1),
         'IA': f"{res_ia:+.2f}%",
         'Técnico': diag,
-        'RECOMENDACIÓN': "COMPRA" if score >= 2 else "VENTA" if score <= -2 else "NEUTRAL",
+        'RECOMENDACIÓN': "ALCISTA" if score >= 2 else "BAJISTA" if score <= -2 else "Sin señal clara",
         'Score': score
     }
 
