@@ -3,10 +3,9 @@ Esquemas Pydantic para validación de datos.
 Define las estructuras de entrada y salida para los endpoints.
 """
 
-from pydantic import BaseModel, Field
-from typing import Optional, List
+from pydantic import Field, computed_field, ConfigDict, BaseModel
 from datetime import datetime
-
+from typing import Optional, List
 
 # ========================= SECTOR SCHEMAS =========================
 
@@ -26,6 +25,9 @@ class SectorUpdate(BaseModel):
 
     model_config = {"from_attributes": True}
 
+class SectorSimple(BaseModel):
+    NombreSector: str
+    model_config = ConfigDict(from_attributes=True)
 
 class SectorOut(SectorBase):
     """Esquema de salida para un sector."""
@@ -39,7 +41,7 @@ class SectorOut(SectorBase):
 
 class EmpresaBase(BaseModel):
     """Esquema base para Empresa con campos comunes."""
-    Ticket: str = Field(..., min_length=1, max_length=10, description="Símbolo del ticker de la empresa")
+    Ticket: str = Field(..., min_length=1, max_length=50, description="Símbolo del ticker de la empresa")
     NombreEmpresa: str = Field(..., min_length=1, max_length=100, description="Nombre de la empresa")
     IdSector: int = Field(..., description="ID del sector")
 
@@ -64,9 +66,14 @@ class EmpresaOut(EmpresaBase):
     NombreEmpresa: str = Field(..., description="Nombre de la empresa")
     FechaAgregado: datetime = Field(..., description="Fecha de creación del registro")
     IdSector: int = Field(..., description="ID del sector al que pertenece la empresa")
+    sector: Optional[SectorSimple] = Field(None, exclude=True)
 
-    model_config = {"from_attributes": True}
+    @computed_field
+    @property
+    def NombreSector(self) -> Optional[str]:
+        return self.sector.NombreSector if self.sector else None
 
+    model_config = ConfigDict(from_attributes=True)
 # ========================= Rol SCHEMAS =========================
 
 class RolBase(BaseModel):

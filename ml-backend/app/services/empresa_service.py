@@ -4,7 +4,7 @@ Contiene la lógica de negocio separada de los endpoints.
 """
 
 from datetime import datetime
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from app.models import Empresa, Sector
 from app.schemas.schemas import EmpresaCreate, EmpresaUpdate
 from app.exceptions import ResourceNotFoundError, DuplicateResourceError, InvalidDataError
@@ -53,7 +53,7 @@ class EmpresaService:
     @staticmethod
     def obtener_todas_empresas(db: Session) -> list[Empresa]:
         """Obtiene todas las empresas."""
-        return db.query(Empresa).all()
+        return db.query(Empresa).options(joinedload(Empresa.sector)).all()
 
     @staticmethod
     def obtener_empresa_por_id(db: Session, empresa_id: int) -> Empresa:
