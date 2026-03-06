@@ -42,14 +42,40 @@ class PortafolioService:
 
     @staticmethod
     def obtener_portafolio_por_id(db: Session, portafolio_id: int) -> Portafolio:
-        pass
+        portafolio_id = db.query(Portafolio).filter(Portafolio.IdPortafolio == portafolio_id).first()
+        if not portafolio_id:
+            raise ResourceNotFoundError("Portafolio", portafolio_id)
+        return portafolio_id
 
     @staticmethod
     def actualizar_portafolio(db: Session, portafolio_id: int, portafolio_data: PortafolioUpdate) -> Portafolio:
-        pass
+        portafolio = db.query(Portafolio).filter(Portafolio.IdPortafolio == portafolio_id).first()
+        if not portafolio:
+            raise ResourceNotFoundError("Portafolio", portafolio_id)
+
+        if portafolio_data.IdEmpresa:
+            PortafolioService._validar_empresa_existe(db, portafolio_data.IdEmpresa)
+            portafolio.IdEmpresa = portafolio_data.IdEmpresa
+
+        if portafolio_data.IdUsuario:
+            PortafolioService._validar_usuario_existe(db, portafolio_data.IdUsuario)
+            portafolio.IdUsuario = portafolio_data.IdUsuario
+
+        db.commit()
+        db.refresh(portafolio)
+        return portafolio
 
     @staticmethod
     def eliminar_portafolio(db: Session, portafolio_id: int, usuario_id: int, empresa_id: int) -> dict:
-        pass
+        portafolio = db.query(Portafolio).filter(Portafolio.IdPortafolio == portafolio_id).first()
+        if not portafolio:
+            raise ResourceNotFoundError("Portafolio", portafolio_id)
+
+        if portafolio.IdUsuario != usuario_id or portafolio.IdEmpresa != empresa_id:
+            raise InvalidDataError("El usuario o la empresa no coinciden con el portafolio")
+
+        db.delete(portafolio)
+        db.commit()
+        return {"message": "Portafolio eliminado exitosamente"}
 
 

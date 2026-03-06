@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.db.sessions import get_db
-from app.schemas.schemas import RolCreate, RolOut, RolUpdate
+from app.schemas.schemas import RolCreate, RolOut, RolUpdate, UsuarioOut
 from app.services.rol_service import RolService
 from app.exceptions import ResourceNotFoundError, InvalidDataError, DuplicateResourceError
 
@@ -26,6 +26,13 @@ def obtener_rol(rol_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail=e.message)
 
 #Obtener usuaaros por rol 
+@router.get("/{rol_id}/usuarios", response_model= list[UsuarioOut])
+def obtener_usuarios_por_rol(rol_id: int, db: Session = Depends(get_db)):
+    try:
+        rol = RolService.obtener_rol_por_id(db, rol_id)
+        return rol.usuarios
+    except ResourceNotFoundError as e:
+        raise HTTPException(status_code=404, detail=e.message)
 
 @router.put("/{rol_id}", response_model=RolOut)
 def actualizar_rol(rol_id: int, rol_data: RolUpdate, db: Session = Depends(get_db)):
