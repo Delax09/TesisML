@@ -113,3 +113,29 @@ class UsuarioOut(BaseModel):
     IdRol: int = Field(..., description="Id del rol del usuario")
 
     model_config = {"from_attributes": True}
+
+# ========================= Portafolio SCHEMAS =========================
+
+class PortafolioBase(BaseModel):
+    FechaCreacion: datetime = Field(..., description = "Fecha de agregado al portafolio")
+    IdUsuario: int = Field(..., description = "Id del usuario que agrego la empresa")
+    IdEmpresa: int = Field(..., description= "Id de la empresa agregada al portafolio")
+    
+
+class PortafolioCreate(PortafolioBase):
+    pass
+
+class PortafolioUpdate(BaseModel):
+    FechaCreacion: Optional[datetime] = Field(None, description="Fecha de agregado al portafolio")
+    IdUsuario: Optional[int] = Field(None, description="Id del usuario que agrego la empresa")
+    IdEmpresa: Optional[int] = Field(None, description="Id de la empresa agregada al portafolio")
+
+    model_config = {"from_attributes": True}
+
+class PortafolioOut(BaseModel):
+    FechaCreacion: datetime = Field(..., description="Fecha de agregado al portafolio")
+    IdUsuario: int = Field(..., description="Id del usuario que agrego la empresa")
+    IdEmpresa: int = Field(..., description="Id de la empresa agregada al portafolio")
+    IdPortafolio: int = Field(..., description="Id unico del portafolio")
+
+    model_config = {"from_attributes": True}
