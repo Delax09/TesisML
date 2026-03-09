@@ -185,7 +185,7 @@ def Prediccion():
     # 1. Paralelismo de Red: Descarga e Info simultáneos
     with ThreadPoolExecutor() as threads:
         print("Descargando datos y fundamentales...")
-        f_datos = threads.submit(yf.download, PORTAFOLIO, period='3y', interval='1d', group_by='ticker', progress=False, auto_adjust=True)
+        f_datos = threads.submit(yf.download, PORTAFOLIO, period='4y', interval='1d', group_by='ticker', progress=False, auto_adjust=True)
         f_pe = {ticker: threads.submit(ObtenerPE, ticker) for ticker in PORTAFOLIO}
         
         datos = f_datos.result()

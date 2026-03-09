@@ -23,3 +23,18 @@ ALTER TABLE Usuario ADD
     FechaCreacion DATETIME2 DEFAULT SYSUTCDATETIME(),
     UltimoLogin DATETIME2,
     IntentosFallidos INT DEFAULT 0;
+
+
+UPDATE Empresa
+SET 
+    Activo = 1, 
+    FechaActualizacion = SYSUTCDATETIME();
+
+Select * from sector;
+
+UPDATE Sector
+SET 
+    Activo = 1, 
+    FechaCreacion = SYSUTCDATETIME();
+
+
