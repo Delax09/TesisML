@@ -3,6 +3,8 @@ import sys
 import pandas as pd
 from datetime import datetime
 
+#Para ejecutar este archivo: python -m app.auto.importar_tickers
+
 # =============================================================================
 # CONFIGURACIÓN DE RUTAS (SOLUCIÓN A ModuleNotFoundError)
 # =============================================================================
