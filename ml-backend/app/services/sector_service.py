@@ -40,7 +40,12 @@ class SectorService:
         sector = SectorService.obtener_sector_por_id(db, sector_id)
         empresas = db.query(Empresa).filter(Empresa.IdSector == sector_id).all()
         return empresas
-
+    
+    @staticmethod
+    def obtener_sector_activos(db: Session) -> list[Sector]:
+        """Obtiene todos los sectores que tienen empresas activas."""
+        return db.query(Sector).join(Empresa).filter(Empresa.Activo == True).distinct().all()
+        
     @staticmethod
     def actualizar_sector(db: Session, sector_id: int, sector_data: SectorUpdate) -> Sector:
         """Actualiza un sector existente."""

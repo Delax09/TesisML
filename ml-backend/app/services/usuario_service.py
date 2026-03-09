@@ -1,11 +1,16 @@
 import re
+from datetime import datetime
 from sqlalchemy.orm import Session
-from app.models import Usuario, Rol
-from app.schemas.schemas import UsuarioCreate, UsuarioUpdate, RolUpdate
+from app.models.usuario import Usuario
+from app.models.rol import Rol
+from app.schemas.schemas import UsuarioCreate, UsuarioUpdate
 from app.exceptions import ResourceNotFoundError, DuplicateResourceError, InvalidDataError
 from app.utils.security import hash_password, verify_password
 
 class UsuarioService: 
+    # =========================================================================
+    # VALIDACIONES PRIVADAS
+    # =========================================================================
     @staticmethod
     def _validar_rol_existe(db: Session, rol_id: int) -> None:
         rol = db.query(Rol).filter(Rol.IdRol == rol_id).first()
@@ -29,25 +34,29 @@ class UsuarioService:
     
     @staticmethod
     def validar_largo_password(password: str) -> None:
-        if len(password) < 6 or len(password) > 12:
-            raise InvalidDataError("La contraseña debe tener entre 6 y 12 caracteres")
+        if len(password) < 8 or len(password) > 32:
+            raise InvalidDataError("La contraseña debe tener entre 8 y 32 caracteres")
 
+    # =========================================================================
+    # OPERACIONES CRUD (CON FILTRO DE ACTIVO)
+    # =========================================================================
     @staticmethod
     def crear_usuario(db: Session, usuario: UsuarioCreate) -> Usuario:
-        # Validaciones (lanzan excepciones si fallan)
+        # Validaciones de integridad
         UsuarioService.validar_formato_email(usuario.Email)
         UsuarioService._validar_email_unico(db, usuario.Email)
         UsuarioService._validar_rol_existe(db, usuario.IdRol)
-        # Validar longitud de contraseña ANTES de hashearla
-        UsuarioService.validar_largo_password(usuario.PasswordU)
+        UsuarioService.validar_largo_password(usuario.PasswordHash)
         
-        # Crear usuario con contraseña hasheada
         db_usuario = Usuario(
             Nombre=usuario.Nombre,
             Apellido=usuario.Apellido,
             Email=usuario.Email,
-            PasswordU=hash_password(usuario.PasswordU),  # Hashear contraseña
-            IdRol=usuario.IdRol
+            PasswordHash=hash_password(usuario.PasswordHash),
+            IdRol=usuario.IdRol,
+            Activo=True,                      # Nuevo campo
+            FechaCreacion=datetime.utcnow(),  # Nuevo campo
+            IntentosFallidos=0                # Nuevo campo
         )
         
         db.add(db_usuario)
@@ -57,48 +66,41 @@ class UsuarioService:
     
     @staticmethod
     def obtener_usuario_por_id(db: Session, usuario_id: int) -> Usuario:
-        usuario = db.query(Usuario).filter(Usuario.IdUsuario == usuario_id).first()
+        # Solo obtenemos usuarios activos (Soft Delete)
+        usuario = db.query(Usuario).filter(
+            Usuario.IdUsuario == usuario_id,
+            Usuario.Activo == True
+        ).first()
+        
         if not usuario:
             raise ResourceNotFoundError("Usuario", usuario_id)
         return usuario
     
     @staticmethod
-    def obtener_usuario_por_email(db: Session, email: str) -> Usuario:
-        usuario = db.query(Usuario).filter(Usuario.Email == email).first()
-        if not usuario:
-            raise ResourceNotFoundError("Usuario", email)
-        return usuario
-    
-    @staticmethod
     def obtener_todos_usuarios(db: Session) -> list[Usuario]:
-        return db.query(Usuario).all()
-    
+        return db.query(Usuario).filter(Usuario.Activo == True).all()
+
     @staticmethod
     def actualizar_usuario(db: Session, usuario_id: int, usuario_update: UsuarioUpdate) -> Usuario:
         db_usuario = UsuarioService.obtener_usuario_por_id(db, usuario_id)
         
-        # Validar email si se está actualizando
         if usuario_update.Email and usuario_update.Email != db_usuario.Email:
             UsuarioService.validar_formato_email(usuario_update.Email)
             UsuarioService._validar_email_unico(db, usuario_update.Email, usuario_id)
             db_usuario.Email = usuario_update.Email
         
-        # Validar rol si se está actualizando
         if usuario_update.IdRol:
             UsuarioService._validar_rol_existe(db, usuario_update.IdRol)
             db_usuario.IdRol = usuario_update.IdRol
         
-        # Actualizar otros campos
-        if usuario_update.Nombre:
-            db_usuario.Nombre = usuario_update.Nombre
-        if usuario_update.Apellido:
-            db_usuario.Apellido = usuario_update.Apellido
+        # Actualización de campos básicos
+        for campo, valor in usuario_update.dict(exclude_unset=True).items():
+            if campo not in ["Email", "IdRol", "PasswordHash"]:
+                setattr(db_usuario, campo, valor)
         
-        # Hashear contraseña si se proporciona nueva
-        if usuario_update.PasswordU:
-            # Validar longitud de contraseña ANTES de hashearla
-            UsuarioService.validar_largo_password(usuario_update.PasswordU)
-            db_usuario.PasswordU = hash_password(usuario_update.PasswordU)
+        if usuario_update.PasswordHash:
+            UsuarioService.validar_largo_password(usuario_update.PasswordHash)
+            db_usuario.PasswordHash = hash_password(usuario_update.PasswordHash)
         
         db.commit()
         db.refresh(db_usuario)
@@ -106,12 +108,30 @@ class UsuarioService:
     
     @staticmethod
     def eliminar_usuario(db: Session, usuario_id: int) -> bool:
+        """Implementa Soft Delete desactivando el registro."""
         db_usuario = UsuarioService.obtener_usuario_por_id(db, usuario_id)
-        db.delete(db_usuario)
+        db_usuario.Activo = False  # Marcamos como inactivo en lugar de borrar
         db.commit()
         return True
-    
+
+    # =========================================================================
+    # LÓGICA DE AUTENTICACIÓN Y SEGURIDAD
+    # =========================================================================
     @staticmethod
-    def verificar_contraseña(db: Session, email: str, password: str) -> bool:
-        usuario = UsuarioService.obtener_usuario_por_email(db, email)
-        return verify_password(password, usuario.PasswordU)
+    def verificar_y_autenticar(db: Session, email: str, password: str) -> Usuario:
+        """Autentica al usuario y actualiza su último login."""
+        usuario = db.query(Usuario).filter(
+            Usuario.Email == email,
+            Usuario.Activo == True
+        ).first()
+        
+        if not usuario or not verify_password(password, usuario.PasswordHash):
+            # Aquí podrías implementar el incremento de IntentosFallidos si el usuario existe
+            raise InvalidDataError("Credenciales inválidas o cuenta desactivada")
+        
+        # Actualizamos la auditoría de acceso
+        usuario.UltimoLogin = datetime.utcnow()
+        usuario.IntentosFallidos = 0
+        db.commit()
+        
+        return usuario

@@ -42,7 +42,9 @@ class EmpresaService:
             Ticket=empresa_data.Ticket,
             NombreEmpresa=empresa_data.NombreEmpresa,
             IdSector=empresa_data.IdSector,
-            FechaAgregado=datetime.utcnow()
+            FechaAgregado=datetime.utcnow(),
+            Activo = True,
+            FechaActualizacion = datetime.utcnow()
         )
 
         db.add(nueva_empresa)
@@ -62,6 +64,10 @@ class EmpresaService:
         if not empresa:
             raise ResourceNotFoundError("Empresa", empresa_id)
         return empresa
+    
+    @staticmethod
+    def obtener_empresas_activas(db: Session) -> list[Empresa]:
+        return db.query(Empresa).filter(Empresa.Activo == True).distinct().all()
 
     @staticmethod
     def actualizar_empresa(db: Session, empresa_id: int, empresa_data: EmpresaUpdate) -> Empresa:
@@ -86,10 +92,13 @@ class EmpresaService:
         return db_empresa
 
     @staticmethod
-    def eliminar_empresa(db: Session, empresa_id: int) -> dict:
-        """Elimina una empresa."""
+    def desactivar_empresa(db: Session, empresa_id: int):
         db_empresa = EmpresaService.obtener_empresa_por_id(db, empresa_id)
-        ticket = db_empresa.Ticket
-        db.delete(db_empresa)
+        if not empresa_id:
+            raise ResourceNotFoundError("No se puede desactivar una empresa que no existe", db_empresa)
+        
+        db_empresa.Activo = False
+        db_empresa.FechaActualizacion = datetime.utcnow()   
         db.commit()
-        return {"message": f"Empresa {ticket} eliminada correctamente"}
+        db.refresh(db_empresa)
+        return db_empresa
