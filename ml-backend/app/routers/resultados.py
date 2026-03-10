@@ -2,7 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.db.sessions import get_db
 from app.schemas.schemas import ResultadoOut
-from app.services.resultado_service import ResultadoService, EmpresaService
+from app.services.resultado_service import ResultadoService
+from app.services.empresa_service import EmpresaService
 from app.exceptions import ResourceNotFoundError
 
 router = APIRouter(prefix="/api/v1/resultados", tags=["Resultados"])

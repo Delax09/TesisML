@@ -8,6 +8,7 @@ from app.routers.rols import router as rols_router
 from app.routers.usuarios import router as usuarios_router
 from app.routers.portafolios import router as portafolios_router
 from app.routers.precio_historicos import router as precio_historico_router
+from app.routers.resultados import router as resultado_router
 
 
 __all__ = ["sectors_router", 
@@ -16,4 +17,5 @@ __all__ = ["sectors_router",
             "usuarios_router",
             "portafolios_router",
             "precio_historico_router",
+            "resultado_router"
 ]
