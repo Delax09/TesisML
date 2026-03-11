@@ -14,3 +14,7 @@ GROUP BY e.IdEmpresa, e.NombreEmpresa
 ORDER BY e.IdEmpresa;
 
 select * from PrecioHistorico where IdEmpresa = 1 order by Fecha asc;
+
+select * from empresa where Ticket = 'SQ';
+
+select * from Resultado;

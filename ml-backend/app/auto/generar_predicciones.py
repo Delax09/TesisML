@@ -15,7 +15,7 @@ def ejecutar_analisis_diario():
         #Ultimos precios para calcular
         precios = db.query(PrecioHistorico).filter(
             PrecioHistorico.IdEmpresa == empresa.IdEmpresa
-        ).order_by(PrecioHistorico.Fecha.desc()).limit().all()
+        ).order_by(PrecioHistorico.Fecha.desc()).limit(100).all()
 
         if len(precios) < 50: continue
 
