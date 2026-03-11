@@ -4,6 +4,8 @@ import React from 'react';
 import AuthForm from './components/AuthForm'; 
 import SectorList from './components/SectorList';
 import EmpresaTable from './components/EmpresaTable';
+import RolList from './components/RolList';
+
 
 function App() {
   return (
@@ -16,9 +18,12 @@ function App() {
         {/* Mantenemos el AuthForm que es importante */}
         <AuthForm />
 
-        {/* 2. Añadimos un separador o espacio y mostramos la tabla */}
-        <div style={estilos.espaciador}>
-          <SectorList />
+        <div style={estilos.seccionMaestras}>
+          <div style={{ flex: 1 }}><SectorList /></div>
+          <div style={{ flex: 1 }}><RolList /></div>
+        </div>
+        
+        <div style={estilos.seccionDatos}>
           <EmpresaTable />
         </div>
       </main>
