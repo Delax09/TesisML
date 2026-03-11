@@ -35,7 +35,7 @@ def poblar_precios_historicos():
             else:
                 # Si la tabla está vacía para esta empresa, descargamos el histórico completo
                 print(f"📥 Descargando histórico completo (6y) para {empresa.Ticket}...")
-                ticker_data = yf.download(empresa.Ticket, period="6y", interval="1d")
+                ticker_data = yf.download(empresa.Ticket, period="max", interval="1d")
 
             # 3. Insertar nuevos datos si existen
             if not ticker_data.empty:
