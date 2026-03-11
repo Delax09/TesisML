@@ -6,6 +6,7 @@ import EmpresaTable from './components/EmpresaTable';
 import RolList from './components/RolList';
 import PrecioChart from './components/PrecioChart';
 import ResultadoPanel from './components/ResultadoPanel';
+import AdminPanel from './components/AdminPanel';
 
 function App() {
   // Estado para capturar qué empresa seleccionamos
@@ -24,6 +25,7 @@ function App() {
       
       <main style={estilos.contenido}>
         <AuthForm />
+        <AdminPanel />
 
         <div style={estilos.seccionMaestras}>
           <div style={{ flex: 1 }}><SectorList /></div>

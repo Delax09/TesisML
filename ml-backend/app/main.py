@@ -7,8 +7,9 @@ from app.routers import (sectors_router,
                         usuarios_router, 
                         portafolios_router, 
                         precio_historico_router,
-                        resultado_router)
-from app.routers import ia
+                        resultado_router,
+                        ia_router,
+                        admin_router)
 
 # Crear aplicación FastAPI
 app = FastAPI(
@@ -34,7 +35,8 @@ app.include_router(usuarios_router)
 app.include_router(portafolios_router)
 app.include_router(precio_historico_router)
 app.include_router(resultado_router)
-app.include_router(ia.router)
+app.include_router(ia_router)
+app.include_router(admin_router)
 
 
 @app.get("/")
