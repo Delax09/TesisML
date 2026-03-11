@@ -1,6 +1,6 @@
 // src/components/PrecioChart.js
 import React, { useState, useEffect } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
+import { /*LineChart, Line,*/ XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
 import precioService from '../services/precioService';
 
 

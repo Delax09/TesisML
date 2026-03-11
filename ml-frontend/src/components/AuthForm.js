@@ -89,7 +89,7 @@ function AuthForm() {
 
 // Estilos rápidos en JS para que se vea bien desde el inicio
 const estilos = {
-  contenedor: { display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#f0f2f5', fontFamily: 'sans-serif' },
+  contenedor: { display: 'flex', paddingTop: '2rem', alignItems: 'center', minHeight: 'auto', backgroundColor: '#f0f2f5', fontFamily: 'sans-serif' },
   tarjeta: { backgroundColor: 'white', padding: '2rem', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', width: '100%', maxWidth: '400px', textAlign: 'center' },
   subtitulo: { color: '#666', marginBottom: '1.5rem' },
   formulario: { display: 'flex', flexDirection: 'column', gap: '1rem', textAlign: 'left' },

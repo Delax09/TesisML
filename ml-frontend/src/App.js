@@ -4,7 +4,8 @@ import AuthForm from './components/AuthForm';
 import SectorList from './components/SectorList';
 import EmpresaTable from './components/EmpresaTable';
 import RolList from './components/RolList';
-import PrecioChart from './components/PrecioChart'; // Nueva pieza
+import PrecioChart from './components/PrecioChart';
+import ResultadoPanel from './components/ResultadoPanel';
 
 function App() {
   // Estado para capturar qué empresa seleccionamos
@@ -29,12 +30,16 @@ function App() {
           <div style={{ flex: 1 }}><RolList /></div>
         </div>
 
-        {/* Sección de la Gráfica: Solo se verá bien cuando seleccionemos una empresa */}
-        <div style={estilos.seccionGrafica}>
-          <PrecioChart 
-            empresaId={empresaSeleccionada.id} 
-            nombreEmpresa={empresaSeleccionada.nombre} 
-          />
+        <div style={estilos.seccionAnalisis}>
+            <div style={{ flex: 3 }}>
+                <PrecioChart 
+                    empresaId={empresaSeleccionada.id} 
+                    nombreEmpresa={empresaSeleccionada.nombre} 
+                />
+            </div>
+            <div style={{ flex: 1 }}>
+                <ResultadoPanel empresaId={empresaSeleccionada.id} />
+            </div>
         </div>
         
         <div style={estilos.seccionDatos}>
@@ -71,11 +76,13 @@ const estilos = {
     width: '100%',
     flexWrap: 'wrap' 
   },
-  seccionGrafica: {
-    width: '100%',
-    backgroundColor: '#fff',
-    borderRadius: '8px',
-    boxShadow: '0 2px 10px rgba(0,0,0,0.05)'
+  seccionAnalisis: {
+      display: 'flex',
+      flexDirection: 'row', // Esto los pone al lado
+      gap: '20px',
+      width: '100%',
+      alignItems: 'flex-start',
+      flexWrap: 'wrap' // Para que en móviles se ponga uno abajo del otro
   },
   seccionDatos: { 
     width: '100%' 
