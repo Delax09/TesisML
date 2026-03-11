@@ -2,7 +2,8 @@
 
 import React from 'react';
 import AuthForm from './components/AuthForm'; 
-import SectorList from './components/SectorList'; // 1. Importamos la nueva pieza
+import SectorList from './components/SectorList';
+import EmpresaTable from './components/EmpresaTable';
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
         {/* 2. Añadimos un separador o espacio y mostramos la tabla */}
         <div style={estilos.espaciador}>
           <SectorList />
+          <EmpresaTable />
         </div>
       </main>
     </div>
