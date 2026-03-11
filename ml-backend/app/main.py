@@ -1,8 +1,3 @@
-"""
-Aplicación principal de FastAPI.
-Punto de entrada de la aplicación con configuración centralizada.
-"""
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
