@@ -120,10 +120,8 @@ class UsuarioUpdate(BaseModel):
 
 class UsuarioOut(UsuarioBase):
     IdUsuario: int
-    Activo: bool
-    FechaCreacion: datetime
-    UltimoLogin: Optional[datetime] = None
-    IntentosFallidos: Optional[int]
+    Activo: Optional[bool]
+    FechaCreacion: Optional[datetime]
     
     rol: Optional[RolOut] = None
 
