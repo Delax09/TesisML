@@ -126,6 +126,8 @@ class UsuarioOut(UsuarioBase):
     IntentosFallidos: Optional[int]
     
     rol: Optional[RolOut] = None
+
+    model_config = {"from_attributes": True}
 # ========================= Portafolio SCHEMAS =========================
 
 class PortafolioBase(BaseModel):
