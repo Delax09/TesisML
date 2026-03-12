@@ -55,7 +55,7 @@ class EmpresaService:
     @staticmethod
     def obtener_todas_empresas(db: Session) -> list[Empresa]:
         """Obtiene todas las empresas."""
-        return db.query(Empresa).options(joinedload(Empresa.sector)).all()
+        return db.query(Empresa).all()
 
     @staticmethod
     def obtener_empresa_por_id(db: Session, empresa_id: int) -> Empresa:

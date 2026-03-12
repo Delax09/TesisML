@@ -78,7 +78,7 @@ class UsuarioService:
     
     @staticmethod
     def obtener_todos_usuarios(db: Session) -> list[Usuario]:
-        return db.query(Usuario).filter(Usuario.Activo == True).all()
+        return db.query(Usuario).all()
 
     @staticmethod
     def actualizar_usuario(db: Session, usuario_id: int, usuario_update: UsuarioUpdate) -> Usuario:

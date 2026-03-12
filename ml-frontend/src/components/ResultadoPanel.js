@@ -73,7 +73,7 @@ function ResultadoPanel({ empresaId }) {
                             color: resultado.RSI > 70 ? '#d9534f' : resultado.RSI < 30 ? '#5cb85c' : '#f0ad4e',
                             fontWeight: 'bold' 
                         }}>
-                            {resultado.RSI.toFixed(2)}
+                            {Number(resultado.RSI || 0).toFixed(2)}
                         </span>
                     </div>
 

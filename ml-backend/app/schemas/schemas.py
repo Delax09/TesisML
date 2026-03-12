@@ -123,7 +123,7 @@ class UsuarioOut(UsuarioBase):
     Activo: bool
     FechaCreacion: datetime
     UltimoLogin: Optional[datetime] = None
-    IntentosFallidos: int
+    IntentosFallidos: Optional[int]
     
     rol: Optional[RolOut] = None
 # ========================= Portafolio SCHEMAS =========================
