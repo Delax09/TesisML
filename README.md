@@ -59,7 +59,8 @@ TesisML/
 │   └── package.json                # Dependencias de Node.js
 │
 └── 📁 ScriptsBaseDatos/            # Scripts DDL para restaurar la base de datos
-🚀 Guía de Ejecución Rápida
+``` 
+## 🚀 Guía de Ejecución Rápida
 Sigue estos pasos para levantar el entorno completo desde cero.
 
 1. Configuración de Base de Datos
