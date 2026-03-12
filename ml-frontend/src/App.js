@@ -1,5 +1,5 @@
 // src/App.js
-import React, { useState } from 'react'; // Importamos useState para la interacción
+import React, { useState } from 'react';
 import AuthForm from './components/AuthForm'; 
 import SectorList from './components/SectorList';
 import EmpresaTable from './components/EmpresaTable';
@@ -7,12 +7,11 @@ import RolList from './components/RolList';
 import PrecioChart from './components/PrecioChart';
 import ResultadoPanel from './components/ResultadoPanel';
 import AdminPanel from './components/AdminPanel';
+import AnalisisIAButton from './components/AnalisisIAButton'; // <--- El nuevo componente
 
 function App() {
-  // Estado para capturar qué empresa seleccionamos
   const [empresaSeleccionada, setEmpresaSeleccionada] = useState({ id: null, nombre: "" });
 
-  // Función para manejar la selección (se la pasaremos a la tabla)
   const manejarSeleccionEmpresa = (id, nombre) => {
     setEmpresaSeleccionada({ id, nombre });
   };
@@ -27,25 +26,35 @@ function App() {
         <AuthForm />
         <AdminPanel />
 
+        {/* Sección de Acciones Rápidas */}
+        {empresaSeleccionada.id && (
+            <div style={estilos.barraAccion}>
+                <span>Analizando: <strong>{empresaSeleccionada.nombre}</strong></span>
+                <AnalisisIAButton 
+                    empresaId={empresaSeleccionada.id} 
+                    onComplete={() => console.log("IA finalizada, resultados actualizados")}
+                />
+            </div>
+        )}
+
         <div style={estilos.seccionMaestras}>
           <div style={{ flex: 1 }}><SectorList /></div>
           <div style={{ flex: 1 }}><RolList /></div>
         </div>
 
         <div style={estilos.seccionAnalisis}>
-            <div style={{ flex: 3 }}>
+            <div style={{ flex: 3, minWidth: '300px' }}>
                 <PrecioChart 
                     empresaId={empresaSeleccionada.id} 
                     nombreEmpresa={empresaSeleccionada.nombre} 
                 />
             </div>
-            <div style={{ flex: 1 }}>
+            <div style={{ flex: 1, minWidth: '250px' }}>
                 <ResultadoPanel empresaId={empresaSeleccionada.id} />
             </div>
         </div>
         
         <div style={estilos.seccionDatos}>
-          {/* Pasamos la función de selección como una 'prop' a la tabla */}
           <EmpresaTable onSelect={manejarSeleccionEmpresa} />
         </div>
       </main>
@@ -54,41 +63,24 @@ function App() {
 }
 
 const estilos = {
-  layout: { 
-    display: 'flex', 
-    flexDirection: 'column', 
-    alignItems: 'center', 
-    backgroundColor: '#f0f2f5', 
-    minHeight: '100vh',
-    paddingBottom: '3rem'
-  },
+  layout: { display: 'flex', flexDirection: 'column', alignItems: 'center', backgroundColor: '#f0f2f5', minHeight: '100vh', paddingBottom: '3rem' },
   header: { padding: '1rem', color: '#333' },
-  contenido: { 
-    marginTop: '2rem',
+  contenido: { marginTop: '2rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2rem', width: '95%', maxWidth: '1300px' },
+  barraAccion: { 
+    width: '100%', 
+    backgroundColor: 'white', 
+    padding: '1rem 2rem', 
+    borderRadius: '12px', 
     display: 'flex', 
-    flexDirection: 'column',
+    justifyContent: 'space-between', 
     alignItems: 'center',
-    gap: '2rem',
-    width: '90%',        // Ocupa más ancho en pantallas grandes
-    maxWidth: '1200px'   // Pero con un tope para que no se deforme
+    boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
+    flexWrap: 'wrap',
+    gap: '15px'
   },
-  seccionMaestras: { 
-    display: 'flex', 
-    gap: '20px', 
-    width: '100%',
-    flexWrap: 'wrap' 
-  },
-  seccionAnalisis: {
-      display: 'flex',
-      flexDirection: 'row', // Esto los pone al lado
-      gap: '20px',
-      width: '100%',
-      alignItems: 'flex-start',
-      flexWrap: 'wrap' // Para que en móviles se ponga uno abajo del otro
-  },
-  seccionDatos: { 
-    width: '100%' 
-  }
+  seccionMaestras: { display: 'flex', gap: '20px', width: '100%', flexWrap: 'wrap' },
+  seccionAnalisis: { display: 'flex', flexDirection: 'row', gap: '20px', width: '100%', alignItems: 'flex-start', flexWrap: 'wrap' },
+  seccionDatos: { width: '100%' }
 };
 
 export default App;
