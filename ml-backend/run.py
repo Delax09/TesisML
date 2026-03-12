@@ -14,3 +14,5 @@ if __name__ == "__main__":
         reload=True,
         log_level=settings.LOG_LEVEL.lower()
     )
+
+#Password en Supabase aAZOXyFJoPMjFCG6
