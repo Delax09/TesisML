@@ -11,4 +11,4 @@ scikit-learn
 numpy
 tensorflow
 bcrypt
-"psycopg[binary]"
+psycopg[binary]
