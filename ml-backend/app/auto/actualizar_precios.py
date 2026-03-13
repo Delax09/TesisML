@@ -7,7 +7,6 @@ from app.models.empresa import Empresa
 from app.models.precio_historico import PrecioHistorico
 from datetime import datetime
 
-# Silenciamos las advertencias de Pandas/YFinance para una consola limpia
 warnings.filterwarnings("ignore", category=FutureWarning)
 warnings.filterwarnings("ignore", category=UserWarning)
 
@@ -17,20 +16,18 @@ def actualizar_precios(db: Session):
     
     for empresa in empresas:
         try:
-            # Descargamos los datos recientes (5 días es más rápido y seguro que "max" para procesos diarios)
+            
             data = yf.download(empresa.Ticket, period="max", interval="1d", auto_adjust=False)
             
             if not data.empty:
-                # Tomamos el último registro disponible
+                
                 ultimo_precio = data.iloc[-1]
                 fecha_yf = data.index[-1]
                 
-                # EXTRACCIÓN A PRUEBA DE FALLOS:
-                # Extraemos 'Close' y 'Volume'
+                #Extraccion de close volume
                 precio_bruto = ultimo_precio['Close']
                 volumen_bruto = ultimo_precio['Volume']
                 
-                # Si la librería nos devuelve una 'Series' de Pandas, sacamos el número con .iloc[0]
                 if isinstance(precio_bruto, pd.Series):
                     precio_bruto = precio_bruto.iloc[0]
                 if isinstance(volumen_bruto, pd.Series):
