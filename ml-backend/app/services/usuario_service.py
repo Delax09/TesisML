@@ -56,7 +56,6 @@ class UsuarioService:
             IdRol=usuario.IdRol,
             Activo=True,                      # Nuevo campo
             FechaCreacion=datetime.utcnow(),  # Nuevo campo
-            IntentosFallidos=0                # Nuevo campo
         )
         
         db.add(db_usuario)
