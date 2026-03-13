@@ -43,9 +43,13 @@ def cargar_historico_completo(db: Session):
                         precio_bruto = precio_bruto.iloc[0]
                     if isinstance(volumen_bruto, pd.Series):
                         volumen_bruto = volumen_bruto.iloc[0]
-                        
+                    
+                    existe = db.query(PrecioHistorico).filter(
+                        PrecioHistorico.IdEmpresa == empresa.IdEmpresa,
+                        PrecioHistorico.Fecha == fecha_yf.date()
+                    )
                     # Saltamos datos corruptos o días sin cotización
-                    if pd.isna(precio_bruto) or pd.isna(volumen_bruto):
+                    if pd.isna(precio_bruto) or pd.isna(volumen_bruto) or existe:
                         continue
                         
                     nuevo_precio = PrecioHistorico(
