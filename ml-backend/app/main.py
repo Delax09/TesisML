@@ -12,7 +12,10 @@ from app.routers import (auth_router,
                         ia_router,
                         admin_router)
 from app.db.sessions import engine, Base
-
+from slowapi.errors import RateLimitExceeded
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.middleware import SlowAPIASGIMiddleware
+from app.core.limiter import limiter
 
 # Base.metadata.create_all(bind=engine) ya cree la base de datos
 # Crear aplicación FastAPI
@@ -22,6 +25,9 @@ app = FastAPI(
     version="2.0.0"
 )
 
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_middleware(SlowAPIASGIMiddleware)
 
 
 # Configuración de CORS
