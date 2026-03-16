@@ -11,7 +11,7 @@ class MLEngine:
 
     def __init__(self):
         base_dir = os.path.dirname(os.path.abspath(__file__))
-        model_path = os.path.join(base_dir, "models", "modelo_acciones.keras") # Cambiado a .keras
+        model_path = os.path.join(base_dir, "models", "modelo_acciones.keras")
         scaler_path = os.path.join(base_dir, "models", "scaler.pkl")
         
         self.model = None
@@ -23,98 +23,102 @@ class MLEngine:
         else:
             print("⚠️ Modelos no encontrados. Ejecuta app/ml/entrenamiento.py primero.")
 
-    def analizar_empresa(self, db, id_empresa):
-        """
-        MÉTODO PUENTE: Conecta la base de datos con la lógica de predicción.
-        """
-        # 1. Extraer precios históricos de la base de datos
-        # Necesitamos al menos 100 registros para que al calcular indicadores queden 60 limpios
-        query = db.query(PrecioHistorico).filter(
-            PrecioHistorico.IdEmpresa == id_empresa
-        ).order_by(PrecioHistorico.Fecha.asc()).all()
-
-        if len(query) < 80: # Margen de seguridad
-            return None
-
-        # 2. Convertir lista de objetos SQLAlchemy a DataFrame de Pandas
-        df = pd.DataFrame([
-            {
-                'Date': p.Fecha,
-                'Close': p.PrecioCierre,
-                'Volume': p.Volumen,
-                'High': p.PrecioCierre * 1.01, # Simulación si no tienes High/Low real
-                'Low': p.PrecioCierre * 0.99   # Simulación si no tienes High/Low real
-            } for p in query
-        ])
-        
-        # 3. Llamar a la función de predicción que ya tienes
-        resultado_ia = self.predecir(df)
-        
-        if not resultado_ia:
-            return None
-
-        # 4. Formatear la salida exactamente como la espera tu tabla 'Resultados'
-        return {
-            "PrediccionIA": resultado_ia["prediccion"],
-            "RSI": float(resultado_ia["features"]["RSI"]),
-            "Score": resultado_ia["score"],
-            "Recomendacion": resultado_ia["recomendacion"]
-        }
-    
     def calcular_indicadores(self, df):
-        # Misma lógica exacta que en entrenamiento para mantener coherencia
+        # Hacemos una copia para no alterar el original
+        df = df.copy()
+        
         close = df['Close']
         high = df['High']
         low = df['Low']
         
+        # RSI
         delta = close.diff()
         ganancia = delta.where(delta > 0, 0).ewm(com=13, adjust=False).mean()
         perdida = -delta.where(delta < 0, 0).ewm(com=13, adjust=False).mean()
         rs = ganancia / perdida
         df['RSI'] = 100 - (100 / (1 + rs))
         
+        # MACD
         ema12 = close.ewm(span=12, adjust=False).mean()
         ema26 = close.ewm(span=26, adjust=False).mean()
         df['MACD'] = ema12 - ema26
         
+        # ATR 
         prev_close = close.shift(1)
         tr = pd.concat([high - low, (high - prev_close).abs(), (low - prev_close).abs()], axis=1).max(axis=1)
         df['ATR'] = tr.rolling(window=14).mean()
         
+        # EMAs
         df['EMA20'] = close.ewm(span=20, adjust=False).mean()
         df['EMA50'] = close.ewm(span=50, adjust=False).mean()
         
         return df.dropna()
 
-    def predecir(self, df_historico):
+    def analizar_empresa(self, db, id_empresa):
         """
-        Recibe un DataFrame desde el orquestador (la BD), calcula el bloque de 60 días
-        y retorna la predicción final aplicando la lógica de negocio de tu tesis.
+        MÉTODO PUENTE: Conecta la base de datos con la lógica de predicción.
+        """
+        query = db.query(PrecioHistorico).filter(
+            PrecioHistorico.IdEmpresa == id_empresa
+        ).order_by(PrecioHistorico.Fecha.asc()).all()
+
+        if len(query) < 80:
+            return None
+
+        df = pd.DataFrame([
+            {
+                'Date': p.Fecha,
+                'Close': float(p.PrecioCierre),
+                'Volume': int(p.Volumen),
+                'High': float(p.PrecioCierre) * 1.01,
+                'Low': float(p.PrecioCierre) * 0.99  
+            } for p in query
+        ])
+        df.set_index('Date', inplace=True)
+        
+        # Calculamos indicadores ANTES de predecir
+        df_ind = self.calcular_indicadores(df)
+        
+        if len(df_ind) < self.DIAS_MEMORIA_IA:
+            return None
+
+        resultado_ia = self.predecir(df_ind)
+        
+        if not resultado_ia:
+            return None
+
+        return {
+            "PrediccionIA": resultado_ia["prediccion"],
+            "RSI": float(resultado_ia["features"]["RSI"]),
+            "Score": resultado_ia["score"],
+            "Recomendacion": resultado_ia["recomendacion"]
+        }
+
+    def predecir(self, df_ind):
+        """
+        Recibe un DataFrame con los indicadores ya calculados.
         """
         if self.model is None or self.scaler is None:
             raise Exception("El motor de IA no tiene un modelo cargado.")
 
-        # 1. Preparar datos
-        df_ind = self.calcular_indicadores(df_historico.copy())
-        if len(df_ind) < self.DIAS_MEMORIA_IA:
-            return None # No hay suficientes datos en la BD para esta empresa
-            
         # 2. Tomar exactamente el último bloque de 60 días
         data = df_ind[self.FEATURES].values[-self.DIAS_MEMORIA_IA:]
         
-        # 3. Escalar con el Scaler del entrenamiento
+        # 3. Escalar
         scaled_data = self.scaler.transform(data)
-        
-        # Formatear a 3D (1, 60, 7) para LSTM
         X_pred = scaled_data.reshape(1, self.DIAS_MEMORIA_IA, len(self.FEATURES))
         
-        # 4. Inferencia
+        # 4. Inferencia (La IA nos devuelve un número entre 0 y 1)
         pred_scaled = self.model.predict(X_pred, verbose=0)
         
-        # 5. Desescalar (CRÍTICO: Multiplicar por el rango de la columna 'Close')
-        max_val = self.scaler.data_max_[0]
-        min_val = self.scaler.data_min_[0]
-        pred_real = pred_scaled[0, 0] * (max_val - min_val) + min_val
+        # 5. Desescalado MATEMÁTICAMENTE CORRECTO
+        # Creamos un array ficticio (dummy) con ceros del tamaño de nuestras FEATURES (7 columnas)
+        # porque el scaler espera 7 columnas para desescalar.
+        dummy_array = np.zeros((1, len(self.FEATURES)))
+        # Ponemos la predicción de la IA en la primera columna (Close), que es la que nos importa
+        dummy_array[0, 0] = pred_scaled[0][0]
+        # Desescalamos toda la matriz y extraemos el valor real de la columna 'Close'
+        pred_real = self.scaler.inverse_transform(dummy_array)[0, 0]
         
         # 6. Cálculo de lógica de negocio
         precio_actual = df_ind['Close'].iloc[-1]
@@ -128,11 +132,10 @@ class MLEngine:
 
         recomendacion = "ALCISTA" if score >= 2 else "BAJISTA" if score <= -2 else "Sin señal"
         
-        # Retornamos el objeto procesado para que el orquestador lo guarde en la BD
         return {
             "prediccion": float(pred_real),
             "variacion": float(var_pct),
             "score": float(score),
             "recomendacion": recomendacion,
-            "features": df_ind.iloc[-1] # Enviamos la última fila para extraer RSI, MACD, etc.
+            "features": df_ind.iloc[-1] 
         }

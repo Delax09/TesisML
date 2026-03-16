@@ -16,7 +16,7 @@ def ejecutar_ia_masiva(db: Session):
         empresas = db.query(Empresa).filter(Empresa.Activo == True).all()
         
         if not empresas:
-            print("⚠️ [IA-MASSIVE] No hay empresas activas para procesar.")
+            
             return
 
         # 2. Instanciar el motor y el servicio (una sola vez para ahorrar memoria)

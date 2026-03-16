@@ -8,7 +8,6 @@ from tensorflow.keras.optimizers import Adam
 import joblib
 import os
 
-# 1. Importamos la conexión a tu Base de Datos
 from app.db.sessions import SessionLocal
 from app.models.empresa import Empresa
 from app.models.precio_historico import PrecioHistorico
@@ -48,75 +47,93 @@ def calcular_indicadores(df):
     
     return df.dropna()
 
-def obtener_datos_bd():
-    """Extrae los precios históricos desde SQL Server y los formatea para la IA."""
-    db = SessionLocal()
-    try:
-        # Buscamos una empresa de referencia que tenga muchos datos (ej: MSFT o la primera activa)
-        empresa = db.query(Empresa).filter(Empresa.Ticket == 'MSFT', Empresa.Activo == True).first()
-        if not empresa:
-            empresa = db.query(Empresa).filter(Empresa.Activo == True).first()
-            
-        print(f"📥 Extrayendo datos de la base de datos para: {empresa.Ticket}...")
+def obtener_datos_por_empresa(db, empresa):
+    """Extrae los precios históricos de UNA empresa en específico."""
+    precios = db.query(PrecioHistorico).filter(
+        PrecioHistorico.IdEmpresa == empresa.IdEmpresa
+    ).order_by(PrecioHistorico.Fecha.asc()).all()
+
+    if len(precios) < DIAS_MEMORIA_IA + 50:
+        return None # Ignoramos la empresa si no tiene suficiente historia
+
+    datos_formateados = []
+    for p in precios:
+        datos_formateados.append({
+            'Fecha': p.Fecha,
+            'Close': float(p.PrecioCierre),
+            'Volume': int(p.Volumen),
+            'High': float(p.PrecioCierre),
+            'Low': float(p.PrecioCierre)
+        })
         
-        # Traemos el histórico ordenado por fecha de más antiguo a más reciente
-        precios = db.query(PrecioHistorico).filter(
-            PrecioHistorico.IdEmpresa == empresa.IdEmpresa
-        ).order_by(PrecioHistorico.Fecha.asc()).all()
+    df = pd.DataFrame(datos_formateados)
+    df.set_index('Fecha', inplace=True)
+    return df
 
-        if len(precios) < DIAS_MEMORIA_IA + 50:
-            raise ValueError(f"No hay suficientes datos en la BD para {empresa.Ticket}. Ejecuta la carga de precios primero.")
-
-        # Convertimos a formato DataFrame simulando High y Low para el ATR
-        datos_formateados = []
-        for p in precios:
-            datos_formateados.append({
-                'Fecha': p.Fecha,
-                'Close': float(p.PrecioCierre),
-                'Volume': int(p.Volumen),
-                'High': float(p.PrecioCierre), # Simulación por falta de columna en BD
-                'Low': float(p.PrecioCierre)   # Simulación por falta de columna en BD
-            })
-            
-        df = pd.DataFrame(datos_formateados)
-        df.set_index('Fecha', inplace=True)
-        return df
-
+def entrenar_y_guardar():
+    db = SessionLocal()
+    lista_dfs = []
+    
+    try:
+        empresas = db.query(Empresa).filter(Empresa.Activo == True).all()
+        print(f"📥 Buscando datos para {len(empresas)} empresas activas...")
+        
+        # 1. Recolectar y calcular indicadores POR SEPARADO
+        for empresa in empresas:
+            df_empresa = obtener_datos_por_empresa(db, empresa)
+            if df_empresa is not None:
+                df_empresa = calcular_indicadores(df_empresa)
+                lista_dfs.append(df_empresa)
+            else:
+                print(f"⚠️ Saltando {empresa.Ticket}: No tiene suficientes datos históricos.")
+                
     finally:
         db.close()
 
-def entrenar_y_guardar():
-    # 1. Obtener datos locales desde SQL Server
-    df = obtener_datos_bd()
-        
-    print("⚙️ Calculando indicadores técnicos...")
-    df = calcular_indicadores(df)
-    data = df[FEATURES].values
+    if not lista_dfs:
+        print("❌ Error: No se encontraron datos suficientes en ninguna empresa.")
+        return
+
+    # 2. Escalar variables usando el conocimiento de TODAS las empresas combinadas
+    print("⚖️ Ajustando el Scaler global...")
+    df_global = pd.concat(lista_dfs)
+    data_global = df_global[FEATURES].values
     
-    # 2. Escalar datos
-    print("⚖️ Escalando variables...")
     scaler = MinMaxScaler(feature_range=(0, 1))
-    scaled_data = scaler.fit_transform(data)
+    scaler.fit(data_global) # El scaler ahora conoce el min y max absoluto de todo el mercado
     
-    # 3. Construir Bloques LSTM (60 días de memoria)
-    x_train, y_train = [], []
-    for i in range(DIAS_MEMORIA_IA, len(scaled_data)):
-        x_train.append(scaled_data[i-DIAS_MEMORIA_IA:i, :])
-        y_train.append(scaled_data[i, 0]) # Predice la columna 0 ('Close')
+    # 3. Construir Bloques LSTM (respetando los límites de cada empresa)
+    print("🧩 Construyendo secuencias de entrenamiento...")
+    x_train_global, y_train_global = [], []
+    
+    for df in lista_dfs:
+        # Transformamos los datos de esta empresa específica
+        scaled_data = scaler.transform(df[FEATURES].values)
         
-    x_train, y_train = np.array(x_train), np.array(y_train)
+        for i in range(DIAS_MEMORIA_IA, len(scaled_data)):
+            x_train_global.append(scaled_data[i-DIAS_MEMORIA_IA:i, :])
+            y_train_global.append(scaled_data[i, 0]) # Predice 'Close'
+            
+    x_train = np.array(x_train_global)
+    y_train = np.array(y_train_global)
+    
+    print(f"📊 Total de secuencias generadas: {len(x_train)}")
     
     # 4. Entrenar el Modelo LSTM
-    print("🧠 Entrenando red neuronal LSTM...")
+    print("🧠 Entrenando red neuronal LSTM masiva...")
     model = Sequential([
         Input(shape=(x_train.shape[1], x_train.shape[2])),
-        LSTM(32),
+        LSTM(64, return_sequences=False), # Aumentamos las neuronas porque hay más datos
+        Dense(32, activation='relu'),
         Dense(1)
     ])
-    model.compile(optimizer=Adam(0.001), loss='mse')
-    model.fit(x_train, y_train, epochs=20, batch_size=32, verbose=1)
     
-    # 5. Guardar modelo y scaler en la carpeta correspondiente
+    model.compile(optimizer=Adam(0.001), loss='mse')
+    
+    # Usamos batch_size=64 porque ahora tenemos muchos más datos que antes
+    model.fit(x_train, y_train, epochs=20, batch_size=64, verbose=1, validation_split=0.1)
+    
+    # 5. Guardar modelo y scaler
     ruta_modelos = os.path.join(os.path.dirname(__file__), 'models')
     os.makedirs(ruta_modelos, exist_ok=True)
     
