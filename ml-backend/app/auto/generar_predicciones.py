@@ -7,7 +7,6 @@ import pandas as pd
 from sqlalchemy.orm import Session
 
 def ejecutar_analisis_diario(db: Session):
-    db = SessionLocal()
     ml = MLEngine()
 
     empresas = db.query(Empresa).filter(Empresa.Activo == True).all()
