@@ -159,7 +159,7 @@ def guardar_metricas(y_true, y_pred):
     with open("app/ml/models/metricas.json", "w") as f:
         json.dump(metricas, f)
     
-    print("Metricas de evaluación credad")
+    print("Metricas de evaluación creados")
 
 
 if __name__ == "__main__":

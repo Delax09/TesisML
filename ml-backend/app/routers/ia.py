@@ -21,3 +21,13 @@ async def analizar_todas_las_empresas(background_tasks: BackgroundTasks, db: Ses
         "status": "success",
         "message": "Análisis masivo de IA iniciado. Los resultados se actualizarán en unos minutos."
     }
+@router.get("/metricas")
+def obtener_metricas_modelo():
+    ruta_metricas = os.path.join(os.path.dirname(__file__), "..", "ml", "models", "metricas.json")
+
+    try:
+        with open(ruta_metricas, "r") as f:
+            metricas = json.load(f)
+            return metricas
+    except FileNotFoundError:
+        return {"Error": "Metricas no encontradas"}

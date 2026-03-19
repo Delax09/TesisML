@@ -6,7 +6,7 @@ import os
 from app.models.precio_historico import PrecioHistorico
 
 class MLEngine:
-    DIAS_MEMORIA_IA = 60
+    DIAS_MEMORIA_IA = 90
     FEATURES = ['Close', 'Volume', 'RSI', 'MACD', 'ATR', 'EMA20', 'EMA50']
 
     def __init__(self):
