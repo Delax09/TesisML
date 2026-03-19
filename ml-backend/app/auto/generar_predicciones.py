@@ -4,8 +4,9 @@ from app.models.precio_historico import PrecioHistorico
 from app.ml.engine import MLEngine
 from app.services.resultado_service import ResultadoService
 import pandas as pd
+from sqlalchemy.orm import Session
 
-def ejecutar_analisis_diario():
+def ejecutar_analisis_diario(db: Session):
     db = SessionLocal()
     ml = MLEngine()
 
@@ -26,8 +27,14 @@ def ejecutar_analisis_diario():
             'Low': float(p.PrecioCierre)
         } for p in reversed(precios)])
 
+        df_ind = ml.calcular_indicadores(df)
+
+        if len(df_ind) < ml.DIAS_MEMORIA_IA:
+            print(f"⚠️ Datos post-indicadores insuficientes para {empresa.NombreEmpresa}")
+            continue
+
         # Procesado y predicción (todo en un solo paso)
-        prediccion_data = ml.predecir(df)
+        prediccion_data = ml.predecir(df_ind)
         
         if prediccion_data is None:
             print(f"⚠️ Datos insuficientes en DataFrame procesado para {empresa.NombreEmpresa}")
