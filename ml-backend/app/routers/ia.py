@@ -3,6 +3,8 @@ from fastapi import APIRouter, Depends, BackgroundTasks
 from sqlalchemy.orm import Session
 from app.db.sessions import get_db
 from app.auto.generar_predicciones import ejecutar_analisis_diario # Importamos la lógica que crearemos
+import json
+import os
 
 router = APIRouter(prefix="/api/v1/ia", tags=["IA Engine"])
 

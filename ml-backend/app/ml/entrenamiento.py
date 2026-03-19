@@ -7,6 +7,8 @@ from tensorflow.keras.layers import Dense, LSTM, Input
 from tensorflow.keras.optimizers import Adam
 import joblib
 import os
+import json
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix
 
 from app.db.sessions import SessionLocal
 from app.models.empresa import Empresa
@@ -145,6 +147,20 @@ def entrenar_y_guardar():
     
     print(f"✅ ¡Éxito! Modelo LSTM guardado en: {ruta_modelo}")
     print(f"✅ ¡Éxito! Scaler guardado en: {ruta_scaler}")
+
+def guardar_metricas(y_true, y_pred): 
+    metricas = {
+        "accuracy": accuracy_score(y_true, y_pred),
+        "precision": precision_score(y_true, y_pred, average='weighted', zero_division=0),
+        "recall": recall_score(y_true, y_pred, average='weighted', zero_division=0),
+        "f1-score": f1_score(y_true, y_pred, average='weighted', zero_division=0)
+        #Añadir matriz de confunsion
+    }
+    with open("app/ml/models/metricas.json", "w") as f:
+        json.dump(metricas, f)
+    
+    print("Metricas de evaluación credad")
+
 
 if __name__ == "__main__":
     entrenar_y_guardar()
