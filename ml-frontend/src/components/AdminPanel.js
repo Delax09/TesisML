@@ -1,6 +1,7 @@
 // src/components/AdminPanel.js
 import React, { useState } from 'react';
 import adminService from '../services/adminService';
+import iaService from '../services/iaService'; 
 
 function AdminPanel() {
     const [cargando, setCargando] = useState(false);
@@ -12,7 +13,7 @@ function AdminPanel() {
             const response = await funcion();
             alert(response.message);
         } catch (e) {
-            alert("Error al ejecutar la tarea");
+            alert(`Error al ejecutar la tarea: ${nombreTarea}`);
         } finally {
             setCargando(false);
         }
@@ -36,6 +37,15 @@ function AdminPanel() {
                 >
                     📈 Actualizar Precios (Yahoo Finance)
                 </button>
+                
+                {/* NUEVO BOTÓN DE ENTRENAMIENTO */}
+                <button 
+                    style={estilos.botonEntrenar}
+                    onClick={() => ejecutarTarea("ENTRENAR la IA (Esto consumirá recursos y tomará varios minutos)", iaService.entrenarLSTM)}
+                    disabled={cargando}
+                >
+                    🧠 Entrenar Modelo IA
+                </button>
             </div>
             {cargando && <p style={estilos.aviso}>Procesando... no cierres la ventana.</p>}
         </div>
@@ -47,6 +57,8 @@ const estilos = {
     grid: { display: 'flex', gap: '15px', flexWrap: 'wrap' },
     botonImportar: { backgroundColor: '#34495e', color: 'white', padding: '10px 20px', border: 'none', borderRadius: '6px', cursor: 'pointer' },
     botonPrecios: { backgroundColor: '#27ae60', color: 'white', padding: '10px 20px', border: 'none', borderRadius: '6px', cursor: 'pointer' },
+    // Estilo para el nuevo botón (morado para diferenciarlo)
+    botonEntrenar: { backgroundColor: '#8e44ad', color: 'white', padding: '10px 20px', border: 'none', borderRadius: '6px', cursor: 'pointer' }, 
     aviso: { color: '#e67e22', fontWeight: 'bold', marginTop: '10px' }
 };
 

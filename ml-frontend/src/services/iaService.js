@@ -9,6 +9,11 @@ const iaService = {
     analizarTodo: async () => {
         const response = await axios.post(`${API_URL}/analizar-todo`);
         return response.data;
+    },
+
+    entrenarLSTM: async () => {
+        const response = await axios.post(`${API_URL}/entrenar-modelo-lstm`);
+        return response.data;
     }
 };
 
