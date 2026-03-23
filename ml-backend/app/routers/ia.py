@@ -2,7 +2,8 @@
 from fastapi import APIRouter, Depends, BackgroundTasks
 from sqlalchemy.orm import Session
 from app.db.sessions import get_db
-from app.auto.generar_predicciones import ejecutar_analisis_diario # Importamos la lógica que crearemos
+from app.auto.generar_predicciones import ejecutar_analisis_diario
+from app.ml.entrenamiento import entrenar_y_guardar
 import json
 import os
 
@@ -31,3 +32,12 @@ def obtener_metricas_modelo():
             return metricas
     except FileNotFoundError:
         return {"Error": "Metricas no encontradas"}
+    
+@router.post("/entrenar-modelo-lstm")
+async def entrenar_modelo_lstm(background_task: BackgroundTasks):
+    background_task.add_task(entrenar_y_guardar)
+
+    return {
+        "status": "Success",
+        "message": "Entreamiento de LSTM iniciado"
+    }
