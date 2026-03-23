@@ -1,9 +1,11 @@
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
+import { useAuth } from 'context';
 
 export default function AdminLayout() {
   const location = useLocation();
   const isActivo = (ruta) => location.pathname.includes(ruta);
+  const { logout } = useAuth();
 
   return (
     <div style={estilos.layout}>
@@ -16,7 +18,13 @@ export default function AdminLayout() {
           {/* A futuro aquí irán: Gestión de IA, Empresas Activas, etc. */}
           
           <div style={{ flexGrow: 1 }}></div>
-          <Link to="/login" style={{...estilos.link, color: '#e74c3c'}}>🚪 Cerrar Sesión</Link>
+          <button 
+            href="#" 
+            onClick={(e) => { e.preventDefault(); logout(); }} 
+            style={{...estilos.link, color: '#e74c3c'}}
+          >
+            🚪 Cerrar Sesión
+          </button>
         </nav>
       </aside>
       <main style={estilos.main}><Outlet /></main>
@@ -24,7 +32,6 @@ export default function AdminLayout() {
   );
 }
 
-// Estilos compartidos (puedes pegarlos al final)
 const estilos = {
   layout: { display: 'flex', minHeight: '100vh', fontFamily: 'system-ui, sans-serif' },
   sidebar: { width: '250px', backgroundColor: '#2c3e50', color: '#ecf0f1', display: 'flex', flexDirection: 'column' },

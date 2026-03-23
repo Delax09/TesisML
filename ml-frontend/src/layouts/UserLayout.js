@@ -1,9 +1,11 @@
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
+import { useAuth } from 'context';
 
 export default function UserLayout() {
   const location = useLocation();
   const isActivo = (ruta) => location.pathname.includes(ruta);
+  const { logout } = useAuth();
 
   return (
     <div style={estilos.layout}>
@@ -16,7 +18,22 @@ export default function UserLayout() {
           {/* Aquí a futuro puedes agregar más vistas de usuario */}
           
           <div style={{ flexGrow: 1 }}></div>
-          <Link to="/login" style={{...estilos.link, color: '#e74c3c'}}>🚪 Cerrar Sesión</Link>
+          <button 
+            onClick={logout} 
+            style={{
+              ...estilos.link, 
+              color: '#e74c3c', 
+              background: 'none', 
+              border: 'none', 
+              cursor: 'pointer',
+              textAlign: 'left',
+              width: '100%',
+              fontFamily: 'inherit',
+              fontSize: 'inherit'
+            }}
+          >
+            🚪 Cerrar Sesión
+          </button>
         </nav>
       </aside>
       <main style={estilos.main}><Outlet /></main>
