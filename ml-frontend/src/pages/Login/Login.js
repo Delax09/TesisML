@@ -1,4 +1,3 @@
-// src/pages/login/Login.js
 import React, { useState } from 'react';
 
 // Importación de componentes 
@@ -6,13 +5,10 @@ import {
   AuthForm, 
   AdminPanel, 
   EmpresaTable, 
-  //SectorList,
-  //RolList,
   PrecioChart,
   ResultadoPanel,
   AnalisisIAButton
 } from 'components';
-
 
 function Login() {
   const [empresaSeleccionada, setEmpresaSeleccionada] = useState({ id: null, nombre: "" });
@@ -36,7 +32,6 @@ function Login() {
         <div style={estilos.contenedorSeccion}>
             <h3 style={estilos.subtitulo}>Gestión de Datos</h3>
             <AdminPanel /> 
-            {/* Aquí están tus botones de Cargar Tickets y Actualizar Precios */}
         </div>
 
         {/* CONTENEDOR EXTERNO DE IA (Separado) */}
@@ -55,7 +50,6 @@ function Login() {
             </div>
         )}
 
-        {/* ... resto del código igual ... */}
         <div style={estilos.seccionAnalisis}>
             <div style={{ flex: 3, minWidth: '300px' }}>
                 <PrecioChart empresaId={empresaSeleccionada.id} nombreEmpresa={empresaSeleccionada.nombre} />
@@ -73,9 +67,9 @@ function Login() {
   );
 }
 
-
 const estilos = {
-  layout: { display: 'flex', flexDirection: 'column', alignItems: 'center', backgroundColor: '#f0f2f5', minHeight: '100vh', paddingBottom: '3rem' },
+  // AQUÍ ESTÁ LA MAGIA: height: '100vh', overflowY: 'auto', width: '100%'
+  layout: { display: 'flex', flexDirection: 'column', alignItems: 'center', backgroundColor: '#f0f2f5', height: '100vh', overflowY: 'auto', width: '100%', paddingBottom: '3rem' },
   header: { padding: '1rem', color: '#333' },
   contenido: { marginTop: '2rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2rem', width: '95%', maxWidth: '1300px' },
   barraAccion: { 
@@ -115,13 +109,13 @@ const estilos = {
     textAlign: 'center',
     maxWidth: '500px'
   },
-    barraInfo: {
+  barraInfo: {
         width: '100%',
         padding: '10px 20px',
         backgroundColor: '#e8f0fe',
         borderRadius: '8px',
         color: '#1a73e8'
-    },
+  },
   seccionMaestras: { display: 'flex', gap: '20px', width: '100%', flexWrap: 'wrap' },
   seccionAnalisis: { display: 'flex', flexDirection: 'row', gap: '20px', width: '100%', alignItems: 'flex-start', flexWrap: 'wrap' },
   seccionDatos: { width: '100%' },
