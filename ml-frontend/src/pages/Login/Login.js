@@ -28,7 +28,9 @@ function Login() {
       </header>
       
       <main style={estilos.contenido}>
-        <AuthForm />
+        <div style={estilos.contenedorLogin}>
+          <AuthForm />
+        </div>
         
         {/* CONTENEDOR DE DATOS (Tradicional) */}
         <div style={estilos.contenedorSeccion}>
@@ -122,7 +124,11 @@ const estilos = {
     },
   seccionMaestras: { display: 'flex', gap: '20px', width: '100%', flexWrap: 'wrap' },
   seccionAnalisis: { display: 'flex', flexDirection: 'row', gap: '20px', width: '100%', alignItems: 'flex-start', flexWrap: 'wrap' },
-  seccionDatos: { width: '100%' }
+  seccionDatos: { width: '100%' },
+  contenedorLogin: { 
+    width: '100%', 
+    maxWidth: '450px'
+  }
 };
 
 export default Login;

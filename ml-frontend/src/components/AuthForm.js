@@ -98,6 +98,12 @@ export default function AuthForm() {
             {esRegistro ? 'Inicia sesión aquí' : 'Regístrate aquí'}
           </button>
         </p>
+        {/* BORRAR ESTO EN EL FUTURO */}
+        <p style={{ textAlign: 'center', marginTop: '15px', fontSize: '12px', color: '#555' }}>
+          <strong>Usuarios de Prueba:</strong>
+        </p>
+                <li>Correo: user@user.cl; Contraseña: A12345dsa%d_!</li>
+                <li>Correo: admin@admin.cl; Contraseña: A12345dsa%d_!</li>
       </form>
     </div>
   );
