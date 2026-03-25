@@ -214,6 +214,7 @@ class ModeloIACreate(ModeloIABase):
     pass
 
 class ModeloIAOut(BaseModel):
+    IdModelo: int = Field(..., description="Id único del modelo") # <--- AGREGAR ESTA LÍNEA
     Nombre: str = Field(..., description="Nombre del modelo")
     Version: str = Field(..., description="Version del modelo")
     Descripcion: str = Field(..., description="Descripcion breve del modelo")

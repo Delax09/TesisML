@@ -1,20 +1,21 @@
 // ml-frontend/src/services/iaService.js
-import axios from 'axios';
+import api from './api'; // <-- IMPORTANTE: Usar la instancia configurada en lugar de axios puro
 
-const API_URL = 'http://localhost:8000/api/v1/ia';
-const MODELOS_URL = 'http://localhost:8000/api/v1/modelos-ia';
+// Si api.js ya tiene configurada la baseURL ('http://localhost:8000/api/v1'), puedes simplificar las rutas:
+const API_URL = '/ia';
+const MODELOS_URL = '/modelos-ia';
 
 const iaService = {
     analizarTodo: async () => {
-        const response = await axios.post(`${API_URL}/analizar-todo`);
+        const response = await api.post(`${API_URL}/analizar-todo`); // Cambiar axios por api
         return response.data;
     },
     entrenarModelo: async (modeloId) => {
-        const response = await axios.post(`${API_URL}/entrenar-modelo/${modeloId}`);
+        const response = await api.post(`${API_URL}/entrenar-modelo/${modeloId}`); // Cambiar axios por api
         return response.data;
     },
     obtenerModelosActivos: async () => {
-        const response = await axios.get(`${MODELOS_URL}/activos`);
+        const response = await api.get(`${MODELOS_URL}/activos`); // Cambiar axios por api
         return response.data;
     }
 };

@@ -4,7 +4,8 @@ import {
   AdminPanel, 
   AnalisisIAButton, 
   EmpresaForm,
-  EmpresaTable
+  EmpresaTable,
+  EntrenamientoSelector
   } from 'components';
 import { empresaService } from 'services';
 
@@ -86,9 +87,16 @@ export default function Panel() {
           </div>
         )}
 
+
         {tabActiva === 'ia' && (
           <div style={estilos.iaContainer}>
+            {/* Botón original de análisis masivo */}
             <AnalisisIAButton onComplete={() => alert("IA Actualizada")} />
+            
+            {/* NUEVO: Selector de entrenamiento */}
+            <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'center' }}>
+              <EntrenamientoSelector />
+            </div>
           </div>
         )}
 
