@@ -1,0 +1,9 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Caches de librerías y herramientas
+.pytest_cache/
+.cache/
+.mypy_cache/
