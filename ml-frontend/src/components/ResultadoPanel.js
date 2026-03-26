@@ -33,7 +33,7 @@ function ResultadoPanel({ empresaId }) {
     if (!empresaId) {
         return (
             <div style={estilos.panelVacio}>
-                <p>Selecciona una empresa para ver el análisis de IA</p>
+                <p style={{ margin: 0, fontWeight: '500' }}>Esperando análisis de IA...</p>
             </div>
         );
     }
@@ -120,14 +120,16 @@ const estilos = {
     },
     panelVacio: {
         backgroundColor: '#f8fafc',
-        padding: '2rem',
-        borderRadius: '16px',
+        padding: '1rem',
+        borderRadius: '12px', // Borde más suave
         border: '2px dashed #e2e8f0',
         textAlign: 'center',
         color: '#64748b',
         height: '100%',
+        minHeight: '60px', // Evita que se estire sin necesidad
         display: 'flex',
-        alignItems: 'center'
+        alignItems: 'center',
+        justifyContent: 'center' // Centra horizontalmente
     },
     header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' },
     titulo: { margin: 0, color: '#1e293b', fontSize: '1.1rem', fontWeight: '700' },

@@ -100,8 +100,14 @@ function PrecioChart({ empresaId, nombreEmpresa }) {
 
 }, [datosOriginales, rango]);
 
-    if (!empresaId) return <p style={{padding: '2rem'}}>Selecciona una empresa para ver su historial.</p>;
-    if (cargando) return <p style={{padding: '2rem'}}>Dibujando gráfica...</p>;
+    if (!empresaId) {
+        return (
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', minHeight: '80px', color: '#64748b' }}>
+                <p style={{ margin: 0, fontWeight: '500' }}>Esperando selección de empresa...</p>
+            </div>
+        );
+    }
+    if (cargando) return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', minHeight: '80px' }}><p>Dibujando gráfica...</p></div>;
 
     const botonesRango = [
         { label: '1 día', v: '1D' }, { label: '5 días', v: '5D' },

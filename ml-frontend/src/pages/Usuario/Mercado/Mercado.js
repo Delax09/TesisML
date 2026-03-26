@@ -38,29 +38,43 @@ export default function Mercado() {
          </Alert>
       )}
 
-      {/* SECCIÓN 1: Gráficos de Análisis y Resultados IA */}
-      <Grid container spacing={3} alignItems="stretch">
-        
-        {/* Gráfico de Precios (Ocupa más espacio) */}
-        <Grid item xs={12} lg={8} xl={9}>
-          <Paper elevation={2} sx={{ p: {xs: 1, md: 2}, borderRadius: 3, height: '100%', minHeight: '450px' }}>
-            <PrecioChart 
-              empresaId={empresaSeleccionada.id} 
-              nombreEmpresa={empresaSeleccionada.nombre} 
-            />
-          </Paper>
-        </Grid>
-        
-        {/* Panel de Resultados IA (Barra lateral derecha) */}
-        <Grid item xs={12} lg={4} xl={3}>
-          <Paper elevation={2} sx={{ p: {xs: 1, md: 2}, borderRadius: 3, height: '100%' }}>
-            <ResultadoPanel 
-              empresaId={empresaSeleccionada.id} 
-            />
-          </Paper>
-        </Grid>
+        {/* SECCIÓN 1: Gráficos de Análisis y Resultados IA */}
+        <Grid container spacing={3} alignItems="center"  justify="center">
+            
+            {/* Gráfico de Precios */}
+            <Grid item xs={12} lg={8} xl={9}>
+                <Paper elevation={2} sx={{ 
+                    p: {xs: 1, md: 2}, 
+                    borderRadius: 3, 
+                    height: '100%', 
+                    // AQUÍ ESTÁ LA MAGIA: Si hay id, mide 450px, si no, mide 100px
+                    minHeight: empresaSeleccionada.id ? '450px' : '100px', 
+                    transition: 'min-height 0.3s ease' // Agrega una animación suave
+                    }}>
+                    <PrecioChart 
+                    empresaId={empresaSeleccionada.id} 
+                    nombreEmpresa={empresaSeleccionada.nombre} 
+                    />
+                </Paper>
+            </Grid>
+            
+            {/* Panel de Resultados IA */}
+            <Grid item xs={12} lg={4} xl={3}>
+            <Paper elevation={2} sx={{ 
+                p: {xs: 1, md: 2}, 
+                borderRadius: 3, 
+                height: '100%', 
+                // Lo mismo aquí para el panel de IA
+                minHeight: empresaSeleccionada.id ? '320px' : '100px',
+                transition: 'min-height 0.3s ease'
+                }}>
+                <ResultadoPanel 
+                empresaId={empresaSeleccionada.id} 
+                />
+            </Paper>
+            </Grid>
 
-      </Grid>
+        </Grid>
 
       {/* SECCIÓN 2: Tabla de Datos (Directorio) */}
       <Paper elevation={2} sx={{ p: {xs: 2, md: 3}, borderRadius: 3 }}>
