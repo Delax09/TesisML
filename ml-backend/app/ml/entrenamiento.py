@@ -157,7 +157,7 @@ def entrenar_y_guardar(id_modelo_especifico: int = None):
         
         model.fit(
             x_train, y_train, 
-            epochs=50, 
+            epochs=25, 
             batch_size=64, 
             verbose=1, 
             validation_split=0.1, 
