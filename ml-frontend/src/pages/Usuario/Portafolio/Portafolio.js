@@ -9,6 +9,7 @@ import {
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd';
+import PlaylistRemoveIcon from '@mui/icons-material/PlaylistRemove'; // Nuevo icono para eliminar masivo
 
 import { useAuth } from '../../../context';
 import { empresaService, portafolioService } from '../../../services';
@@ -26,7 +27,10 @@ export default function Portafolio() {
   const [cargando, setCargando] = useState(true);
   const [procesandoMasivo, setProcesandoMasivo] = useState(false);
   const [sectorFiltro, setSectorFiltro] = useState('todos');
-  const [seleccionadas, setSeleccionadas] = useState([]);
+  
+  // ESTADOS DE SELECCIÓN (Separados para no mezclarlos)
+  const [seleccionadasAgregar, setSeleccionadasAgregar] = useState([]);
+  const [seleccionadasEliminar, setSeleccionadasEliminar] = useState([]);
 
   // Estados para la Paginación
   const [paginaMis, setPaginaMis] = useState(1);
@@ -65,7 +69,9 @@ export default function Portafolio() {
       setEmpresasDisponibles(empresasFueraDePortafolio);
       setSectoresDisponibles(Array.from(sectoresSet).sort()); 
       
-      setSeleccionadas([]); 
+      // Limpiamos TODAS las selecciones al recargar
+      setSeleccionadasAgregar([]); 
+      setSeleccionadasEliminar([]);
     } catch (error) {
       console.error("Error al cargar datos del portafolio", error);
       toast.error("Error al cargar tu portafolio");
@@ -84,7 +90,7 @@ export default function Portafolio() {
     setPaginaDisponibles(1);
   }, [sectorFiltro]);
 
-  // --- FUNCIONES DE AGREGAR / ELIMINAR ---
+  // --- FUNCIONES DE AGREGAR / ELIMINAR INDIVIDUALES ---
 
   const manejarAgregarUna = async (idEmpresa) => {
     try {
@@ -96,7 +102,7 @@ export default function Portafolio() {
     }
   };
 
-  const manejarEliminar = async (idPortafolio) => {
+  const manejarEliminarUna = async (idPortafolio) => {
     try {
       await portafolioService.eliminar(idPortafolio);
       toast.success("Empresa removida de tu portafolio");
@@ -110,10 +116,10 @@ export default function Portafolio() {
     }
   };
 
-  // --- LÓGICA: SELECCIÓN MÚLTIPLE ---
+  // --- LÓGICA: SELECCIÓN MÚLTIPLE PARA AGREGAR ---
 
-  const alternarSeleccion = (idEmpresa) => {
-    setSeleccionadas(prev => 
+  const alternarSeleccionAgregar = (idEmpresa) => {
+    setSeleccionadasAgregar(prev => 
       prev.includes(idEmpresa) 
         ? prev.filter(id => id !== idEmpresa) 
         : [...prev, idEmpresa] 
@@ -121,27 +127,57 @@ export default function Portafolio() {
   };
 
   const manejarAgregarMultiples = async () => {
-    if (seleccionadas.length === 0) return;
+    if (seleccionadasAgregar.length === 0) return;
     
     setProcesandoMasivo(true);
-    const promesaNotificacion = toast.loading(`Agregando ${seleccionadas.length} empresas...`);
+    const promesaNotificacion = toast.loading(`Agregando ${seleccionadasAgregar.length} empresas...`);
 
     try {
       await Promise.all(
-        seleccionadas.map(idEmpresa => portafolioService.crear(usuario.id, idEmpresa))
+        seleccionadasAgregar.map(idEmpresa => portafolioService.crear(usuario.id, idEmpresa))
       );
       
-      toast.success(`${seleccionadas.length} empresas agregadas correctamente`, { id: promesaNotificacion });
-      cargarDatos(); // Esto ya se encarga de limpiar el array de "seleccionadas"
+      toast.success(`${seleccionadasAgregar.length} empresas agregadas correctamente`, { id: promesaNotificacion });
+      cargarDatos();
       setPaginaDisponibles(1); 
-      
-      setProcesandoMasivo(false); 
-      
+      setProcesandoMasivo(false);
     } catch (error) {
       toast.error("Hubo un error al agregar algunas empresas", { id: promesaNotificacion });
-      setProcesandoMasivo(false); // Aquí ya lo teníamos, pero faltaba en el éxito
+      setProcesandoMasivo(false);
     }
   };
+
+  // --- NUEVA LÓGICA: SELECCIÓN MÚLTIPLE PARA ELIMINAR ---
+
+  const alternarSeleccionEliminar = (idPortafolio) => {
+    setSeleccionadasEliminar(prev => 
+      prev.includes(idPortafolio) 
+        ? prev.filter(id => id !== idPortafolio) 
+        : [...prev, idPortafolio] 
+    );
+  };
+
+  const manejarEliminarMultiples = async () => {
+    if (seleccionadasEliminar.length === 0) return;
+    
+    setProcesandoMasivo(true);
+    const promesaNotificacion = toast.loading(`Removiendo ${seleccionadasEliminar.length} empresas...`);
+
+    try {
+      await Promise.all(
+        seleccionadasEliminar.map(idPortafolio => portafolioService.eliminar(idPortafolio))
+      );
+      
+      toast.success(`${seleccionadasEliminar.length} empresas removidas correctamente`, { id: promesaNotificacion });
+      cargarDatos();
+      setPaginaMis(1); // Volvemos a la primera página por seguridad
+      setProcesandoMasivo(false);
+    } catch (error) {
+      toast.error("Hubo un error al remover algunas empresas", { id: promesaNotificacion });
+      setProcesandoMasivo(false);
+    }
+  };
+
 
   // --- LÓGICA DE PAGINACIÓN ---
   
@@ -170,7 +206,6 @@ export default function Portafolio() {
   );
 
   return (
-    // RESPONSIVIDAD: Ancho fluido basado en porcentajes
     <Box sx={{ width: '100%', pb: 4 }}>
       <Typography variant="h4" fontWeight="bold" color="text.primary" sx={{ mb: 4, pt: {xs: 2, lg: 0} }}>
         Gestionar Mi Portafolio
@@ -181,9 +216,26 @@ export default function Portafolio() {
         {/* LISTA 1: MIS EMPRESAS */}
         <Grid item xs={12} md={6}>
           <Paper elevation={2} sx={{ p: { xs: 1.5, sm: 2, md: 3 }, borderRadius: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
-            <Typography variant="h6" fontWeight="bold" sx={{ mb: 2, color: 'primary.main' }}>
-              Empresas en Seguimiento ({misEmpresas.length})
-            </Typography>
+            
+            {/* CABECERA RESPONSIVA IZQUIERDA (Añadido botón de remover múltiples) */}
+            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, justifyContent: {xs: 'flex-start', lg: 'space-between'}, alignItems: { xs: 'stretch', lg: 'center' }, gap: 2, mb: 2 }}>
+                <Typography variant="h6" fontWeight="bold" sx={{ color: 'primary.main' }}>
+                Empresas en Seguimiento ({misEmpresas.length})
+                </Typography>
+                
+                <Button 
+                    variant="outlined" 
+                    color="error" 
+                    startIcon={<PlaylistRemoveIcon fontSize="small" />}
+                    disabled={seleccionadasEliminar.length === 0 || procesandoMasivo}
+                    onClick={manejarEliminarMultiples}
+                    size="small"
+                    sx={{ borderRadius: 2, fontWeight: 'bold', display: 'flex' }}
+                >
+                    Remover ({seleccionadasEliminar.length})
+                </Button>
+            </Box>
+
             <Divider sx={{ mb: 2 }} />
             
             <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', minHeight: '380px' }}>
@@ -191,28 +243,48 @@ export default function Portafolio() {
                 <Typography color="text.secondary">No tienes empresas en tu portafolio aún.</Typography>
                 ) : (
                 <List disablePadding sx={{ flexGrow: 1 }}>
-                    {misEmpresasPaginadas.map((emp) => (
-                    <ListItem 
-                        key={emp.IdPortafolio}
-                        sx={{ bgcolor: 'background.default', mb: 1, borderRadius: 2, p: {xs: 1, md: 2} }}
-                        secondaryAction={
-                        <IconButton edge="end" color="error" size="small" onClick={() => manejarEliminar(emp.IdPortafolio)}>
-                            <DeleteOutlineIcon fontSize="small" />
-                        </IconButton>
-                        }
-                    >
-                        <ListItemText 
-                        primary={`${emp.Ticket} - ${emp.NombreEmpresa}`} 
-                        secondary={<Chip label={emp.NombreSector} size="small" sx={{ mt: 0.5 }} />}
-                        primaryTypographyProps={{ variant: { xs: 'body2', md: 'body1' } }}
-                        />
-                    </ListItem>
-                    ))}
+                    {misEmpresasPaginadas.map((emp) => {
+                      const estaSeleccionadaParaEliminar = seleccionadasEliminar.includes(emp.IdPortafolio);
+                      
+                      return (
+                        <ListItem 
+                            key={emp.IdPortafolio}
+                            sx={{ 
+                                // Color rojo súper sutil si está marcada para eliminar
+                                bgcolor: estaSeleccionadaParaEliminar ? 'rgba(239, 68, 68, 0.08)' : 'background.default', 
+                                mb: 1, 
+                                borderRadius: 2, 
+                                transition: 'background-color 0.2s',
+                                p: {xs: 1, md: 2} 
+                            }}
+                            secondaryAction={
+                            <IconButton edge="end" color="error" size="small" onClick={() => manejarEliminarUna(emp.IdPortafolio)}>
+                                <DeleteOutlineIcon fontSize="small" />
+                            </IconButton>
+                            }
+                        >
+                            {/* CHECKBOX DE ELIMINACIÓN */}
+                            <Checkbox
+                                edge="start"
+                                checked={estaSeleccionadaParaEliminar}
+                                onChange={() => alternarSeleccionEliminar(emp.IdPortafolio)}
+                                size="small"
+                                color="error" // Hace que la casilla sea roja al marcarla
+                                sx={{ p: {xs: 0.5, md: 1} }}
+                            />
+                            <ListItemText 
+                            primary={`${emp.Ticket} - ${emp.NombreEmpresa}`} 
+                            secondary={<Chip label={emp.NombreSector} size="small" sx={{ mt: 0.5 }} />}
+                            primaryTypographyProps={{ variant: { xs: 'body2', md: 'body1' } }}
+                            />
+                        </ListItem>
+                      );
+                    })}
                 </List>
                 )}
             </Box>
 
-            {/* CONTROLES DE PAGINACIÓN */}
+            {/* CONTROLES DE PAGINACIÓN IZQUIERDOS */}
             {totalPaginasMis > 1 && (
                 <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2, pt: 2, borderTop: '1px solid #f1f5f9' }}>
                     <Pagination 
@@ -231,7 +303,7 @@ export default function Portafolio() {
         <Grid item xs={12} md={6}>
           <Paper elevation={2} sx={{ p: { xs: 1.5, sm: 2, md: 3 }, borderRadius: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
             
-            {/* CABECERA RESPONSIVA */}
+            {/* CABECERA RESPONSIVA DERECHA */}
             <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, justifyContent: {xs: 'flex-start', lg: 'space-between'}, alignItems: { xs: 'stretch', lg: 'center' }, gap: 2, mb: 2 }}>
                 <Typography variant="h6" fontWeight="bold" sx={{ color: 'text.secondary' }}>
                 Mercado Disponible
@@ -257,12 +329,12 @@ export default function Portafolio() {
                 variant="contained" 
                 color="secondary" 
                 startIcon={<PlaylistAddIcon fontSize="small" />}
-                disabled={seleccionadas.length === 0 || procesandoMasivo}
+                disabled={seleccionadasAgregar.length === 0 || procesandoMasivo}
                 onClick={manejarAgregarMultiples}
                 size="small"
-                sx={{ mb: 2, borderRadius: 2, fontWeight: 'bold', width: '100%', display: 'flex' }}
+                sx={{ mb: 2, borderRadius: 2, fontWeight: 'bold', display: 'flex' }}
             >
-                Agregar Seleccionadas ({seleccionadas.length})
+                Agregar ({seleccionadasAgregar.length})
             </Button>
 
             <Divider sx={{ mb: 2 }} />
@@ -276,12 +348,12 @@ export default function Portafolio() {
                 ) : (
                 <List disablePadding sx={{ flexGrow: 1 }}>
                     {disponiblesPaginadas.map((emp) => {
-                    const estaSeleccionada = seleccionadas.includes(emp.IdEmpresa);
+                    const estaSeleccionadaParaAgregar = seleccionadasAgregar.includes(emp.IdEmpresa);
                     return (
                         <ListItem 
                             key={emp.IdEmpresa}
                             sx={{ 
-                                bgcolor: estaSeleccionada ? 'action.selected' : 'background.default', 
+                                bgcolor: estaSeleccionadaParaAgregar ? 'action.selected' : 'background.default', 
                                 mb: 1, 
                                 borderRadius: 2,
                                 transition: 'background-color 0.2s',
@@ -295,8 +367,8 @@ export default function Portafolio() {
                         >
                             <Checkbox
                                 edge="start"
-                                checked={estaSeleccionada}
-                                onChange={() => alternarSeleccion(emp.IdEmpresa)}
+                                checked={estaSeleccionadaParaAgregar}
+                                onChange={() => alternarSeleccionAgregar(emp.IdEmpresa)}
                                 size="small"
                                 sx={{ p: {xs: 0.5, md: 1} }}
                             />
@@ -312,7 +384,7 @@ export default function Portafolio() {
                 )}
             </Box>
 
-            {/* CONTROLES DE PAGINACIÓN */}
+            {/* CONTROLES DE PAGINACIÓN DERECHOS */}
             {totalPaginasDisponibles > 1 && (
                 <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2, pt: 2, borderTop: '1px solid #f1f5f9' }}>
                     <Pagination 
