@@ -231,3 +231,11 @@ class Token(BaseModel):
 class TokenData(BaseModel):
     id_usuario: Optional[int] = None
     email: Optional[str] = None
+
+#Recuperar Password
+class RecuperarPassword(BaseModel):
+    email: str = Field(..., description="Email del usuario registrado")
+
+class ResetearPasswordRequest(BaseModel):
+    token: str = Field(..., description="Token JWT enviado por email")
+    nueva_password: str = Field(..., description="Nueva password")
