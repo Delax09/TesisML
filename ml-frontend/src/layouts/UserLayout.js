@@ -10,6 +10,7 @@ import {
 import HomeIcon from '@mui/icons-material/Home';
 import LogoutIcon from '@mui/icons-material/Logout';
 import MenuIcon from '@mui/icons-material/Menu';
+import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 
 const drawerWidth = 250;
 
@@ -30,12 +31,26 @@ export default function UserLayout() {
         TesisML - Usuario
       </Typography>
       
-      <List sx={{ px: 2, pt: 2, flexGrow: 1 }}>
+<List sx={{ px: 2, pt: 2, flexGrow: 1 }}>
         <ListItem disablePadding sx={{ mb: 1 }}>
           <ListItemButton 
             component={RouterLink} 
             to="/home"
             selected={isActivo('/home')}
+            onClick={() => setMobileOpen(false)}
+            // ... (estilos existentes)
+          >
+            <ListItemIcon sx={{ color: 'inherit', minWidth: 40 }}><HomeIcon /></ListItemIcon>
+            <ListItemText primary="Dashboard IA" primaryTypographyProps={{ fontWeight: 500 }} />
+          </ListItemButton>
+        </ListItem>
+
+        {/* NUEVO BOTÓN DE NAVEGACIÓN */}
+        <ListItem disablePadding sx={{ mb: 1 }}>
+          <ListItemButton 
+            component={RouterLink} 
+            to="/gestionar-portafolio"
+            selected={isActivo('/gestionar-portafolio')}
             onClick={() => setMobileOpen(false)}
             sx={{ 
               borderRadius: 2,
@@ -44,8 +59,8 @@ export default function UserLayout() {
               '&:hover': { backgroundColor: 'rgba(255,255,255,0.05)' }
             }}
           >
-            <ListItemIcon sx={{ color: 'inherit', minWidth: 40 }}><HomeIcon /></ListItemIcon>
-            <ListItemText primary="Mi Portafolio" primaryTypographyProps={{ fontWeight: 500 }} />
+            <ListItemIcon sx={{ color: 'inherit', minWidth: 40 }}><AccountBalanceWalletIcon /></ListItemIcon>
+            <ListItemText primary="Gestionar Portafolio" primaryTypographyProps={{ fontWeight: 500 }} />
           </ListItemButton>
         </ListItem>
       </List>
