@@ -1,118 +1,184 @@
+// src/components/AuthForm.js
 import React, { useState } from 'react';
-import { useAuth } from 'context';
+import { useAuth } from '../context';
+import { 
+    Box, 
+    TextField, 
+    Button, 
+    Typography, 
+    CircularProgress,
+    InputAdornment,
+    Divider,
+    Link
+} from '@mui/material';
+import EmailIcon from '@mui/icons-material/Email';
+import LockIcon from '@mui/icons-material/Lock';
+import PersonIcon from '@mui/icons-material/Person';
 
-export default function AuthForm() {
-  const { login, registro } = useAuth(); 
-  
-  // Estado para alternar entre Login y Registro
-  const [esRegistro, setEsRegistro] = useState(false);
-  
-  // Estados de los campos
-  const [nombre, setNombre] = useState('');
-  const [apellido, setApellido] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
+function AuthForm() {
+    const { login, registro } = useAuth(); 
     
-    let result;
-    if (esRegistro) {
-      result = await registro(nombre, apellido, email, password);
-    } else {
-      result = await login(email, password);
-    }
+    // Estado para alternar entre Login y Registro
+    const [esRegistro, setEsRegistro] = useState(false);
     
-    if (!result.success) {
-      setError(result.message);
-    }
-    setLoading(false);
-  };
+    // Estados de los campos
+    const [nombre, setNombre] = useState('');
+    const [apellido, setApellido] = useState('');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    
+    const [error, setError] = useState('');
+    const [cargando, setCargando] = useState(false);
 
-  return (
-    <div style={estilos.contenedor}>
-      <form onSubmit={handleSubmit} style={estilos.formulario}>
-        <h2 style={{ textAlign: 'center', marginBottom: '20px' }}>
-          {esRegistro ? 'Crear una Cuenta' : 'Iniciar Sesión'}
-        </h2>
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setError('');
+        setCargando(true);
         
-        {/* Campos extras solo para el Registro */}
-        {esRegistro && (
-          <>
-            <input 
-              type="text" 
-              placeholder="Nombre" 
-              value={nombre}
-              onChange={(e) => setNombre(e.target.value)}
-              required
-              style={estilos.input}
-            />
-            <input 
-              type="text" 
-              placeholder="Apellido" 
-              value={apellido}
-              onChange={(e) => setApellido(e.target.value)}
-              required
-              style={estilos.input}
-            />
-          </>
-        )}
+        let result;
+        if (esRegistro) {
+            result = await registro(nombre, apellido, email, password);
+        } else {
+            result = await login(email, password);
+        }
         
-        <input 
-          type="email" 
-          placeholder="Correo electrónico" 
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          style={estilos.input}
-        />
-        
-        <input 
-          type="password" 
-          placeholder="Contraseña" 
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          style={estilos.input}
-        />
-        
-        {error && <p style={{ color: '#e74c3c', fontSize: '14px', fontWeight: 'bold' }}>{error}</p>}
-        
-        <button type="submit" disabled={loading} style={estilos.boton}>
-          {loading ? 'Procesando...' : (esRegistro ? 'Registrarse' : 'Ingresar')}
-        </button>
+        if (!result.success) {
+            setError(result.message);
+        }
+        setCargando(false);
+    };
 
-        {/* Botón para cambiar entre modos */}
-        <p style={{ textAlign: 'center', marginTop: '15px', fontSize: '14px' }}>
-          {esRegistro ? '¿Ya tienes cuenta?' : '¿No tienes cuenta?'}
-          <button 
-            type="button" 
-            onClick={() => { setEsRegistro(!esRegistro); setError(''); }}
-            style={estilos.botonLink}
-          >
-            {esRegistro ? 'Inicia sesión aquí' : 'Regístrate aquí'}
-          </button>
-        </p>
-        {/* BORRAR ESTO EN EL FUTURO */}
-        <p style={{ textAlign: 'center', marginTop: '15px', fontSize: '12px', color: '#555' }}>
-          <strong>Usuarios de Prueba:</strong>
-        </p>
-                <li>Correo: user@user.cl; Contraseña: A12345dsa%d_!</li>
-                <li>Correo: admin@admin.cl; Contraseña: A12345dsa%d_!</li>
-      </form>
-    </div>
-  );
+    return (
+        <Box 
+            component="form" 
+            onSubmit={handleSubmit} 
+            sx={{ 
+                display: 'flex', 
+                flexDirection: 'column', 
+                gap: 2.5, 
+                width: '100%',
+                mt: 1
+            }}
+        >
+            <Typography variant="h5" align="center" fontWeight="900" color="text.primary">
+                {esRegistro ? 'Crear una Cuenta' : '¡Hola de nuevo!'}
+            </Typography>
+
+            {/* Campos extras solo para el Registro */}
+            {esRegistro && (
+                <Box sx={{ display: 'flex', gap: 2 }}>
+                    <TextField 
+                        label="Nombre" 
+                        variant="outlined" 
+                        fullWidth 
+                        required 
+                        value={nombre} 
+                        onChange={(e) => setNombre(e.target.value)}
+                        InputProps={{
+                            startAdornment: (
+                                <InputAdornment position="start">
+                                    <PersonIcon color="action" fontSize="small" />
+                                </InputAdornment>
+                            ),
+                        }}
+                    />
+                    <TextField 
+                        label="Apellido" 
+                        variant="outlined" 
+                        fullWidth 
+                        required 
+                        value={apellido} 
+                        onChange={(e) => setApellido(e.target.value)}
+                    />
+                </Box>
+            )}
+
+            <TextField 
+                label="Correo Electrónico" 
+                type="email" 
+                variant="outlined" 
+                fullWidth 
+                required 
+                value={email} 
+                onChange={(e) => setEmail(e.target.value)} 
+                InputProps={{
+                    startAdornment: (
+                        <InputAdornment position="start">
+                            <EmailIcon color="action" />
+                        </InputAdornment>
+                    ),
+                }}
+            />
+            
+            <TextField 
+                label="Contraseña" 
+                type="password" 
+                variant="outlined" 
+                fullWidth 
+                required 
+                value={password} 
+                onChange={(e) => setPassword(e.target.value)} 
+                InputProps={{
+                    startAdornment: (
+                        <InputAdornment position="start">
+                            <LockIcon color="action" />
+                        </InputAdornment>
+                    ),
+                }}
+            />
+
+            {error && (
+                <Typography color="error" variant="body2" fontWeight="bold" align="center">
+                    {error}
+                </Typography>
+            )}
+
+            <Button 
+                type="submit" 
+                variant="contained" 
+                color="primary" 
+                size="large" 
+                fullWidth 
+                disabled={cargando}
+                sx={{ py: 1.5, mt: 1, fontWeight: 'bold', borderRadius: 2, boxShadow: 3 }}
+            >
+                {cargando ? <CircularProgress size={24} color="inherit" /> : (esRegistro ? 'Registrarse' : 'Ingresar al sistema')}
+            </Button>
+
+            {/* Botón para cambiar entre modos */}
+            <Typography align="center" variant="body2" sx={{ mt: 1 }}>
+                {esRegistro ? '¿Ya tienes cuenta? ' : '¿No tienes cuenta? '}
+                <Link 
+                    component="button" 
+                    type="button"
+                    variant="body2" 
+                    fontWeight="bold"
+                    onClick={() => { 
+                        setEsRegistro(!esRegistro); 
+                        setError(''); 
+                    }}
+                >
+                    {esRegistro ? 'Inicia sesión aquí' : 'Regístrate aquí'}
+                </Link>
+            </Typography>
+
+            <Divider sx={{ my: 1 }} />
+
+            {/* DATOS DE PRUEBA (BORRAR EN EL FUTURO) */}
+            <Box sx={{ backgroundColor: 'grey.100', p: 1.5, borderRadius: 2, textAlign: 'center' }}>
+                <Typography variant="caption" fontWeight="bold" color="text.secondary" display="block" gutterBottom>
+                    Usuarios de Prueba:
+                </Typography>
+                <Typography variant="caption" color="text.secondary" display="block">
+                    <strong>Admin:</strong> admin@admin.cl | A12345dsa%d_!
+                </Typography>
+                <Typography variant="caption" color="text.secondary" display="block">
+                    <strong>User:</strong> user@user.cl | A12345dsa%d_!
+                </Typography>
+            </Box>
+
+        </Box>
+    );
 }
 
-const estilos = {
-  contenedor: { display: 'flex', justifyContent: 'center', width: '100%' },
-  formulario: { width: '100%', backgroundColor: 'white', padding: '2rem', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', display: 'flex', flexDirection: 'column', gap: '15px' },
-  input: { padding: '12px', borderRadius: '8px', border: '1px solid #ccc', fontSize: '16px' },
-  boton: { padding: '12px', backgroundColor: '#4f46e5', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '16px' },
-  botonLink: { background: 'none', border: 'none', color: '#4f46e5', textDecoration: 'underline', cursor: 'pointer', marginLeft: '5px' }
-};
+export default AuthForm;

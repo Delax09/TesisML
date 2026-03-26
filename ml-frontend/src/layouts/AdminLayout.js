@@ -1,6 +1,22 @@
+// src/layouts/AdminLayout.js
 import React from 'react';
-import { Outlet, Link, useLocation } from 'react-router-dom';
+import { Outlet, Link as RouterLink, useLocation } from 'react-router-dom';
 import { useAuth } from 'context';
+import { 
+  Box, 
+  Drawer, 
+  List, 
+  ListItem, 
+  ListItemButton, 
+  ListItemIcon, 
+  ListItemText, 
+  Typography 
+} from '@mui/material';
+
+import SettingsIcon from '@mui/icons-material/Settings';
+import LogoutIcon from '@mui/icons-material/Logout';
+
+const drawerWidth = 250;
 
 export default function AdminLayout() {
   const location = useLocation();
@@ -8,47 +24,60 @@ export default function AdminLayout() {
   const { logout } = useAuth();
 
   return (
-    <div style={estilos.layout}>
-      <aside style={estilos.sidebar}>
-        <h2 style={estilos.logo}>TesisML - Admin</h2>
-        <nav style={estilos.nav}>
-          <Link to="/panel" style={{...estilos.link, backgroundColor: isActivo('/panel') ? '#34495e' : 'transparent'}}>
-            ⚙️ Panel Principal
-          </Link>
-          {/* A futuro aquí irán: Gestión de IA, Empresas Activas, etc. */}
-          
-          <div style={{ flexGrow: 1 }}></div>
-          <button 
-            href="#" 
-            onClick={(e) => { e.preventDefault(); logout(); }} 
-            style={{
-              ...estilos.link, 
-              color: '#e74c3c', 
-              background: 'none', 
-              border: 'none', 
-              cursor: 'pointer',
-              textAlign: 'left',
-              width: '100%',
-              fontFamily: 'inherit',
-              fontSize: 'inherit'
-            }}
-          >
-            🚪 Cerrar Sesión
-          </button>
-        </nav>
-      </aside>
-      <main style={estilos.main}><Outlet /></main>
-    </div>
+    <Box sx={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
+      <Drawer
+        variant="permanent"
+        sx={{
+          width: drawerWidth,
+          flexShrink: 0,
+          '& .MuiDrawer-paper': {
+            width: drawerWidth,
+            boxSizing: 'border-box',
+            backgroundColor: '#2c3e50', 
+            color: '#ecf0f1',
+            borderRight: 'none'
+          },
+        }}
+      >
+        <Typography variant="h6" sx={{ p: 2.5, textAlign: 'center', borderBottom: '1px solid #34495e', fontWeight: 'bold' }}>
+          TesisML - Admin
+        </Typography>
+        
+        <List sx={{ px: 2, pt: 2, flexGrow: 1 }}>
+          <ListItem disablePadding sx={{ mb: 1 }}>
+            <ListItemButton 
+              component={RouterLink} 
+              to="/panel"
+              selected={isActivo('/panel')}
+              sx={{ 
+                borderRadius: 2,
+                '&.Mui-selected': { backgroundColor: '#34495e' },
+                '&.Mui-selected:hover': { backgroundColor: '#34495e' },
+                '&:hover': { backgroundColor: 'rgba(255,255,255,0.05)' }
+              }}
+            >
+              <ListItemIcon sx={{ color: 'inherit', minWidth: 40 }}><SettingsIcon /></ListItemIcon>
+              <ListItemText primary="Panel Principal" primaryTypographyProps={{ fontWeight: 500 }} />
+            </ListItemButton>
+          </ListItem>
+        </List>
+
+        <List sx={{ px: 2, mb: 2 }}>
+          <ListItem disablePadding>
+            <ListItemButton 
+              onClick={logout}
+              sx={{ borderRadius: 2, color: '#e74c3c', '&:hover': { backgroundColor: 'rgba(231, 76, 60, 0.1)' } }}
+            >
+              <ListItemIcon sx={{ color: 'inherit', minWidth: 40 }}><LogoutIcon /></ListItemIcon>
+              <ListItemText primary="Cerrar Sesión" primaryTypographyProps={{ fontWeight: 'bold' }} />
+            </ListItemButton>
+          </ListItem>
+        </List>
+      </Drawer>
+
+      <Box component="main" sx={{ flexGrow: 1, p: 4, backgroundColor: 'background.default', overflowY: 'auto' }}>
+        <Outlet />
+      </Box>
+    </Box>
   );
 }
-
-const estilos = {
-  // CAMBIO: height fijo de 100vh y overflow hidden para que la página global no haga scroll
-  layout: { display: 'flex', height: '100vh', overflow: 'hidden', fontFamily: 'system-ui, sans-serif' }, 
-  sidebar: { width: '250px', backgroundColor: '#2c3e50', color: '#ecf0f1', display: 'flex', flexDirection: 'column' },
-  logo: { padding: '20px', margin: 0, textAlign: 'center', borderBottom: '1px solid #34495e', fontSize: '1.2rem' },
-  nav: { display: 'flex', flexDirection: 'column', padding: '15px', gap: '10px', flexGrow: 1 },
-  link: { color: '#ecf0f1', textDecoration: 'none', padding: '12px 15px', borderRadius: '8px', transition: '0.2s', fontWeight: '500' },
-  // El main ya tiene overflowY: 'auto', por lo que AHORA será el único que hará scroll
-  main: { flex: 1, backgroundColor: '#f4f6f8', padding: '30px', overflowY: 'auto' } 
-};
