@@ -15,17 +15,14 @@ import {
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 
+// Solo importamos los componentes que realmente se usan en la Landing
 import { 
     AuthForm, 
-    AdminPanel, 
-    AnalisisIAButton, 
-    PrecioChart, 
-    ResultadoPanel, 
     EmpresaTable 
 } from 'components'; 
 
 export default function Landing() {
-    // NUEVO ESTADO: Maneja la visibilidad y el modo del modal
+    // ESTADO: Maneja la visibilidad y el modo del modal
     const [modalAuth, setModalAuth] = useState({ open: false, esRegistro: false });
     
     const { usuario } = useAuth();
@@ -51,7 +48,8 @@ export default function Landing() {
     return (
         <Box sx={{ minHeight: '100vh', height: '100vh', overflowY: 'auto', backgroundColor: 'background.default', display: 'flex', flexDirection: 'column' }}>
             
-            <AppBar position="static" color="inherit" elevation={1} sx={{ px: '5%' }}>
+            {/* BARRA DE NAVEGACIÓN */}
+            <AppBar position="static" color="inherit" elevation={1} sx={{ px: { xs: 2, md: '5%' } }}>
                 <Toolbar disableGutters sx={{ justifyContent: 'space-between' }}>
                     <Typography variant="h5" component="div" sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', color: 'text.primary' }}>
                         TesisML
@@ -73,7 +71,7 @@ export default function Landing() {
                             color="primary" 
                             size="large"
                             onClick={() => abrirModalAuth(true)} // Se abre en modo Registro
-                            sx={{ fontWeight: 'bold', borderRadius: 2, display: { xs: 'none', sm: 'flex' } }} // Se oculta en móviles muy pequeños para no amontonar
+                            sx={{ fontWeight: 'bold', borderRadius: 2, display: { xs: 'none', sm: 'flex' } }} // Se oculta en móviles muy pequeños
                         >
                             Registrarse
                         </Button>
@@ -81,9 +79,10 @@ export default function Landing() {
                 </Toolbar>
             </AppBar>
 
-            <Box component="main" sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', p: { xs: 2, md: 4 }, gap: 4 }}>
+            <Box component="main" sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', p: { xs: 2, md: 4 }, gap: 6 }}>
                 
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-around', width: '100%', flexWrap: 'wrap', gap: 4, mb: 4, mt: 4 }}>
+                {/* SECCIÓN HERO (Banner Principal) */}
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-around', width: '100%', maxWidth: '1200px', flexWrap: 'wrap', gap: 4, mt: 4 }}>
                     <Box sx={{ maxWidth: '500px' }}>
                         <Typography variant="h3" component="h1" sx={{ fontWeight: '900', color: 'text.primary', mb: 2, lineHeight: 1.2 }}>
                             Predicción Inteligente del Mercado
@@ -109,40 +108,14 @@ export default function Landing() {
                     </Box>
                 </Box>
 
-                <div style={estilos.contenedorSeccion}>
-                    <h3 style={estilos.subtitulo}>Gestión de Datos</h3>
-                    <AdminPanel /> 
-                </div>
-
-                <div style={{...estilos.contenedorSeccion, backgroundColor: '#f8f9ff', border: '1px solid #e0e7ff'}}>
-                    <h3 style={{...estilos.subtitulo, color: '#4f46e5'}}>Inteligencia Artificial</h3>
-                    <p style={estilos.descripcion}>
-                        Calcula predicciones, RSI y Scores para todas las empresas activas en la base de datos.
-                    </p>
-                    <AnalisisIAButton onComplete={() => console.log("IA Masiva iniciada")} />
-                </div>
-
-                {empresaSeleccionada.id && (
-                    <div style={estilos.barraInfo}>
-                        <span>Visualizando datos de: <strong>{empresaSeleccionada.nombre}</strong></span>
-                    </div>
-                )}
-
-                <div style={estilos.seccionAnalisis}>
-                    <div style={{ flex: 3, minWidth: '300px' }}>
-                        <PrecioChart empresaId={empresaSeleccionada.id} nombreEmpresa={empresaSeleccionada.nombre} />
-                    </div>
-                    <div style={{ flex: 1, minWidth: '250px' }}>
-                        <ResultadoPanel empresaId={empresaSeleccionada.id} />
-                    </div>
-                </div>
-
-                <div style={estilos.seccionDatos}>
+                {/* TABLA DE EMPRESAS (Reemplazo del div por Box con sx) */}
+                <Box sx={{ width: '100%', maxWidth: '1200px', mb: 4 }}>
                     <EmpresaTable onSelect={manejarSeleccionEmpresa} />
-                </div>
+                </Box>
 
             </Box>
 
+            {/* MODAL DE AUTENTICACIÓN */}
             <Dialog 
                 open={modalAuth.open} 
                 onClose={cerrarModalAuth}
@@ -166,12 +139,3 @@ export default function Landing() {
         </Box>
     );
 }
-
-const estilos = {
-    contenedorSeccion: { backgroundColor: 'white', padding: '1.5rem', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', width: '100%', maxWidth: '1200px' },
-    subtitulo: { fontSize: '1.5rem', color: '#1e293b', marginBottom: '1rem', borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem' },
-    descripcion: { fontSize: '1.1rem', color: '#475569', lineHeight: '1.6', marginBottom: '2rem' },
-    barraInfo: { backgroundColor: '#e0e7ff', color: '#4338ca', padding: '10px 20px', borderRadius: '8px', width: '100%', maxWidth: '1200px', textAlign: 'center' },
-    seccionAnalisis: { display: 'flex', gap: '20px', width: '100%', maxWidth: '1200px', flexWrap: 'wrap' },
-    seccionDatos: { width: '100%', maxWidth: '1200px' }
-};

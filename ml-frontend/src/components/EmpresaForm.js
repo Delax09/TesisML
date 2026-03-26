@@ -1,5 +1,15 @@
 // src/components/EmpresaForm.js
 import React, { useState, useEffect } from 'react';
+import { 
+  Box, 
+  Paper, 
+  Typography, 
+  TextField, 
+  MenuItem, 
+  FormControlLabel, 
+  Checkbox, 
+  Button 
+} from '@mui/material';
 import { sectorService } from 'services';
 
 export default function EmpresaForm({ empresaInicial, onSave, onCancel }) {
@@ -14,8 +24,12 @@ export default function EmpresaForm({ empresaInicial, onSave, onCancel }) {
   useEffect(() => {
     // Cargar sectores para el dropdown
     const cargarSectores = async () => {
-      const data = await sectorService.getAll();
-      setSectores(data);
+      try {
+        const data = await sectorService.getAll();
+        setSectores(data);
+      } catch (error) {
+        console.error("Error al cargar sectores", error);
+      }
     };
     cargarSectores();
 
@@ -28,54 +42,111 @@ export default function EmpresaForm({ empresaInicial, onSave, onCancel }) {
     onSave(formData);
   };
 
+  // Centralizamos el manejo de cambios para limpiar el JSX
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData({
+      ...formData,
+      [name]: type === 'checkbox' ? checked : (name === 'Ticket' ? value.toUpperCase() : value)
+    });
+  };
+
   return (
-    <form onSubmit={handleSubmit} style={estilos.form}>
-      <h4 style={{marginTop: 0}}>{empresaInicial ? 'Editar' : 'Nueva'} Empresa</h4>
-      
-      <input 
-        placeholder="Ticker (ej: AAPL)" 
-        value={formData.Ticket} 
-        onChange={e => setFormData({...formData, Ticket: e.target.value.toUpperCase()})}
-        style={estilos.input} required
-      />
-
-      <input 
-        placeholder="Nombre de la Empresa" 
-        value={formData.NombreEmpresa} 
-        onChange={e => setFormData({...formData, NombreEmpresa: e.target.value})}
-        style={estilos.input} required
-      />
-
-      <select 
-        value={formData.IdSector} 
-        onChange={e => setFormData({...formData, IdSector: e.target.value})}
-        style={estilos.input} required
+    <Paper 
+        elevation={0} 
+        sx={{ 
+            p: 3, 
+            backgroundColor: '#f8fafc', 
+            borderRadius: '12px' 
+        }}
+    >
+      <Box 
+        component="form" 
+        onSubmit={handleSubmit} 
+        sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}
       >
-        <option value="">Seleccione Sector</option>
-        {sectores.map(s => <option key={s.IdSector} value={s.IdSector}>{s.NombreSector}</option>)}
-      </select>
-
-      <label style={{display: 'flex', gap: '10px', alignItems: 'center'}}>
-        <input 
-          type="checkbox" 
-          checked={formData.Activo} 
-          onChange={e => setFormData({...formData, Activo: e.target.checked})}
+        <Typography variant="h6" fontWeight="bold" color="text.primary">
+          {empresaInicial ? 'Editar' : 'Nueva'} Empresa
+        </Typography>
+        
+        <TextField 
+          label="Ticker (ej: AAPL)" 
+          name="Ticket"
+          value={formData.Ticket} 
+          onChange={handleChange}
+          required
+          fullWidth
+          size="small"
         />
-        ¿Empresa Activa?
-      </label>
 
-      <div style={estilos.botones}>
-        <button type="button" onClick={onCancel} style={estilos.btnSecundario}>Cancelar</button>
-        <button type="submit" style={estilos.btnPrimario}>Guardar Cambios</button>
-      </div>
-    </form>
+        <TextField 
+          label="Nombre de la Empresa" 
+          name="NombreEmpresa"
+          value={formData.NombreEmpresa} 
+          onChange={handleChange}
+          required
+          fullWidth
+          size="small"
+        />
+
+        <TextField
+          select
+          label="Seleccione Sector"
+          name="IdSector"
+          value={formData.IdSector}
+          onChange={handleChange}
+          required
+          fullWidth
+          size="small"
+        >
+          {/* Opción por defecto deshabilitada para forzar la selección */}
+          <MenuItem value="" disabled>
+            <em>Seleccione Sector</em>
+          </MenuItem>
+          {sectores.map(s => (
+            <MenuItem key={s.IdSector} value={s.IdSector}>
+              {s.NombreSector}
+            </MenuItem>
+          ))}
+        </TextField>
+
+        <FormControlLabel 
+          control={
+            <Checkbox 
+              name="Activo"
+              checked={formData.Activo} 
+              onChange={handleChange}
+              color="primary"
+            />
+          } 
+          label="¿Empresa Activa?" 
+        />
+
+        <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end', mt: 1 }}>
+          <Button 
+            variant="contained" 
+            onClick={onCancel} 
+            disableElevation
+            sx={{ 
+                backgroundColor: '#94a3b8', 
+                '&:hover': { backgroundColor: '#64748b' } 
+            }}
+          >
+            Cancelar
+          </Button>
+          <Button 
+            type="submit" 
+            variant="contained" 
+            disableElevation
+            sx={{ 
+                backgroundColor: '#4f46e5', 
+                '&:hover': { backgroundColor: '#4338ca' } 
+            }}
+          >
+            Guardar Cambios
+          </Button>
+        </Box>
+      </Box>
+    </Paper>
   );
 }
-
-const estilos = {
-  form: { display: 'flex', flexDirection: 'column', gap: '15px', padding: '20px', backgroundColor: '#f8fafc', borderRadius: '12px' },
-  input: { padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1' },
-  botones: { display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '10px' },
-  btnPrimario: { backgroundColor: '#4f46e5', color: 'white', border: 'none', padding: '10px 15px', borderRadius: '6px', cursor: 'pointer' },
-  btnSecundario: { backgroundColor: '#94a3b8', color: 'white', border: 'none', padding: '10px 15px', borderRadius: '6px', cursor: 'pointer' }
-};

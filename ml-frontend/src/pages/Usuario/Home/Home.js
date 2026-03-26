@@ -1,6 +1,6 @@
 // src/pages/Usuario/Home/Home.js
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../../../context';
+import { useAuth } from 'context';
 import { Box, Typography, Paper, Grid, Card, CardContent, Button, CircularProgress, List, ListItem, ListItemAvatar, Avatar, ListItemText, Divider } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
 
@@ -13,7 +13,7 @@ import AnalyticsIcon from '@mui/icons-material/Analytics';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import AutoGraphIcon from '@mui/icons-material/AutoGraph';
 
-import { portafolioService, empresaService } from '../../../services';
+import { portafolioService, empresaService } from 'services';
 import toast from 'react-hot-toast';
 
 export default function Home() {

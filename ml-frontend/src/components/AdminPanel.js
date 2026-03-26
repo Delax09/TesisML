@@ -1,65 +1,116 @@
 // src/components/AdminPanel.js
 import React, { useState } from 'react';
-import adminService from '../services/adminService';
-import iaService from '../services/iaService'; 
+import { 
+    Box, Paper, Typography, Grid, Button, 
+    Dialog, DialogActions, DialogContent, 
+    DialogContentText, DialogTitle, CircularProgress 
+} from '@mui/material';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import UpdateIcon from '@mui/icons-material/Update';
+import PsychologyIcon from '@mui/icons-material/Psychology';
+import { adminService, iaService } from 'services';
+import toast from 'react-hot-toast';
 
 function AdminPanel() {
     const [cargando, setCargando] = useState(false);
+    const [confirmDialog, setConfirmDialog] = useState({ open: false, tarea: '', funcion: null });
 
-    const ejecutarTarea = async (nombreTarea, funcion) => {
-        if (!window.confirm(`¿Seguro que deseas ${nombreTarea}?`)) return;
+    const abrirConfirmacion = (nombreTarea, funcion) => {
+        setConfirmDialog({ open: true, tarea: nombreTarea, funcion: funcion });
+    };
+
+    const cerrarConfirmacion = () => {
+        setConfirmDialog({ open: false, tarea: '', funcion: null });
+    };
+
+    const ejecutarTarea = async () => {
+        const { tarea, funcion } = confirmDialog;
+        cerrarConfirmacion();
+        
         setCargando(true);
+        const idNoti = toast.loading(`Ejecutando: ${tarea}...`);
+        
         try {
             const response = await funcion();
-            alert(response.message);
+            toast.success(response.message || "Tarea completada con éxito", { id: idNoti });
         } catch (e) {
-            alert(`Error al ejecutar la tarea: ${nombreTarea}`);
+            toast.error(`Error al ejecutar la tarea: ${tarea}`, { id: idNoti });
         } finally {
             setCargando(false);
         }
     };
 
     return (
-        <div style={estilos.panel}>
-            <h3>Mantenimiento del Sistema</h3>
-            <div style={estilos.grid}>
-                <button 
-                    style={estilos.botonImportar}
-                    onClick={() => ejecutarTarea("importar tickers", adminService.importarTickers)}
-                    disabled={cargando}
-                >
-                    📥 Cargar Tickers (CSV)
-                </button>
-                <button 
-                    style={estilos.botonPrecios}
-                    onClick={() => ejecutarTarea("actualizar precios", adminService.actualizarPrecios)}
-                    disabled={cargando}
-                >
-                    📈 Actualizar Precios (Yahoo Finance)
-                </button>
-                
-                {/* NUEVO BOTÓN DE ENTRENAMIENTO */}
-                <button 
-                    style={estilos.botonEntrenar}
-                    onClick={() => ejecutarTarea("ENTRENAR la IA (Esto consumirá recursos y tomará varios minutos)", iaService.entrenarLSTM)}
-                    disabled={cargando}
-                >
-                    🧠 Entrenar Modelo IA
-                </button>
-            </div>
-            {cargando && <p style={estilos.aviso}>Procesando... no cierres la ventana.</p>}
-        </div>
+        <Paper elevation={0} sx={{ p: 3, borderRadius: 3, border: '1px solid #e0e0e0', mb: 4 }}>
+            <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ color: '#1e293b' }}>
+                Mantenimiento del Sistema
+            </Typography>
+
+            <Grid container spacing={2} sx={{ mt: 1 }}>
+                <Grid item xs={12} sm={4}>
+                    <Button
+                        fullWidth
+                        variant="contained"
+                        startIcon={<CloudUploadIcon />}
+                        onClick={() => abrirConfirmacion("importar tickers", adminService.importarTickers)}
+                        disabled={cargando}
+                        sx={{ bgcolor: '#34495e', py: 1.5 }}
+                    >
+                        Cargar Tickers (CSV)
+                    </Button>
+                </Grid>
+                <Grid item xs={12} sm={4}>
+                    <Button
+                        fullWidth
+                        variant="contained"
+                        startIcon={<UpdateIcon />}
+                        onClick={() => abrirConfirmacion("actualizar precios", adminService.actualizarPrecios)}
+                        disabled={cargando}
+                        sx={{ bgcolor: '#27ae60', py: 1.5 }}
+                    >
+                        Actualizar Precios
+                    </Button>
+                </Grid>
+                <Grid item xs={12} sm={4}>
+                    <Button
+                        fullWidth
+                        variant="contained"
+                        startIcon={<PsychologyIcon />}
+                        onClick={() => abrirConfirmacion("ENTRENAR la IA", iaService.entrenarLSTM)}
+                        disabled={cargando}
+                        sx={{ bgcolor: '#8e44ad', py: 1.5 }}
+                    >
+                        Entrenar Modelo IA
+                    </Button>
+                </Grid>
+            </Grid>
+
+            {cargando && (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 3, color: '#e67e22' }}>
+                    <CircularProgress size={20} color="inherit" />
+                    <Typography variant="body2" fontWeight="bold">
+                        Procesando... no cierres la ventana.
+                    </Typography>
+                </Box>
+            )}
+
+            {/* Diálogo de Confirmación Genérico */}
+            <Dialog open={confirmDialog.open} onClose={cerrarConfirmacion}>
+                <DialogTitle sx={{ fontWeight: 'bold' }}>Confirmar Tarea</DialogTitle>
+                <DialogContent>
+                    <DialogContentText>
+                        ¿Seguro que deseas <strong>{confirmDialog.tarea}</strong>?
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions sx={{ pb: 2, px: 3 }}>
+                    <Button onClick={cerrarConfirmacion}>Cancelar</Button>
+                    <Button onClick={ejecutarTarea} variant="contained" color="primary">
+                        Confirmar
+                    </Button>
+                </DialogActions>
+            </Dialog>
+        </Paper>
     );
 }
-
-const estilos = {
-    panel: { backgroundColor: '#fff', padding: '1.5rem', borderRadius: '12px', border: '2px solid #e0e0e0', marginBottom: '2rem' },
-    grid: { display: 'flex', gap: '15px', flexWrap: 'wrap' },
-    botonImportar: { backgroundColor: '#34495e', color: 'white', padding: '10px 20px', border: 'none', borderRadius: '6px', cursor: 'pointer' },
-    botonPrecios: { backgroundColor: '#27ae60', color: 'white', padding: '10px 20px', border: 'none', borderRadius: '6px', cursor: 'pointer' },
-    // Estilo para el nuevo botón (morado para diferenciarlo)
-    botonEntrenar: { backgroundColor: '#8e44ad', color: 'white', padding: '10px 20px', border: 'none', borderRadius: '6px', cursor: 'pointer' }, 
-    aviso: { color: '#e67e22', fontWeight: 'bold', marginTop: '10px' }
-};
 
 export default AdminPanel;
