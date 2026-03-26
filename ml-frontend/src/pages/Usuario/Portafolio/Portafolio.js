@@ -27,8 +27,6 @@ export default function Portafolio() {
   const [cargando, setCargando] = useState(true);
   const [procesandoMasivo, setProcesandoMasivo] = useState(false);
   const [sectorFiltro, setSectorFiltro] = useState('todos');
-  
-  // Estado para el filtro de Mis Empresas
   const [sectorFiltroMis, setSectorFiltroMis] = useState('todos'); 
   
   // ESTADOS DE SELECCIÓN
@@ -96,7 +94,72 @@ export default function Portafolio() {
     setPaginaMis(1);
   }, [sectorFiltroMis]);
 
-  // --- FUNCIONES DE AGREGAR / ELIMINAR INDIVIDUALES ---
+  // --- LÓGICA DE FILTRADO (Se mueve arriba para usarla en "Seleccionar Todo") ---
+  const sectoresMisEmpresas = Array.from(new Set(misEmpresas.map(emp => emp.NombreSector))).sort();
+
+  const misEmpresasFiltradas = sectorFiltroMis === 'todos' 
+    ? misEmpresas 
+    : misEmpresas.filter(emp => emp.NombreSector === sectorFiltroMis);
+
+  const empresasDisponiblesFiltradas = sectorFiltro === 'todos' 
+    ? empresasDisponibles 
+    : empresasDisponibles.filter(emp => emp.NombreSector === sectorFiltro);
+
+  // --- FUNCIONES DE SELECCIÓN MÚLTIPLE (INDIVIDUAL Y TODO) ---
+
+  const alternarSeleccionAgregar = (idEmpresa) => {
+    setSeleccionadasAgregar(prev => 
+      prev.includes(idEmpresa) ? prev.filter(id => id !== idEmpresa) : [...prev, idEmpresa] 
+    );
+  };
+
+  const alternarSeleccionEliminar = (idPortafolio) => {
+    setSeleccionadasEliminar(prev => 
+      prev.includes(idPortafolio) ? prev.filter(id => id !== idPortafolio) : [...prev, idPortafolio] 
+    );
+  };
+
+  // NUEVO: Seleccionar TODAS las disponibles según filtro
+  const alternarTodasAgregar = () => {
+    const idsFiltradas = empresasDisponiblesFiltradas.map(emp => emp.IdEmpresa);
+    const todasSeleccionadas = idsFiltradas.every(id => seleccionadasAgregar.includes(id));
+
+    if (todasSeleccionadas) {
+        // Deseleccionar todas las de esta categoría
+        setSeleccionadasAgregar(prev => prev.filter(id => !idsFiltradas.includes(id)));
+    } else {
+        // Seleccionar todas las de esta categoría (manteniendo las de otras categorías si hubiera)
+        setSeleccionadasAgregar(prev => {
+            const nuevas = idsFiltradas.filter(id => !prev.includes(id));
+            return [...prev, ...nuevas];
+        });
+    }
+  };
+
+  // NUEVO: Seleccionar TODAS las de seguimiento según filtro
+  const alternarTodasEliminar = () => {
+    const idsFiltradas = misEmpresasFiltradas.map(emp => emp.IdPortafolio);
+    const todasSeleccionadas = idsFiltradas.every(id => seleccionadasEliminar.includes(id));
+
+    if (todasSeleccionadas) {
+        setSeleccionadasEliminar(prev => prev.filter(id => !idsFiltradas.includes(id)));
+    } else {
+        setSeleccionadasEliminar(prev => {
+            const nuevas = idsFiltradas.filter(id => !prev.includes(id));
+            return [...prev, ...nuevas];
+        });
+    }
+  };
+
+  // --- COMPROBACIONES DE ESTADO PARA LOS CHECKBOXES GLOBALES ---
+  const todasEliminarSeleccionadas = misEmpresasFiltradas.length > 0 && misEmpresasFiltradas.every(emp => seleccionadasEliminar.includes(emp.IdPortafolio));
+  const algunasEliminarSeleccionadas = misEmpresasFiltradas.some(emp => seleccionadasEliminar.includes(emp.IdPortafolio)) && !todasEliminarSeleccionadas;
+
+  const todasAgregarSeleccionadas = empresasDisponiblesFiltradas.length > 0 && empresasDisponiblesFiltradas.every(emp => seleccionadasAgregar.includes(emp.IdEmpresa));
+  const algunasAgregarSeleccionadas = empresasDisponiblesFiltradas.some(emp => seleccionadasAgregar.includes(emp.IdEmpresa)) && !todasAgregarSeleccionadas;
+
+
+  // --- FUNCIONES CRUD MASIVAS E INDIVIDUALES ---
 
   const manejarAgregarUna = async (idEmpresa) => {
     try {
@@ -113,36 +176,19 @@ export default function Portafolio() {
       await portafolioService.eliminar(idPortafolio);
       toast.success("Empresa removida de tu portafolio");
       cargarDatos();
-      
-      if (misEmpresas.length % ITEMS_POR_PAGINA === 1 && paginaMis > 1) {
-          setPaginaMis(paginaMis - 1);
-      }
+      if (misEmpresas.length % ITEMS_POR_PAGINA === 1 && paginaMis > 1) setPaginaMis(paginaMis - 1);
     } catch (error) {
       toast.error("No se pudo remover la empresa");
     }
   };
 
-  // --- LÓGICA: SELECCIÓN MÚLTIPLE PARA AGREGAR ---
-
-  const alternarSeleccionAgregar = (idEmpresa) => {
-    setSeleccionadasAgregar(prev => 
-      prev.includes(idEmpresa) 
-        ? prev.filter(id => id !== idEmpresa) 
-        : [...prev, idEmpresa] 
-    );
-  };
-
   const manejarAgregarMultiples = async () => {
     if (seleccionadasAgregar.length === 0) return;
-    
     setProcesandoMasivo(true);
     const promesaNotificacion = toast.loading(`Agregando ${seleccionadasAgregar.length} empresas...`);
 
     try {
-      await Promise.all(
-        seleccionadasAgregar.map(idEmpresa => portafolioService.crear(usuario.id, idEmpresa))
-      );
-      
+      await Promise.all(seleccionadasAgregar.map(idEmpresa => portafolioService.crear(usuario.id, idEmpresa)));
       toast.success(`${seleccionadasAgregar.length} empresas agregadas correctamente`, { id: promesaNotificacion });
       cargarDatos();
       setPaginaDisponibles(1); 
@@ -153,27 +199,13 @@ export default function Portafolio() {
     }
   };
 
-  // --- LÓGICA: SELECCIÓN MÚLTIPLE PARA ELIMINAR ---
-
-  const alternarSeleccionEliminar = (idPortafolio) => {
-    setSeleccionadasEliminar(prev => 
-      prev.includes(idPortafolio) 
-        ? prev.filter(id => id !== idPortafolio) 
-        : [...prev, idPortafolio] 
-    );
-  };
-
   const manejarEliminarMultiples = async () => {
     if (seleccionadasEliminar.length === 0) return;
-    
     setProcesandoMasivo(true);
     const promesaNotificacion = toast.loading(`Removiendo ${seleccionadasEliminar.length} empresas...`);
 
     try {
-      await Promise.all(
-        seleccionadasEliminar.map(idPortafolio => portafolioService.eliminar(idPortafolio))
-      );
-      
+      await Promise.all(seleccionadasEliminar.map(idPortafolio => portafolioService.eliminar(idPortafolio)));
       toast.success(`${seleccionadasEliminar.length} empresas removidas correctamente`, { id: promesaNotificacion });
       cargarDatos();
       setPaginaMis(1); 
@@ -184,31 +216,11 @@ export default function Portafolio() {
     }
   };
 
-  // --- LÓGICA DE FILTRADO Y PAGINACIÓN ---
-  
-  const sectoresMisEmpresas = Array.from(new Set(misEmpresas.map(emp => emp.NombreSector))).sort();
-
-  const misEmpresasFiltradas = sectorFiltroMis === 'todos' 
-    ? misEmpresas 
-    : misEmpresas.filter(emp => emp.NombreSector === sectorFiltroMis);
-
-  const empresasDisponiblesFiltradas = sectorFiltro === 'todos' 
-    ? empresasDisponibles 
-    : empresasDisponibles.filter(emp => emp.NombreSector === sectorFiltro);
-
-  const misEmpresasPaginadas = misEmpresasFiltradas.slice(
-    (paginaMis - 1) * ITEMS_POR_PAGINA, 
-    paginaMis * ITEMS_POR_PAGINA
-  );
-
-  const disponiblesPaginadas = empresasDisponiblesFiltradas.slice(
-    (paginaDisponibles - 1) * ITEMS_POR_PAGINA, 
-    paginaDisponibles * ITEMS_POR_PAGINA
-  );
-
+  // --- PAGINACIÓN ---
+  const misEmpresasPaginadas = misEmpresasFiltradas.slice((paginaMis - 1) * ITEMS_POR_PAGINA, paginaMis * ITEMS_POR_PAGINA);
+  const disponiblesPaginadas = empresasDisponiblesFiltradas.slice((paginaDisponibles - 1) * ITEMS_POR_PAGINA, paginaDisponibles * ITEMS_POR_PAGINA);
   const totalPaginasMis = Math.ceil(misEmpresasFiltradas.length / ITEMS_POR_PAGINA);
   const totalPaginasDisponibles = Math.ceil(empresasDisponiblesFiltradas.length / ITEMS_POR_PAGINA);
-
 
   if (cargando) return (
     <Box sx={{ display: 'flex', justifyContent: 'center', p: 5 }}>
@@ -224,11 +236,12 @@ export default function Portafolio() {
 
       <Grid container spacing={{ xs: 2, md: 3, lg: 4 }} alignItems="stretch">
         
-        {/* LISTA 1: MIS EMPRESAS */}
+        {/* =========================================
+            LISTA 1: MIS EMPRESAS 
+        ========================================= */}
         <Grid item xs={12} md={6}>
           <Paper elevation={2} sx={{ p: { xs: 1.5, sm: 2, md: 3 }, borderRadius: 3, width: '100%', height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
             
-            {/* CABECERA MODIFICADA: Título arriba, controles abajo */}
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mb: 2 }}>
                 <Typography variant="h6" fontWeight="bold" sx={{ color: 'primary.main' }}>
                 Empresas en Seguimiento ({misEmpresasFiltradas.length})
@@ -236,28 +249,18 @@ export default function Portafolio() {
                 
                 {misEmpresas.length > 0 && (
                     <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
-                        {/* El flexGrow: 1 hace que el selector tome todo el ancho sobrante */}
                         <FormControl size="small" sx={{ flexGrow: 1 }}>
                             <InputLabel>Filtrar por Sector</InputLabel>
-                            <Select
-                                value={sectorFiltroMis}
-                                label="Filtrar por Sector"
-                                onChange={(e) => setSectorFiltroMis(e.target.value)}
-                            >
+                            <Select value={sectorFiltroMis} label="Filtrar por Sector" onChange={(e) => setSectorFiltroMis(e.target.value)}>
                                 <MenuItem value="todos">Todos los sectores</MenuItem>
-                                {sectoresMisEmpresas.map(sector => (
-                                    <MenuItem key={sector} value={sector}>{sector}</MenuItem>
-                                ))}
+                                {sectoresMisEmpresas.map(sector => (<MenuItem key={sector} value={sector}>{sector}</MenuItem>))}
                             </Select>
                         </FormControl>
 
                         <Button 
-                            variant="outlined" 
-                            color="error" 
-                            startIcon={<PlaylistRemoveIcon fontSize="small" />}
+                            variant="outlined" color="error" startIcon={<PlaylistRemoveIcon fontSize="small" />}
                             disabled={seleccionadasEliminar.length === 0 || procesandoMasivo}
-                            onClick={manejarEliminarMultiples}
-                            size="small"
+                            onClick={manejarEliminarMultiples} size="small"
                             sx={{ borderRadius: 2, fontWeight: 'bold', display: 'flex', whiteSpace: 'nowrap' }}
                         >
                             Remover ({seleccionadasEliminar.length})
@@ -266,9 +269,25 @@ export default function Portafolio() {
                 )}
             </Box>
 
-            <Divider sx={{ mb: 2 }} />
+            <Divider sx={{ mb: 1 }} />
             
             <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', minHeight: '380px' }}>
+                {/* CHECKBOX GLOBAL: Seleccionar todo (Izquierda) */}
+                {misEmpresasFiltradas.length > 0 && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', px: 1, py: 0.5, bgcolor: 'rgba(0,0,0,0.02)', borderRadius: 1, mb: 1 }}>
+                        <Checkbox
+                            size="small"
+                            color="error"
+                            checked={todasEliminarSeleccionadas}
+                            indeterminate={algunasEliminarSeleccionadas}
+                            onChange={alternarTodasEliminar}
+                        />
+                        <Typography variant="body2" fontWeight="bold" color="text.secondary">
+                            Seleccionar todas ({misEmpresasFiltradas.length})
+                        </Typography>
+                    </Box>
+                )}
+
                 {misEmpresas.length === 0 ? (
                     <Typography color="text.secondary">No tienes empresas en tu portafolio aún.</Typography>
                 ) : misEmpresasFiltradas.length === 0 ? (
@@ -277,16 +296,12 @@ export default function Portafolio() {
                 <List disablePadding sx={{ flexGrow: 1 }}>
                     {misEmpresasPaginadas.map((emp) => {
                       const estaSeleccionadaParaEliminar = seleccionadasEliminar.includes(emp.IdPortafolio);
-                      
                       return (
                         <ListItem 
                             key={emp.IdPortafolio}
                             sx={{ 
                                 bgcolor: estaSeleccionadaParaEliminar ? 'rgba(239, 68, 68, 0.08)' : 'background.default', 
-                                mb: 1, 
-                                borderRadius: 2, 
-                                transition: 'background-color 0.2s',
-                                p: {xs: 1, md: 2} 
+                                mb: 1, borderRadius: 2, transition: 'background-color 0.2s', p: {xs: 1, md: 2} 
                             }}
                             secondaryAction={
                             <IconButton edge="end" color="error" size="small" onClick={() => manejarEliminarUna(emp.IdPortafolio)}>
@@ -295,12 +310,9 @@ export default function Portafolio() {
                             }
                         >
                             <Checkbox
-                                edge="start"
-                                checked={estaSeleccionadaParaEliminar}
+                                edge="start" checked={estaSeleccionadaParaEliminar}
                                 onChange={() => alternarSeleccionEliminar(emp.IdPortafolio)}
-                                size="small"
-                                color="error" 
-                                sx={{ p: {xs: 0.5, md: 1} }}
+                                size="small" color="error" sx={{ p: {xs: 0.5, md: 1} }}
                             />
                             <ListItemText 
                             primary={`${emp.Ticket} - ${emp.NombreEmpresa}`} 
@@ -316,51 +328,36 @@ export default function Portafolio() {
 
             {totalPaginasMis > 1 && (
                 <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2, pt: 2, borderTop: '1px solid #f1f5f9' }}>
-                    <Pagination 
-                        count={totalPaginasMis} 
-                        page={paginaMis} 
-                        onChange={(e, value) => setPaginaMis(value)} 
-                        color="primary" 
-                        size="small"
-                    />
+                    <Pagination count={totalPaginasMis} page={paginaMis} onChange={(e, value) => setPaginaMis(value)} color="primary" size="small" />
                 </Box>
             )}
           </Paper>
         </Grid>
 
-        {/* LISTA 2: EMPRESAS DISPONIBLES */}
+        {/* =========================================
+            LISTA 2: EMPRESAS DISPONIBLES
+        ========================================= */}
         <Grid item xs={12} md={6}>
           <Paper elevation={2} sx={{ p: { xs: 1.5, sm: 2, md: 3 }, borderRadius: 3, width: '100%', height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
             
-            {/* CABECERA MODIFICADA: Título arriba, controles abajo */}
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mb: 2 }}>
                 <Typography variant="h6" fontWeight="bold" sx={{ color: 'text.secondary' }}>
                 Mercado Disponible
                 </Typography>
                 
                 <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
-                    {/* El flexGrow: 1 hace que el selector tome todo el ancho sobrante */}
                     <FormControl size="small" sx={{ flexGrow: 1 }}>
                         <InputLabel>Filtrar por Sector</InputLabel>
-                        <Select
-                            value={sectorFiltro}
-                            label="Filtrar por Sector"
-                            onChange={(e) => setSectorFiltro(e.target.value)}
-                        >
+                        <Select value={sectorFiltro} label="Filtrar por Sector" onChange={(e) => setSectorFiltro(e.target.value)}>
                             <MenuItem value="todos">Todos los sectores</MenuItem>
-                            {sectoresDisponibles.map(sector => (
-                                <MenuItem key={sector} value={sector}>{sector}</MenuItem>
-                            ))}
+                            {sectoresDisponibles.map(sector => (<MenuItem key={sector} value={sector}>{sector}</MenuItem>))}
                         </Select>
                     </FormControl>
 
                     <Button 
-                        variant="contained" 
-                        color="secondary" 
-                        startIcon={<PlaylistAddIcon fontSize="small" />}
+                        variant="contained" color="secondary" startIcon={<PlaylistAddIcon fontSize="small" />}
                         disabled={seleccionadasAgregar.length === 0 || procesandoMasivo}
-                        onClick={manejarAgregarMultiples}
-                        size="small"
+                        onClick={manejarAgregarMultiples} size="small"
                         sx={{ borderRadius: 2, fontWeight: 'bold', display: 'flex', whiteSpace: 'nowrap' }}
                     >
                         Agregar ({seleccionadasAgregar.length})
@@ -368,9 +365,25 @@ export default function Portafolio() {
                 </Box>
             </Box>
 
-            <Divider sx={{ mb: 2 }} />
+            <Divider sx={{ mb: 1 }} />
 
             <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', minHeight: '380px' }}>
+                {/* CHECKBOX GLOBAL: Seleccionar todo (Derecha) */}
+                {empresasDisponiblesFiltradas.length > 0 && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', px: 1, py: 0.5, bgcolor: 'rgba(0,0,0,0.02)', borderRadius: 1, mb: 1 }}>
+                        <Checkbox
+                            size="small"
+                            color="primary"
+                            checked={todasAgregarSeleccionadas}
+                            indeterminate={algunasAgregarSeleccionadas}
+                            onChange={alternarTodasAgregar}
+                        />
+                        <Typography variant="body2" fontWeight="bold" color="text.secondary">
+                            Seleccionar todas ({empresasDisponiblesFiltradas.length})
+                        </Typography>
+                    </Box>
+                )}
+
                 {empresasDisponiblesFiltradas.length === 0 ? (
                 <Typography color="text.secondary">
                     {empresasDisponibles.length === 0 ? "Ya sigues a todas las empresas disponibles." : "No hay empresas disponibles en este sector."}
@@ -384,10 +397,7 @@ export default function Portafolio() {
                             key={emp.IdEmpresa}
                             sx={{ 
                                 bgcolor: estaSeleccionadaParaAgregar ? 'action.selected' : 'background.default', 
-                                mb: 1, 
-                                borderRadius: 2,
-                                transition: 'background-color 0.2s',
-                                p: {xs: 1, md: 2}
+                                mb: 1, borderRadius: 2, transition: 'background-color 0.2s', p: {xs: 1, md: 2}
                             }}
                             secondaryAction={
                             <IconButton edge="end" color="primary" size="small" onClick={() => manejarAgregarUna(emp.IdEmpresa)}>
@@ -396,11 +406,9 @@ export default function Portafolio() {
                             }
                         >
                             <Checkbox
-                                edge="start"
-                                checked={estaSeleccionadaParaAgregar}
+                                edge="start" checked={estaSeleccionadaParaAgregar}
                                 onChange={() => alternarSeleccionAgregar(emp.IdEmpresa)}
-                                size="small"
-                                sx={{ p: {xs: 0.5, md: 1} }}
+                                size="small" sx={{ p: {xs: 0.5, md: 1} }}
                             />
                             <ListItemText 
                                 primary={`${emp.Ticket} - ${emp.NombreEmpresa}`} 
@@ -416,16 +424,9 @@ export default function Portafolio() {
 
             {totalPaginasDisponibles > 1 && (
                 <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2, pt: 2, borderTop: '1px solid #f1f5f9' }}>
-                    <Pagination 
-                        count={totalPaginasDisponibles} 
-                        page={paginaDisponibles} 
-                        onChange={(e, value) => setPaginaDisponibles(value)} 
-                        color="primary" 
-                        size="small"
-                    />
+                    <Pagination count={totalPaginasDisponibles} page={paginaDisponibles} onChange={(e, value) => setPaginaDisponibles(value)} color="primary" size="small" />
                 </Box>
             )}
-
           </Paper>
         </Grid>
 
