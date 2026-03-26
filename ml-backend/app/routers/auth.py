@@ -1,5 +1,5 @@
 # app/routers/auth.py
-from fastapi import APIRouter, Depends, HTTPException, status, Request # Añadir Request
+from fastapi import APIRouter, Depends, HTTPException, status, Request, Response
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from datetime import timedelta
@@ -13,10 +13,12 @@ from app.core.limiter import limiter
 
 router = APIRouter(prefix="/api/v1/auth", tags=["Autenticación"])
 
-@router.post("/login", response_model=Token)
-@limiter.limit("5/minute") # LÍMITE: 5 peticiones por minuto
+# CAMBIO AQUÍ: Quitar response_model=Token
+@router.post("/login") 
+@limiter.limit("5/minute")
 def login(
     request: Request,
+    response: Response, # <-- AÑADIR Response como parámetro
     form_data: OAuth2PasswordRequestForm = Depends(), 
     db: Session = Depends(get_db)
 ):
@@ -38,4 +40,15 @@ def login(
         expires_delta=access_token_expires
     )
     
-    return {"access_token": access_token, "token_type": "bearer"}
+    # CAMBIO AQUÍ: Crear la cookie
+    response.set_cookie(
+        key="access_token",
+        value=f"Bearer {access_token}",
+        httponly=True,   # Protege contra XSS
+        secure=False,    # Ponlo en True solo cuando uses HTTPS en producción
+        samesite="lax",  # Protege contra CSRF
+        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60 # Tiempo de vida en segundos
+    )
+    
+    # Ya no devolvemos el token, solo un mensaje de éxito
+    return {"message": "Autenticación exitosa"}

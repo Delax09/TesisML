@@ -1,4 +1,4 @@
-// src/pages/admin/Panel/Panel.js
+// src/pages/Admin/Panel/Panel.js
 import React, { useState } from 'react';
 import { 
   AdminPanel, 
@@ -6,113 +6,148 @@ import {
   EmpresaForm,
   EmpresaTable,
   EntrenamientoSelector
-  } from 'components';
+} from 'components';
 import { empresaService } from 'services';
+
+// Importaciones MUI
+import { Box, Typography, Paper, Tabs, Tab, Button, Divider } from '@mui/material';
+import BusinessIcon from '@mui/icons-material/Business';
+import PrecisionManufacturingIcon from '@mui/icons-material/PrecisionManufacturing';
+import StorageIcon from '@mui/icons-material/Storage';
+import AddIcon from '@mui/icons-material/Add';
+import toast from 'react-hot-toast'; // Reemplazo de alerts
 
 export default function Panel() {
   const [tabActiva, setTabActiva] = useState('empresas');
   const [mostrarForm, setMostrarForm] = useState(false);
   const [empresaAEditar, setEmpresaAEditar] = useState(null);
 
+  const manejarCambioTab = (event, newValue) => {
+    setTabActiva(newValue);
+    setMostrarForm(false); // Resetea el form al cambiar de tab
+  };
+
   const manejarGuardar = async (datos) => {
     try {
       if (empresaAEditar) {
         await empresaService.actualizar(datos.IdEmpresa, datos);
-        alert("Empresa actualizada");
+        toast.success("Empresa actualizada correctamente");
       } else {
         await empresaService.crear(datos);
-        alert("Empresa creada");
+        toast.success("Empresa creada exitosamente");
       }
       setMostrarForm(false);
       setEmpresaAEditar(null);
     } catch (error) {
-      alert("Error en la operación");
+      console.error(error);
+      toast.error("Error en la operación. Intenta nuevamente.");
     }
   };
 
   const eliminarEmpresa = async (id) => {
-    if (window.confirm("¿Eliminar empresa?")) {
-      await empresaService.eliminar(id);
-      alert("Eliminada");
+    if (window.confirm("¿Estás seguro de eliminar esta empresa? Esta acción es irreversible.")) {
+      try {
+        await empresaService.eliminar(id);
+        toast.success("Empresa eliminada");
+      } catch(e) {
+        toast.error("No se pudo eliminar la empresa");
+      }
     }
   };
 
   return (
-    <div style={estilos.container}>
-      <header style={estilos.header}>
-        <h1>Panel de Administración</h1>
-        <p>Gestión integral de activos y procesos de IA.</p>
-      </header>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, maxWidth: '1400px', margin: '0 auto' }}>
+      
+      {/* ENCABEZADO */}
+      <Paper elevation={1} sx={{ p: 3, borderRadius: 3 }}>
+        <Typography variant="h4" fontWeight="bold" color="text.primary" gutterBottom>
+          Panel de Administración
+        </Typography>
+        <Typography variant="body1" color="text.secondary">
+          Gestión integral de activos, empresas y procesos de Inteligencia Artificial.
+        </Typography>
+      </Paper>
 
-      {/* TABS */}
-      <div style={estilos.tabBar}>
-        <button onClick={() => {setTabActiva('empresas'); setMostrarForm(false);}} 
-                style={{...estilos.tab, borderBottom: tabActiva === 'empresas' ? '3px solid #4f46e5' : 'none'}}>
-          🏢 Empresas
-        </button>
-        <button onClick={() => setTabActiva('ia')} 
-                style={{...estilos.tab, borderBottom: tabActiva === 'ia' ? '3px solid #4f46e5' : 'none'}}>
-          🤖 IA
-        </button>
-        <button onClick={() => setTabActiva('maestros')} 
-                style={{...estilos.tab, borderBottom: tabActiva === 'maestros' ? '3px solid #4f46e5' : 'none'}}>
-          📊 Maestros
-        </button>
-      </div>
+      {/* CONTENIDO PRINCIPAL CON PESTAÑAS */}
+      <Paper elevation={2} sx={{ borderRadius: 3, overflow: 'hidden' }}>
+        
+        {/* BARRA DE PESTAÑAS MUI */}
+        <Box sx={{ borderBottom: 1, borderColor: 'divider', backgroundColor: '#fafafa' }}>
+          <Tabs 
+            value={tabActiva} 
+            onChange={manejarCambioTab} 
+            indicatorColor="primary"
+            textColor="primary"
+            variant="fullWidth" // Para que ocupen todo el ancho
+          >
+            <Tab icon={<BusinessIcon />} iconPosition="start" label="Empresas" value="empresas" sx={{ fontWeight: 'bold', py: 2 }} />
+            <Tab icon={<PrecisionManufacturingIcon />} iconPosition="start" label="Modelos IA" value="ia" sx={{ fontWeight: 'bold', py: 2 }} />
+            <Tab icon={<StorageIcon />} iconPosition="start" label="Datos Maestros" value="maestros" sx={{ fontWeight: 'bold', py: 2 }} />
+          </Tabs>
+        </Box>
 
-      <div style={estilos.contenidoCard}>
-        {tabActiva === 'empresas' && (
-          <div>
-            {!mostrarForm ? (
-              <>
-                <div style={estilos.seccionTitulo}>
-                  <h3>Listado Maestro</h3>
-                  <button onClick={() => {setEmpresaAEditar(null); setMostrarForm(true);}} style={estilos.btnNuevo}>
-                    + Nueva Empresa
-                  </button>
-                </div>
-                <EmpresaTable 
-                  esAdmin={true} 
-                  onEdit={(emp) => {setEmpresaAEditar(emp); setMostrarForm(true);}} 
-                  onDelete={eliminarEmpresa} 
+        {/* CONTENEDOR DINÁMICO */}
+        <Box sx={{ p: { xs: 2, md: 4 } }}>
+          
+          {tabActiva === 'empresas' && (
+            <Box>
+              {!mostrarForm ? (
+                <>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                    <Typography variant="h5" fontWeight="bold" color="text.primary">
+                      Listado Maestro de Empresas
+                    </Typography>
+                    <Button 
+                      variant="contained" 
+                      color="secondary" // Usa el verde que definimos en theme.js
+                      startIcon={<AddIcon />}
+                      onClick={() => { setEmpresaAEditar(null); setMostrarForm(true); }}
+                      sx={{ fontWeight: 'bold', borderRadius: 2 }}
+                    >
+                      Nueva Empresa
+                    </Button>
+                  </Box>
+                  
+                  {/* Aquí va tu tabla temporalmente (pronto la migraremos) */}
+                  <EmpresaTable 
+                    esAdmin={true} 
+                    onEdit={(emp) => { setEmpresaAEditar(emp); setMostrarForm(true); }} 
+                    onDelete={eliminarEmpresa} 
+                  />
+                </>
+              ) : (
+                <EmpresaForm 
+                  empresaInicial={empresaAEditar} 
+                  onSave={manejarGuardar} 
+                  onCancel={() => setMostrarForm(false)} 
                 />
-              </>
-            ) : (
-              <EmpresaForm 
-                empresaInicial={empresaAEditar} 
-                onSave={manejarGuardar} 
-                onCancel={() => setMostrarForm(false)} 
-              />
-            )}
-          </div>
-        )}
+              )}
+            </Box>
+          )}
 
+          {tabActiva === 'ia' && (
+            <Box sx={{ textAlign: 'center', py: 4 }}>
+              <Typography variant="h6" gutterBottom fontWeight="bold" color="text.secondary">
+                Ejecución de Modelos Predictivos
+              </Typography>
+              <Divider sx={{ mb: 4, width: '50%', mx: 'auto' }} />
+              
+              <AnalisisIAButton onComplete={() => toast.success("Análisis Masivo Completado")} />
+              
+              <Box sx={{ mt: 6, display: 'flex', justifyContent: 'center' }}>
+                <EntrenamientoSelector />
+              </Box>
+            </Box>
+          )}
 
-        {tabActiva === 'ia' && (
-          <div style={estilos.iaContainer}>
-            {/* Botón original de análisis masivo */}
-            <AnalisisIAButton onComplete={() => alert("IA Actualizada")} />
-            
-            {/* NUEVO: Selector de entrenamiento */}
-            <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'center' }}>
-              <EntrenamientoSelector />
-            </div>
-          </div>
-        )}
-
-        {tabActiva === 'maestros' && <AdminPanel />}
-      </div>
-    </div>
+          {tabActiva === 'maestros' && (
+             <Box>
+               <AdminPanel />
+             </Box>
+          )}
+          
+        </Box>
+      </Paper>
+    </Box>
   );
 }
-
-const estilos = {
-  container: { display: 'flex', flexDirection: 'column', gap: '20px', padding: '20px' },
-  header: { backgroundColor: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' },
-  tabBar: { display: 'flex', gap: '20px', borderBottom: '1px solid #e2e8f0' },
-  tab: { padding: '10px 20px', background: 'none', border: 'none', cursor: 'pointer', fontWeight: '600' },
-  contenidoCard: { backgroundColor: 'white', padding: '25px', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' },
-  seccionTitulo: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' },
-  btnNuevo: { backgroundColor: '#10b981', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer' },
-  iaContainer: { textAlign: 'center', padding: '40px 0' }
-};

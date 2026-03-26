@@ -1,16 +1,18 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime
+# ml-backend/app/models/portafolio.py
+from sqlalchemy import Column, Integer, ForeignKey, DateTime, Boolean 
 from sqlalchemy.orm import relationship
-from app.db.sessions import Base
 from sqlalchemy.sql import func
-
+from app.db.sessions import Base
 
 class Portafolio(Base):
     __tablename__ = "Portafolio"
-    IdPortafolio = Column(Integer, primary_key=True, index=True)
-    FechaAgregado = Column(DateTime, server_default=func.now())
-    Activo = Column(String, nullable = False) #Activo, Inactivo)
-    IdUsuario = Column(Integer, ForeignKey("Usuario.IdUsuario"))
-    IdEmpresa = Column(Integer, ForeignKey("Empresa.IdEmpresa"))
+    
+    IdPortafolio = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    IdUsuario = Column(Integer, ForeignKey("Usuario.IdUsuario"), nullable=False)
+    IdEmpresa = Column(Integer, ForeignKey("Empresa.IdEmpresa"), nullable=False)
+    FechaAgregado = Column(DateTime(timezone=True), server_default=func.now())
+    Activo = Column(Boolean, default=True) 
 
+    # Relaciones (Mantenlas tal cual las tengas)
     usuario = relationship("Usuario", back_populates="portafolios")
     empresa = relationship("Empresa", back_populates="portafolios")

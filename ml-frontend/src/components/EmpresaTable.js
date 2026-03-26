@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { empresaService } from 'services'; 
 
-function EmpresaTable({ onSelect, esAdmin = false, onEdit, onDelete }) {
+function EmpresaTable({ onSelect = () => {}, esAdmin = false, onEdit, onDelete }) {
     const [empresas, setEmpresas] = useState([]);
     const [sectores, setSectores] = useState([]);
     const [sectorSeleccionado, setSectorSeleccionado] = useState('todos'); 
@@ -108,12 +108,14 @@ function EmpresaTable({ onSelect, esAdmin = false, onEdit, onDelete }) {
             {/* TABLA DE RESULTADOS */}
             <div style={{overflowX: 'auto'}}>
                 <table style={estilos.tabla}>
-                        <thead>
+                    <thead>
                         <tr style={estilos.header}>
-                            <th style={{ ...estilos.th, width: '30%' }}>Ticker</th>
-                            <th style={{ ...estilos.th, width: '40%' }}>Nombre de Empresa</th>
-                            <th style={{ ...estilos.th, width: '30%' }}>Sector</th>
-                            {/* 2. Cabecera condicional para Admin */}
+                            {/* Ajustamos los porcentajes dinámicamente para que siempre sumen 100% */}
+                            <th style={{ ...estilos.th, width: esAdmin ? '20%' : '30%' }}>Ticker</th>
+                            <th style={{ ...estilos.th, width: esAdmin ? '35%' : '40%' }}>Nombre de Empresa</th>
+                            <th style={{ ...estilos.th, width: esAdmin ? '25%' : '30%' }}>Sector</th>
+                            
+                            {/* La columna de acciones ocupa el 20% restante */}
                             {esAdmin && <th style={{ ...estilos.th, width: '20%', textAlign: 'center' }}>Acciones</th>}
                         </tr>
                     </thead>

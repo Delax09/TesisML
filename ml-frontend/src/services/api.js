@@ -1,21 +1,12 @@
+// ml-frontend/src/services/api.js
 import axios from 'axios';
 
 const api = axios.create({
     baseURL: 'http://localhost:8000/api/v1',
+    withCredentials: true // <-- CAMBIO VITAL: Permite enviar y recibir cookies
 });
 
-// Interceptor de Peticiones: Se ejecuta ANTES de que el frontend envíe algo al backend
-api.interceptors.request.use(
-    (config) => {
-        const token = localStorage.getItem('token');
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
-        }
-        return config;
-    },
-    (error) => {
-        return Promise.reject(error);
-    }
-);
+// ¡Eliminamos el interceptor de request que ponía el Authorization!
+// Las cookies viajan solas, no necesitamos inyectar nada.
 
 export default api;

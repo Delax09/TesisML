@@ -1,6 +1,7 @@
+// ml-frontend/src/context/AuthContext.js
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { authService, api } from 'services'; // Añadimos 'api' aquí
+import { authService, api } from 'services'; 
 
 const AuthContext = createContext();
 
@@ -10,10 +11,10 @@ export function AuthProvider({ children }) {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
+    // CAMBIO AQUÍ: Ya no buscamos el token, solo el perfil del usuario
     const userGuardado = localStorage.getItem('usuario');
     
-    if (token && userGuardado) {
+    if (userGuardado) {
       setUsuario(JSON.parse(userGuardado));
     }
     setCargando(false);
@@ -21,18 +22,15 @@ export function AuthProvider({ children }) {
 
   const login = async (email, password) => {
     try {
-      // 1. Llamamos a FastAPI para obtener el Token
-      const data = await authService.login(email, password);
+      // 1. Llamamos a FastAPI. El servidor nos devolverá la cookie automáticamente.
+      await authService.login(email, password);
 
-      // 2. Guardamos el token INMEDIATAMENTE en el navegador.
-      // Esto es clave para que 'api.js' lo inyecte en la siguiente petición.
-      localStorage.setItem('token', data.access_token);
+      // ¡CAMBIO AQUÍ! Eliminamos: localStorage.setItem('token', data.access_token);
 
-      // 3. Ahora que tenemos el token, pedimos los datos reales del usuario
+      // 3. Pedimos los datos. Axios enviará la cookie de forma invisible.
       const userResponse = await api.get(`/usuarios/email/${email}`);
       const datosUsuario = userResponse.data;
 
-      // 4. Normalizamos el rol para las rutas protegidas
       const nombreRolDb = datosUsuario.rol?.NombreRol?.toLowerCase() || 'usuario';
       const rolEstandarizado = nombreRolDb.includes('admin') ? 'admin' : 'usuario';
 
@@ -43,11 +41,9 @@ export function AuthProvider({ children }) {
         rol: rolEstandarizado
       };
 
-      // 5. Guardamos el perfil en estado y localStorage
       localStorage.setItem('usuario', JSON.stringify(userInfo));
       setUsuario(userInfo);
 
-      // 6. Redirigimos según rol
       if (userInfo.rol === 'admin') {
         navigate('/panel');
       } else {
@@ -58,10 +54,7 @@ export function AuthProvider({ children }) {
       
     } catch (error) {
       console.error("Error de autenticación:", error);
-      
-      // Si falla, borramos cualquier rastro de token a medias
-      localStorage.removeItem('token'); 
-      
+      // Ya no tenemos que hacer removeItem('token') porque ya no existe ahí
       return { 
         success: false, 
         message: error.response?.data?.detail || "Error al verificar las credenciales" 
@@ -96,10 +89,12 @@ export function AuthProvider({ children }) {
   };
 
   const logout = () => {
-    localStorage.removeItem('token');
+    // CAMBIO AQUÍ: Quitamos removeItem('token')
     localStorage.removeItem('usuario');
     setUsuario(null);
     navigate('/login');
+    // NOTA: Para hacer un logout perfecto, luego crearemos un endpoint en FastAPI
+    // que borre la cookie, pero por ahora esto limpia la sesión del frontend.
   };
 
   if (cargando) return <div style={{display: 'flex', justifyContent:'center', marginTop:'20vh'}}>Cargando sesión...</div>;
