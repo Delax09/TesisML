@@ -2,15 +2,17 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
     Box, Paper, Typography, CircularProgress, Chip, IconButton, Tooltip,
-    Table, TableBody, TableCell, TableContainer, TableHead, TableRow 
+    Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
+    TextField, InputAdornment 
 } from '@mui/material';
-import { ChevronLeft, ChevronRight, Edit, Delete } from '@mui/icons-material';
+import { ChevronLeft, ChevronRight, Edit, Delete, Search } from '@mui/icons-material';
 import { empresaService } from 'services'; 
 
 function EmpresaTable({ onSelect = () => {}, esAdmin = false, onEdit, onDelete }) {
     const [empresas, setEmpresas] = useState([]);
     const [sectores, setSectores] = useState([]);
     const [sectorSeleccionado, setSectorSeleccionado] = useState('todos'); 
+    const [busqueda, setBusqueda] = useState(''); // NUEVO ESTADO: Texto de búsqueda
     const [cargando, setCargando] = useState(true);
 
     // Referencia para controlar el scroll de la barra de sectores
@@ -31,9 +33,20 @@ function EmpresaTable({ onSelect = () => {}, esAdmin = false, onEdit, onDelete }
         cargarDatos();
     }, []);
 
-    const empresasAMostrar = sectorSeleccionado === 'todos'
-        ? empresas
-        : empresas.filter((emp) => emp.IdSector === sectorSeleccionado);
+    // NUEVA LÓGICA DE FILTRADO COMBINADA (Sector + Búsqueda de Texto)
+    const empresasAMostrar = empresas.filter((emp) => {
+        // 1. Filtro por sector
+        const coincideSector = sectorSeleccionado === 'todos' || emp.IdSector === sectorSeleccionado;
+        
+        // 2. Filtro por búsqueda (Nombre o Ticker)
+        const termino = busqueda.toLowerCase().trim();
+        const coincideBusqueda = 
+            emp.NombreEmpresa.toLowerCase().includes(termino) || 
+            emp.Ticket.toLowerCase().includes(termino);
+
+        // Ambas condiciones deben cumplirse
+        return coincideSector && coincideBusqueda;
+    });
 
     // Función para desplazar la barra lateralmente
     const desplazar = (direccion) => {
@@ -63,8 +76,8 @@ function EmpresaTable({ onSelect = () => {}, esAdmin = false, onEdit, onDelete }
                 bgcolor: 'background.paper' 
             }}
         >
-            {/* Cabecera */}
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', mb: 2, flexWrap: 'wrap' }}>
+            {/* Cabecera con Buscador */}
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
                 <Box>
                     <Typography variant="h6" fontWeight="bold" color="#1f2937" gutterBottom>
                         Listado de Empresas Activas
@@ -73,6 +86,28 @@ function EmpresaTable({ onSelect = () => {}, esAdmin = false, onEdit, onDelete }
                         {esAdmin ? "* Gestión administrativa de activos." : "* Haz clic en una fila para ver su análisis gráfico."}
                     </Typography>
                 </Box>
+                
+                {/* CAMPO DE BÚSQUEDA */}
+                <TextField 
+                    size="small"
+                    variant="outlined"
+                    placeholder="Buscar por nombre o ticker..."
+                    value={busqueda}
+                    onChange={(e) => setBusqueda(e.target.value)}
+                    InputProps={{
+                        startAdornment: (
+                            <InputAdornment position="start">
+                                <Search fontSize="small" />
+                            </InputAdornment>
+                        ),
+                    }}
+                    sx={{ 
+                        minWidth: { xs: '100%', sm: '250px' },
+                        bgcolor: '#f8fafc',
+                        borderRadius: '8px',
+                        '& fieldset': { borderRadius: '8px' }
+                    }}
+                />
             </Box>
 
             {/* Contenedor del Carrusel con Flechas */}
@@ -104,8 +139,8 @@ function EmpresaTable({ onSelect = () => {}, esAdmin = false, onEdit, onDelete }
                         gap: 1, 
                         overflowX: 'auto', 
                         flexGrow: 1,
-                        scrollbarWidth: 'none', // Oculta scrollbar en Firefox
-                        '&::-webkit-scrollbar': { display: 'none' } // Oculta scrollbar en Chrome/Safari
+                        scrollbarWidth: 'none', 
+                        '&::-webkit-scrollbar': { display: 'none' } 
                     }}
                 >
                     <Chip
@@ -205,8 +240,10 @@ function EmpresaTable({ onSelect = () => {}, esAdmin = false, onEdit, onDelete }
                             ))
                         ) : (
                             <TableRow>
-                                <TableCell colSpan={esAdmin ? 4 : 3} align="center" sx={{ py: 4, color: '#94a3b8' }}>
-                                    No hay empresas en la categoría seleccionada.
+                                <TableCell colSpan={esAdmin ? 4 : 3} align="center" sx={{ py: 6, color: '#94a3b8' }}>
+                                    {busqueda 
+                                        ? `No se encontraron resultados para "${busqueda}"` 
+                                        : 'No hay empresas en la categoría seleccionada.'}
                                 </TableCell>
                             </TableRow>
                         )}
