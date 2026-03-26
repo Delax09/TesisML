@@ -153,11 +153,11 @@ def entrenar_y_guardar(id_modelo_especifico: int = None):
         model = funcion_arquitectura(x_train.shape[1], x_train.shape[2])
         model.compile(optimizer=Adam(0.001), loss='mse')
         
-        early_stopping = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
+        early_stopping = EarlyStopping(monitor='val_loss', patience=3, restore_best_weights=True)
         
         model.fit(
             x_train, y_train, 
-            epochs=25, 
+            epochs=10, 
             batch_size=64, 
             verbose=1, 
             validation_split=0.1, 
