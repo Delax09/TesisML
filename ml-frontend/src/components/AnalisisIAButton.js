@@ -1,47 +1,78 @@
 // ml-frontend/src/components/AnalisisIAButton.js
 import React, { useState } from 'react';
-import iaService from '../services/iaService';
+import { 
+    Button, 
+    Dialog, 
+    DialogActions, 
+    DialogContent, 
+    DialogContentText, 
+    DialogTitle,
+    Box,
+    CircularProgress 
+} from '@mui/material';
+import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
+import SmartToyIcon from '@mui/icons-material/SmartToy';
+import { iaService } from 'services';
+import toast from 'react-hot-toast';
 
 function AnalisisIAButton({ onComplete }) {
     const [ejecutando, setEjecutando] = useState(false);
+    const [openConfirm, setOpenConfirm] = useState(false);
+
+    const handleOpenConfirm = () => setOpenConfirm(true);
+    const handleCloseConfirm = () => setOpenConfirm(false);
 
     const manejarEjecucionMasiva = async () => {
-        const confirmar = window.confirm("¿Deseas ejecutar el análisis de IA para todas las empresas? Esto puede tardar unos minutos.");
-        if (!confirmar) return;
-
+        handleCloseConfirm();
         setEjecutando(true);
+        const idNotificacion = toast.loading("Iniciando análisis masivo de IA...");
+
         try {
-            // Llamamos al nuevo método masivo
             const response = await iaService.analizarTodo(); 
-            alert(response.message || "¡Proceso masivo iniciado con éxito!");
-            
+            toast.success(response.message || "¡Proceso masivo iniciado con éxito!", { id: idNotificacion });
             if (onComplete) onComplete(); 
         } catch (error) {
             console.error(error);
-            alert("Error al iniciar el análisis masivo");
+            toast.error("Error al iniciar el análisis masivo", { id: idNotificacion });
         } finally {
             setEjecutando(false);
         }
     };
 
     return (
-        <button 
-            onClick={manejarEjecucionMasiva}
-            disabled={ejecutando}
-            style={{
-                backgroundColor: ejecutando ? '#94a3b8' : '#4f46e5', // Un morado más profesional
-                color: 'white',
-                padding: '12px 24px',
-                border: 'none',
-                borderRadius: '8px',
-                fontWeight: 'bold',
-                cursor: ejecutando ? 'not-allowed' : 'pointer',
-                boxShadow: '0 4px 6px rgba(79, 70, 229, 0.3)',
-                transition: 'all 0.3s ease'
-            }}
-        >
-            {ejecutando ? '🤖 Analizando Mercado...' : '🚀 Ejecutar IA Masiva'}
-        </button>
+        <Box>
+            <Button
+                variant="contained"
+                onClick={handleOpenConfirm}
+                disabled={ejecutando}
+                startIcon={ejecutando ? <CircularProgress size={20} color="inherit" /> : <RocketLaunchIcon />}
+                sx={{
+                    backgroundColor: '#4f46e5',
+                    color: 'white',
+                    padding: '12px 24px',
+                    borderRadius: '8px',
+                    fontWeight: 'bold',
+                    '&:hover': { backgroundColor: '#4338ca' }
+                }}
+            >
+                {ejecutando ? 'Analizando Mercado...' : 'Ejecutar IA Masiva'}
+            </Button>
+
+            <Dialog open={openConfirm} onClose={handleCloseConfirm}>
+                <DialogTitle sx={{ fontWeight: 'bold' }}>Confirmar Acción</DialogTitle>
+                <DialogContent>
+                    <DialogContentText>
+                        ¿Deseas ejecutar el análisis de IA para todas las empresas?
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions sx={{ pb: 2, px: 3 }}>
+                    <Button onClick={handleCloseConfirm}>Cancelar</Button>
+                    <Button onClick={manejarEjecucionMasiva} variant="contained" sx={{ bgcolor: '#4f46e5' }}>
+                        Sí, ejecutar ahora
+                    </Button>
+                </DialogActions>
+            </Dialog>
+        </Box>
     );
 }
 

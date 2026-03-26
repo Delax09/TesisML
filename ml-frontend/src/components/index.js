@@ -10,3 +10,4 @@ export { default as PrecioChart } from './PrecioChart';
 export { default as ResultadoPanel } from './ResultadoPanel';
 export { default as RolList } from './RolList';
 export { default as SectorList } from './SectorList';
+export { default as ListaPortafolio } from './ListaPortafolio';
