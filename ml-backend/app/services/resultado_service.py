@@ -47,3 +47,11 @@ class ResultadoService:
         if not resultado:
             raise ResourceNotFoundError("Resultado para empresa", empresa_id)
         return resultado
+
+    @staticmethod
+    def obtener_resultado_por_modeloia(db: Session, id_modelo_ia: int) -> list[Resultado]:
+        resultados = db.query(Resultado).filter(
+            Resultado.IdModeloIA == id_modelo_ia
+        ).order_by(Resultado.FechaAnalisis.desc()).all()
+
+        return resultados
