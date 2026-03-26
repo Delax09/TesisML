@@ -113,4 +113,5 @@ Inicia la aplicación React:
 
 Bash
 npm start
+npm install @mui/material @emotion/react @emotion/styled @mui/icons-material react-hot-toast
 El Dashboard se abrirá automáticamente en tu navegador en http://localhost:3000.

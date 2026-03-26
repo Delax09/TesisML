@@ -186,6 +186,7 @@ class ResultadoBase(BaseModel):
     Recomendacion: str = Field(..., max_length=50, description="Recomendacion basada en el analisis")
     IdEmpresa: int = Field(..., description="Id de la empresa a la que pertence la prediccion")
     FechaAnalisis: Optional[datetime] = Field(None, description="fecha del analisis")
+    IdModeloIA: int = Field(..., description = "Id del modelo a que pertenece el resultado")
 
 class ResultadoCreate(ResultadoBase):
     pass

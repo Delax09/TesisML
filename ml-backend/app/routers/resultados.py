@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from app.db.sessions import get_db
 from app.schemas.schemas import ResultadoOut
 from app.services.resultado_service import ResultadoService
-from app.services.empresa_service import EmpresaService
+from app.services.empresa_service import EmpresaService 
 from app.exceptions import ResourceNotFoundError
 
 router = APIRouter(prefix="/api/v1/resultados", tags=["Resultados"])
@@ -19,3 +19,10 @@ def obtener_resultado_por_empresa(empresa_id: int, db: Session = Depends(get_db)
     except ResourceNotFoundError as e:
         raise HTTPException(status_code=404, detail=e.message)
 
+@router.get("/modelo/{id_modelo_ia}", response_model=list[ResultadoOut])
+def obtener_resultado_por_modelo(id_modelo_ia: int, db: Session = Depends(get_db)):
+    resultados = ResultadoService.obtener_resultado_por_modeloia(db, id_modelo_ia)
+    if not resultados:
+        return []
+    
+    return resultados
