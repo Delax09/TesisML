@@ -13,8 +13,8 @@ import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd';
 import PlaylistRemoveIcon from '@mui/icons-material/PlaylistRemove'; 
 import SearchIcon from '@mui/icons-material/Search';
 
-import { useAuth } from '../../../context';
-import { empresaService, portafolioService } from '../../../services';
+import { useAuth } from 'context';
+import { empresaService, portafolioService } from 'services';
 import toast from 'react-hot-toast';
 
 export default function Portafolio() {

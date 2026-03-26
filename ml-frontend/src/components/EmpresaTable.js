@@ -80,10 +80,7 @@ function EmpresaTable({ onSelect = () => {}, esAdmin = false, onEdit, onDelete }
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
                 <Box>
                     <Typography variant="h6" fontWeight="bold" color="#1f2937" gutterBottom>
-                        Listado de Empresas Activas
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                        {esAdmin ? "* Gestión administrativa de activos." : "* Haz clic en una fila para ver su análisis gráfico."}
+                        Listado de Empresas
                     </Typography>
                 </Box>
                 

@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Box, Typography, Paper, Grid, Alert } from '@mui/material';
 import ShowChartIcon from '@mui/icons-material/ShowChart';
 
-import { EmpresaTable, PrecioChart, ResultadoPanel } from '../../../components';
+import { EmpresaTable, PrecioChart, ResultadoPanel } from 'components';
 
 export default function Mercado() {
   // Estado para controlar a qué empresa se le hizo clic en la tabla
