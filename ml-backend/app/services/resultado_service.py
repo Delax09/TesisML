@@ -26,6 +26,9 @@ class ResultadoService:
         )
         db.add(nuevo_resultado)
         db.commit()
+        db.refresh(nuevo_resultado)
+        return nuevo_resultado
+
     @staticmethod
     def obtener_todos_resultados(db: Session) -> list[Resultado]:
         return db.query(Resultado).order_by(desc(Resultado.FechaAnalisis)).all()

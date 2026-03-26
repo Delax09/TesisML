@@ -44,7 +44,7 @@ def ejecutar_analisis_diario(db_request=None):
         for empresa in empresas: 
             precios = db.query(PrecioHistorico).filter(
                 PrecioHistorico.IdEmpresa == empresa.IdEmpresa
-            ).order_by(PrecioHistorico.Fecha.desc()).limit(100).all()
+            ).order_by(PrecioHistorico.Fecha.desc()).limit(300).all() #LIMIT TIENE QUE SER MAYOR QUE LOS DIAS QUE TRAE LA IA
 
             if len(precios) < 50: 
                 continue
