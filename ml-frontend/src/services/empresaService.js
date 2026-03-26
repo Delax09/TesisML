@@ -33,9 +33,28 @@ const obtenerEmpresasConSectores = async () => {
   };
 };
 
+const crear = async (datos) => {
+  // datos: { Ticket, NombreEmpresa, IdSector, Activo }
+  const response = await api.post('/empresas', datos);
+  return response.data;
+};
+
+const actualizar = async (id, datos) => {
+  const response = await api.put(`/empresas/${id}`, datos);
+  return response.data;
+};
+
+const eliminar = async (id) => {
+  const response = await api.delete(`/empresas/${id}`);
+  return response.data;
+};
+
 const empresaService = {
   obtenerTodas,
-  obtenerEmpresasConSectores
+  obtenerEmpresasConSectores,
+  crear,      // <--- ¡No olvides exportarlos!
+  actualizar,
+  eliminar
 };
 
 export default empresaService;
