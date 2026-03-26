@@ -20,6 +20,12 @@ export function AuthProvider({ children }) {
     setCargando(false);
   }, []);
 
+  const actualizarDatos = (nuevosDatos) => {
+    const usuarioActualizado = { ...usuario, ...nuevosDatos };
+    setUsuario(usuarioActualizado);
+    localStorage.setItem('usuario', JSON.stringify(usuarioActualizado));
+  };
+
   const login = async (email, password) => {
     try {
       // 1. Llamamos a FastAPI. El servidor nos devolverá la cookie automáticamente.
@@ -100,7 +106,7 @@ export function AuthProvider({ children }) {
   if (cargando) return <div style={{display: 'flex', justifyContent:'center', marginTop:'20vh'}}>Cargando sesión...</div>;
 
   return (
-    <AuthContext.Provider value={{ usuario, login, logout, registro}}>
+    <AuthContext.Provider value={{ usuario, login, logout, registro, actualizarDatos}}>
       {children}
     </AuthContext.Provider>
   );

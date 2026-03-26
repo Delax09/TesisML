@@ -11,6 +11,7 @@ import HomeIcon from '@mui/icons-material/Home';
 import LogoutIcon from '@mui/icons-material/Logout';
 import MenuIcon from '@mui/icons-material/Menu';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
+import AnalyticsIcon from '@mui/icons-material/Analytics';
 
 const drawerWidth = 250;
 
@@ -31,26 +32,35 @@ export default function UserLayout() {
         TesisML - Usuario
       </Typography>
       
-<List sx={{ px: 2, pt: 2, flexGrow: 1 }}>
+      <List sx={{ px: 2, pt: 2, flexGrow: 1 }}>
+      
+        {/* 1. DASHBOARD PRINCIPAL */}
         <ListItem disablePadding sx={{ mb: 1 }}>
           <ListItemButton 
             component={RouterLink} 
             to="/home"
             selected={isActivo('/home')}
             onClick={() => setMobileOpen(false)}
-            // ... (estilos existentes)
+            sx={{ 
+              borderRadius: 2,
+              '&.Mui-selected': { backgroundColor: '#34495e' },
+              '&.Mui-selected:hover': { backgroundColor: '#34495e' },
+              '&:hover': { backgroundColor: 'rgba(255,255,255,0.05)' }
+            }}
           >
             <ListItemIcon sx={{ color: 'inherit', minWidth: 40 }}><HomeIcon /></ListItemIcon>
-            <ListItemText primary="Dashboard IA" primaryTypographyProps={{ fontWeight: 500 }} />
+            <ListItemText primary="Mi Resumen" primaryTypographyProps={{ fontWeight: 500 }} />
           </ListItemButton>
         </ListItem>
 
-        {/* NUEVO BOTÓN DE NAVEGACIÓN */}
+
+
+        {/* 3. GESTIONAR PORTAFOLIO */}
         <ListItem disablePadding sx={{ mb: 1 }}>
           <ListItemButton 
             component={RouterLink} 
-            to="/gestionar-portafolio"
-            selected={isActivo('/gestionar-portafolio')}
+            to="/portafolio"
+            selected={isActivo('/portafolio')}
             onClick={() => setMobileOpen(false)}
             sx={{ 
               borderRadius: 2,
@@ -63,7 +73,29 @@ export default function UserLayout() {
             <ListItemText primary="Gestionar Portafolio" primaryTypographyProps={{ fontWeight: 500 }} />
           </ListItemButton>
         </ListItem>
+
+        {/* 2. NUEVO: ANÁLISIS DE MERCADO */}
+        <ListItem disablePadding sx={{ mb: 1 }}>
+          <ListItemButton 
+            component={RouterLink} 
+            to="/mercado"
+            selected={isActivo('/mercado')}
+            onClick={() => setMobileOpen(false)}
+            sx={{ 
+              borderRadius: 2,
+              '&.Mui-selected': { backgroundColor: '#34495e' },
+              '&.Mui-selected:hover': { backgroundColor: '#34495e' },
+              '&:hover': { backgroundColor: 'rgba(255,255,255,0.05)' }
+            }}
+          >
+            <ListItemIcon sx={{ color: 'inherit', minWidth: 40 }}><AnalyticsIcon /></ListItemIcon>
+            <ListItemText primary="Análisis de Mercado" primaryTypographyProps={{ fontWeight: 500 }} />
+          </ListItemButton>
+        </ListItem> 
+
       </List>
+
+      
 
       <List sx={{ px: 2, mb: 2 }}>
         <ListItem disablePadding>

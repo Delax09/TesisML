@@ -1,6 +1,6 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { Landing, Home, Panel, Portafolio } from 'pages'; 
+import { Landing, Home, Panel, Portafolio, Mercado} from 'pages'; 
 import { UserLayout, AdminLayout } from 'layouts'; 
 import { AuthProvider, useAuth } from 'context';
 import { Toaster } from 'react-hot-toast';
@@ -32,7 +32,8 @@ function AppRoutes() {
         
         <Route element={<RutaProtegida rolPermitido="usuario"><UserLayout /></RutaProtegida>}>
           <Route path="/home" element={<Home />} />
-          <Route path="/gestionar-portafolio" element={<Portafolio />} />
+          <Route path="/portafolio" element={<Portafolio />} />
+          <Route path="/mercado" element={<Mercado />} />
         </Route>
 
         <Route element={<RutaProtegida rolPermitido="admin"><AdminLayout /></RutaProtegida>}>
