@@ -40,7 +40,7 @@ def ejecutar_analisis_diario(db_request=None):
         engine_temp = MLEngine(version="dummy") 
         
         # --- CÁLCULO DINÁMICO DE DÍAS ---
-        DIAS_INDICADORES = 90
+        DIAS_INDICADORES = 50
         MARGEN_SEGURIDAD = 10 # Por si hay feriados o fines de semana largos
         
         # Total de días a extraer de la base de datos
