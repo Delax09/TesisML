@@ -16,6 +16,8 @@ from app.schemas.schemas import Token
 from app.models.usuario import Usuario
 from app.utils.security import create_access_token, verify_password
 from app.core.limiter import limiter
+from app.utils.deps import obtener_usuario_actual
+
 
 router = APIRouter(prefix="/api/v1/auth", tags=["Autenticación"])
 
@@ -57,6 +59,42 @@ def login(response: Response, form_data: OAuth2PasswordRequestForm = Depends(), 
         "token_type": "bearer",
         "access_token": access_token # Puedes mandarlo también si algún componente aún lo busca en el JSON
     }
+
+
+# =================================================================
+# NUEVOS ENDPOINTS PARA SEGURIDAD Y CIERRE DE SESIÓN
+# =================================================================
+
+@router.get("/me")
+def obtener_perfil_actual(usuario_actual: Usuario = Depends(obtener_usuario_actual)):
+    """
+    Retorna la información del usuario autenticado basándose estrictamente 
+    en la validación de la cookie del backend.
+    """
+    # Estandarizamos el rol para el frontend (ej: 'admin' o 'usuario')
+    nombre_rol_db = usuario_actual.rol.NombreRol.lower() if usuario_actual.rol else 'usuario'
+    rol_estandarizado = 'admin' if 'admin' in nombre_rol_db else 'usuario'
+
+    return {
+        "id": usuario_actual.IdUsuario,
+        "nombre": f"{usuario_actual.Nombre} {usuario_actual.Apellido or ''}".strip(),
+        "email": usuario_actual.Email,
+        "rol": rol_estandarizado
+    }
+
+@router.post("/logout")
+def logout(response: Response):
+    """
+    Invalida la sesión eliminando la cookie del navegador.
+    """
+    response.delete_cookie(
+        key="access_token",
+        httponly=True,
+        samesite="lax"
+    )
+    return {"message": "Sesión cerrada correctamente"}
+
+# =================================================================
 
 @router.get("/verificar-email/{token}")
 def verificar_email(token: str, db: Session = Depends(get_db)):

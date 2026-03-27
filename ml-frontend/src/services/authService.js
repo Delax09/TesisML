@@ -1,7 +1,7 @@
+// ml-frontend/src/services/authService.js
 import { api } from 'services';
 
 const login = async (email, password) => {
-  // FastAPI exige 'username' en formato x-www-form-urlencoded para el Login
   const formData = new URLSearchParams();
   formData.append('username', email); 
   formData.append('password', password);
@@ -12,11 +12,25 @@ const login = async (email, password) => {
     }
   });
   
-  return response.data; // Retorna { access_token, token_type, usuario: {...} }
+  return response.data; 
+};
+
+// NUEVO: Validar sesión con el backend
+const verificarSesion = async () => {
+    const response = await api.get('/auth/me');
+    return response.data;
+};
+
+// NUEVO: Cerrar sesión en el backend
+const logout = async () => {
+    const response = await api.post('/auth/logout');
+    return response.data;
 };
 
 const authService = {
-  login
+  login,
+  verificarSesion,
+  logout
 };
 
 export default authService;
