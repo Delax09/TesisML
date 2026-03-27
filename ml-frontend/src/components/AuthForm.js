@@ -1,6 +1,6 @@
 // src/components/AuthForm.js
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../context';
+import { useAuth } from 'context';
 import { 
     Box, 
     TextField, 

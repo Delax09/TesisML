@@ -170,8 +170,8 @@ function PrecioChart({ empresaId, nombreEmpresa }) {
                 </ToggleButtonGroup>
             </Box>
 
-            <Box sx={{ width: '100%', height: 350, minHeight: 350 }}> {/* Añade minHeight aquí */}
-                <ResponsiveContainer width="100%" height="100%" minWidth={0} debounce={1}> {/* Añade minWidth={0} */}
+            <Box sx={{ width: '100%' }}> {/* Añade minHeight aquí */}
+                <ResponsiveContainer width="100%" height={350}> {/* Añade minWidth={0} */}
                     <AreaChart data={datosFiltrados}>
                         <defs>
                             <linearGradient id="colorPrecio" x1="0" y1="0" x2="0" y2="1">
