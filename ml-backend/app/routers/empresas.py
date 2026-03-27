@@ -26,7 +26,7 @@ def crear_empresa(empresa: EmpresaCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("/", response_model=list[EmpresaOut])
+@router.get("", response_model=list[EmpresaOut])
 def obtener_empresas(db: Session = Depends(get_db)):
     """Obtiene todas las empresas."""
     return EmpresaService.obtener_todas_empresas(db)
