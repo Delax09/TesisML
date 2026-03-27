@@ -46,9 +46,11 @@ export default function Home() {
 
         // Simulamos un "Top 3" de IA tomando las primeras empresas del portafolio del usuario
         // En el futuro, aquí puedes consultar a tu iaService para obtener los mejores scores reales
+
+        //TENEMOS QUE TRAERNOS LA VALIDACIÓN DE LA IA
         const topIA = misEmpresasCompletas.slice(0, 3).map(e => ({
             ...e,
-            score: (Math.random() * (95 - 70) + 70).toFixed(1), // Score simulado entre 70 y 95
+            score: (Math.random() * (95 - 70) + 70).toFixed(1), // Score simulado entre 70 y 95 
             tendencia: 'Alcista'
         }));
 
