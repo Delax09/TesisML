@@ -1,61 +1,76 @@
-import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { Landing, Home, Panel, Portafolio, Mercado} from 'pages'; 
+// src/App.js
+import React, { Suspense, lazy } from 'react';
+import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
 import { UserLayout, AdminLayout } from 'layouts'; 
-import { AuthProvider, useAuth } from 'context';
+import { AuthProvider } from 'context';
 import { Toaster } from 'react-hot-toast';
-
-// 1. IMPORTACIONES NUEVAS DE MUI
+import { RutaProtegida } from 'components';
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
-import theme from './theme'; // Importamos el tema que acabas de crear
+import theme from './theme';
 
-const RutaProtegida = ({ children, rolPermitido }) => {
-  const { usuario } = useAuth();
-  
-  if (!usuario) {
-    return <Navigate to="/" replace />; 
+// IMPORTACIONES PEREZOSAS
+const Landing = lazy(() => import('pages/Landing/Landing'));
+const Home = lazy(() => import('pages/Usuario/Home/Home'));
+const Panel = lazy(() => import('pages/Admin/Panel/Panel'));
+const Portafolio = lazy(() => import('pages/Usuario/Portafolio/Portafolio'));
+const Mercado = lazy(() => import('pages/Usuario/Mercado/Mercado'));
+
+// CONFIGURACIÓN DE RUTAS (Data Router API)
+const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <Landing />,
+  },
+  {
+    // Agrupamos las rutas protegidas para 'usuario'
+    element: (
+      <RutaProtegida rolPermitido="usuario">
+        <UserLayout />
+      </RutaProtegida>
+    ),
+    children: [
+      { path: "home", element: <Home /> },
+      { path: "portafolio", element: <Portafolio /> },
+      { path: "mercado", element: <Mercado /> },
+    ],
+  },
+  {
+    // Agrupamos las rutas protegidas para 'admin'
+    element: (
+      <RutaProtegida rolPermitido="admin">
+        <AdminLayout />
+      </RutaProtegida>
+    ),
+    children: [
+      { path: "panel", element: <Panel /> },
+    ],
+  },
+  {
+    // Catch-all (Cualquier ruta no definida redirige al inicio)
+    path: "*",
+    element: <Navigate to="/" replace />,
   }
-  
-  if (rolPermitido && usuario.rol !== rolPermitido) {
-    return <Navigate to={usuario.rol === 'admin' ? '/panel' : '/home'} replace />;
-  }
+]);
 
-  return children; 
-};
-
-function AppRoutes() {
-  return (
-    <AuthProvider>
-      <Routes>
-        <Route path="/" element={<Landing />} />
-        
-        <Route element={<RutaProtegida rolPermitido="usuario"><UserLayout /></RutaProtegida>}>
-          <Route path="/home" element={<Home />} />
-          <Route path="/portafolio" element={<Portafolio />} />
-          <Route path="/mercado" element={<Mercado />} />
-        </Route>
-
-        <Route element={<RutaProtegida rolPermitido="admin"><AdminLayout /></RutaProtegida>}>
-          <Route path="/panel" element={<Panel />} />
-        </Route>
-
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </AuthProvider>
-  );
-}
-
+// 2. COMPONENTE RAÍZ
 function App() {
   return (
-    // 2. ENVOLVEMOS LA APLICACIÓN CON EL THEMEPROVIDER
     <ThemeProvider theme={theme}>
-      {/* CssBaseline normaliza los estilos del navegador */}
       <CssBaseline /> 
-      <BrowserRouter>
-        <Toaster position="top-right" reverseOrder={false} />
-        <AppRoutes />
-      </BrowserRouter>
+      {/* AuthProvider debe envolver todo el Router para que el contexto esté disponible */}
+      <AuthProvider>
+        {/* Suspense ahora envuelve correctamente al RouterProvider */}
+        <Suspense fallback={
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+            Cargando sección...
+          </div>
+        }>
+          <Toaster position="top-center" reverseOrder={false} />
+          {/* RouterProvider reemplaza a BrowserRouter y Routes */}
+          <RouterProvider router={router} />
+        </Suspense>
+      </AuthProvider>
     </ThemeProvider>
   );
 }

@@ -186,7 +186,7 @@ class ResultadoBase(BaseModel):
     Recomendacion: str = Field(..., max_length=50, description="Recomendacion basada en el analisis")
     IdEmpresa: int = Field(..., description="Id de la empresa a la que pertence la prediccion")
     FechaAnalisis: Optional[datetime] = Field(None, description="fecha del analisis")
-    IdModeloIA: int = Field(..., description = "Id del modelo a que pertenece el resultado")
+    IdModelo: int = Field(..., description = "Id del modelo a que pertenece el resultado")
 
 class ResultadoCreate(ResultadoBase):
     pass
@@ -200,7 +200,7 @@ class ResultadoOut(BaseModel):
     Recomendacion: str = Field(..., description="Recomendacion")
     IdEmpresa: int = Field(..., description="Id de la empresa a la que pertence")
     FechaAnalisis: Optional[datetime] = Field(..., description="Fecha del analisis")
-    IdModeloIA: int = Field(..., description="Modelo Ejecutado")
+    IdModelo: int = Field(..., description="Modelo Ejecutado")
 
     model_config = {"from_attributes": True}
 

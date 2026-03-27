@@ -11,3 +11,4 @@ export { default as ResultadoPanel } from './ResultadoPanel';
 export { default as RolList } from './RolList';
 export { default as SectorList } from './SectorList';
 export { default as ListaPortafolio } from './ListaPortafolio';
+export { default as RutaProtegida } from './RutaProtegida'; 
