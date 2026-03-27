@@ -8,6 +8,7 @@ from app.db.sessions import get_db
 from app.schemas.schemas import EmpresaCreate, EmpresaOut, EmpresaUpdate
 from app.services.empresa_service import EmpresaService
 from app.exceptions import ResourceNotFoundError, DuplicateResourceError, InvalidDataError
+from fastapi_cache.decorator import cache
 
 router = APIRouter(prefix="/api/v1/empresas", tags=["Empresas"])
 
@@ -25,12 +26,13 @@ def crear_empresa(empresa: EmpresaCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("", response_model=list[EmpresaOut])
+@router.get("/", response_model=list[EmpresaOut])
 def obtener_empresas(db: Session = Depends(get_db)):
     """Obtiene todas las empresas."""
     return EmpresaService.obtener_todas_empresas(db)
 
 @router.get("/activas", response_model=list[EmpresaOut])
+@cache(expire=600)
 def obtener_empresas_activas(db: Session = Depends(get_db)):
     return EmpresaService.obtener_empresas_activas(db)
 
