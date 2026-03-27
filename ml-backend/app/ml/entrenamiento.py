@@ -3,6 +3,7 @@ import pandas as pd
 import tensorflow as tf
 from sklearn.preprocessing import MinMaxScaler
 from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.losses import Huber
 from tensorflow.keras.callbacks import EarlyStopping
 import joblib
 import os
@@ -151,14 +152,20 @@ def entrenar_y_guardar(id_modelo_especifico: int = None):
             continue
 
         model = funcion_arquitectura(x_train.shape[1], x_train.shape[2])
-        model.compile(optimizer=Adam(0.001), loss='mse')
         
-        early_stopping = EarlyStopping(monitor='val_loss', patience=3, restore_best_weights=True)
+        # --- NUEVO COMPILADOR ROBUSTO ---
+        model.compile(
+            optimizer=Adam(learning_rate=0.0005), 
+            loss=Huber(delta=1.0), 
+            metrics=['mae']
+        )
+        
+        early_stopping = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
         
         model.fit(
             x_train, y_train, 
-            epochs=10, 
-            batch_size=64, 
+            epochs=100, 
+            batch_size=32, 
             verbose=1, 
             validation_split=0.1, 
             callbacks=[early_stopping]
