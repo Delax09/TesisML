@@ -18,25 +18,26 @@ class MLEngine:
     DIAS_MEMORIA_IA = 90
     FEATURES = ['Close', 'Volume', 'RSI', 'MACD', 'ATR', 'EMA20', 'EMA50']
 
-    def __init__(self, version="v1"):
-        """
-        Inicializa el motor cargando el modelo específico a la versión solicitada.
-        """
-        self.version = version
-        base_dir = os.path.dirname(os.path.abspath(__file__))
-        
-        # Carga dinámica basada en el parámetro 'version'
-        model_path = os.path.join(base_dir, "models", f"modelo_acciones_{self.version}.keras")
-        scaler_path = os.path.join(base_dir, "models", "scaler.pkl")
-        
-        self.model = None
-        self.scaler = None
-        
-        if os.path.exists(model_path) and os.path.exists(scaler_path):
-            self.model = tf.keras.models.load_model(model_path)
-            self.scaler = joblib.load(scaler_path)
-        else:
-            print(f"⚠️ Archivos para el modelo {self.version} no encontrados en {base_dir}/models.")
+    def __init__(self, version="v1", model=None, scaler=None):
+            """
+            Constructor optimizado: Si recibe el modelo y el scaler, los usa directamente.
+            Si no, los carga desde el disco (útil para scripts de entrenamiento).
+            """
+            self.version = version
+            self.model = model
+            self.scaler = scaler
+            
+            # Solo cargar si no se pasaron como parámetros
+            if self.model is None or self.scaler is None:
+                base_dir = os.path.dirname(os.path.abspath(__file__))
+                model_path = os.path.join(base_dir, "models", f"modelo_acciones_{self.version}.keras")
+                scaler_path = os.path.join(base_dir, "models", "scaler.pkl")
+                
+                if os.path.exists(model_path) and os.path.exists(scaler_path):
+                    self.model = tf.keras.models.load_model(model_path)
+                    self.scaler = joblib.load(scaler_path)
+                else:
+                    print(f"⚠️ Archivos para el modelo {self.version} no encontrados.")
 
     def calcular_indicadores(self, df):
         """
