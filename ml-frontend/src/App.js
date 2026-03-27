@@ -1,32 +1,30 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { Landing, Home, Panel, Portafolio, Mercado} from 'pages'; 
 import { UserLayout, AdminLayout } from 'layouts'; 
-import { AuthProvider, useAuth } from 'context';
+import { AuthProvider} from 'context';
 import { Toaster } from 'react-hot-toast';
-
-// 1. IMPORTACIONES NUEVAS DE MUI
+import { RutaProtegida } from 'components';
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
-import theme from './theme'; // Importamos el tema que acabas de crear
+import theme from './theme';
 
-const RutaProtegida = ({ children, rolPermitido }) => {
-  const { usuario } = useAuth();
-  
-  if (!usuario) {
-    return <Navigate to="/" replace />; 
-  }
-  
-  if (rolPermitido && usuario.rol !== rolPermitido) {
-    return <Navigate to={usuario.rol === 'admin' ? '/panel' : '/home'} replace />;
-  }
-
-  return children; 
-};
+//IMPORTACIONES PEREZOSAS --- IMPORTANTE PARA MEJORAR EL RENDIMIENTO
+const Landing = lazy(() => import('pages/Landing/Landing'));
+const Home = lazy(() => import('pages/Usuario/Home/Home'));
+const Panel = lazy(() => import('pages/Admin/Panel/Panel'));
+const Portafolio = lazy(() => import('pages/Usuario/Portafolio/Portafolio'));
+const Mercado = lazy(() => import('pages/Usuario/Mercado/Mercado'));
 
 function AppRoutes() {
   return (
     <AuthProvider>
+
+      <Suspense fallback={
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+          Cargando sección...
+        </div>
+      }></Suspense>
+      
       <Routes>
         <Route path="/" element={<Landing />} />
         
