@@ -12,6 +12,10 @@ router = APIRouter(prefix="/api/v1/resultados", tags=["Resultados"])
 def obtener_resultados(db: Session = Depends(get_db)):
     return ResultadoService.obtener_todos_resultados(db)
 
+@router.get("/ultimos", response_model=list[ResultadoOut])
+def obtener_ultimos_resultados(db: Session = Depends(get_db)):
+    return ResultadoService.obtener_ultimos_resultados(db)
+
 @router.get("/empresa/{empresa_id}", response_model=list[ResultadoOut])
 def obtener_resultado_por_empresa(empresa_id: int, db: Session = Depends(get_db)):
     try:

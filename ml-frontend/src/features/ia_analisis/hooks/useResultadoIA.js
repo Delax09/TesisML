@@ -5,7 +5,7 @@ import { resultadoService } from '../../../services';
 export const useResultadoIA = (empresaId) => {
     const { data, isLoading } = useQuery({
         queryKey: ['resultadoIA', empresaId], // La caché es única por empresa
-        queryFn: () => resultadoService.getByEmpresa(empresaId),
+        queryFn: () => resultadoService.obtenerPorEmpresa(empresaId),
         enabled: !!empresaId, // ¡No se ejecuta si empresaId es null!
         staleTime: 1000 * 60 * 5, // 5 minutos de caché
     });

@@ -51,3 +51,18 @@ class ResultadoService:
     @staticmethod
     def obtener_todos_resultados(db: Session):
         return db.query(Resultado).order_by(Resultado.FechaAnalisis.desc()).all()
+
+    @staticmethod
+    def obtener_ultimos_resultados(db: Session):
+        # 1. Traemos todos los resultados ordenados desde el más nuevo al más viejo
+        todos = db.query(Resultado).order_by(Resultado.FechaAnalisis.desc()).all()
+        
+        # 2. Filtramos para quedarnos solo con el registro más reciente de cada empresa
+        vistos = set()
+        ultimos = []
+        for r in todos:
+            if r.IdEmpresa not in vistos:
+                vistos.add(r.IdEmpresa)
+                ultimos.append(r)
+                
+        return ultimos
