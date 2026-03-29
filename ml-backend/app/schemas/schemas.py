@@ -195,8 +195,13 @@ class ResultadoOut(BaseModel):
     IdResultado: int = Field(..., description="Id del resultado")
     PrecioActual: Decimal = Field(...,description="Precio actual")
     PrediccionIA: Decimal = Field(..., description="Precio predicho por la IA")
+    VariacionPCT: Decimal = Field(..., description= "Variacion porcentual esperada")
     RSI: Decimal = Field(..., description="Relative Strength Index")
     Score: Decimal = Field(..., description="Puntuacion general del analisis")
+    MACD: Optional[Decimal] = None
+    ATR: Optional[Decimal] = None
+    EMA20: Optional[Decimal] = None
+    EMA50: Optional[Decimal] = None
     Recomendacion: str = Field(..., description="Recomendacion")
     IdEmpresa: int = Field(..., description="Id de la empresa a la que pertence")
     FechaAnalisis: Optional[datetime] = Field(..., description="Fecha del analisis")
