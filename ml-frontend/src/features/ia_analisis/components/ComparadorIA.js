@@ -1,3 +1,4 @@
+// ml-frontend/src/features/ia_analisis/components/ComparadorIA.js
 import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import resultadoService from '../../../services/resultadoService'; 
@@ -48,38 +49,53 @@ const ComparadorIA = () => {
   }, []);
 
   // CORRECCIÓN 3: Metemos cargarDatos dentro del useEffect para quitar el Warning
-  useEffect(() => {
+   useEffect(() => {
     const cargarDatos = async () => {
       setLoading(true);
       try {
         const resultados = await resultadoService.obtenerPorEmpresa(idEmpresa);
         
-        // Procesar datos para el gráfico
+        // 1. Agrupar datos por fecha (como lo tenías)
         const datosAgrupados = {};
         resultados.forEach(res => {
           const fecha = res.FechaAnalisis.split('T')[0]; 
           if (!datosAgrupados[fecha]) {
             datosAgrupados[fecha] = { fecha, precioReal: parseFloat(res.PrecioActual) };
           }
-          if (res.IdModelo === 1) datosAgrupados[fecha].prediccionM1 = parseFloat(res.PrediccionIA);
-          if (res.IdModelo === 2) datosAgrupados[fecha].prediccionM2 = parseFloat(res.PrediccionIA);
+          if (res.IdModelo === 1) datosAgrupados[fecha].prediccionBrutaM1 = parseFloat(res.PrediccionIA);
+          if (res.IdModelo === 2) datosAgrupados[fecha].prediccionBrutaM2 = parseFloat(res.PrediccionIA);
         });
 
-        const arrayGrafico = Object.values(datosAgrupados).sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
-        setDatosGrafico(arrayGrafico);
+        // 2. Ordenar cronológicamente
+        const arrayCronologico = Object.values(datosAgrupados).sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+        
+        // 3. LA MAGIA: Desplazar las predicciones 1 posición hacia el futuro
+        const datosAlineados = [];
+        for (let i = 1; i < arrayCronologico.length; i++) {
+          const datoHoy = arrayCronologico[i];
+          const datoAyer = arrayCronologico[i - 1]; // Tomamos lo que la IA predijo en el paso anterior
 
-        // Calcular RMSE y MAE
+          datosAlineados.push({
+            fecha: datoHoy.fecha,
+            precioReal: datoHoy.precioReal,
+            prediccionM1: datoAyer.prediccionBrutaM1, // La predicción de ayer es la que aplica para HOY
+            prediccionM2: datoAyer.prediccionBrutaM2
+          });
+        }
+
+        setDatosGrafico(datosAlineados);
+
+        // Calcular RMSE y MAE ya con los datos correctamente alineados en el mismo objeto
         setMetricas({
-          m1: calcularErrores(arrayGrafico, 'prediccionM1'),
-          m2: calcularErrores(arrayGrafico, 'prediccionM2')
+          m1: calcularErrores(datosAlineados, 'prediccionM1'),
+          m2: calcularErrores(datosAlineados, 'prediccionM2')
         });
 
-        // Extraer el último análisis
         if (resultados.length > 0) {
           const ultimo = resultados.sort((a, b) => new Date(b.FechaAnalisis) - new Date(a.FechaAnalisis))[0];
           setUltimoAnalisis(ultimo);
         } else {
-          setUltimoAnalisis(null); // Limpiar si no hay resultados para esa empresa
+          setUltimoAnalisis(null);
         }
 
       } catch (error) {
@@ -91,7 +107,7 @@ const ComparadorIA = () => {
     if (idEmpresa) {
       cargarDatos();
     }
-  }, [idEmpresa]); // Ahora React sabe que el único trigger correcto es idEmpresa
+  }, [idEmpresa]);
 
   if (loading) return <p style={{ padding: '20px' }}>Cargando comparativa de modelos...</p>;
 
