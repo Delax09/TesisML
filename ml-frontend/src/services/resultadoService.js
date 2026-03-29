@@ -60,6 +60,8 @@ const eliminar = async (id) => {
   return response.data;
 };
 
+
+
 const resultadoService = {
   obtenerTodos,
   obtenerPorId,

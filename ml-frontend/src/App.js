@@ -8,16 +8,18 @@ import { ThemeProvider } from '@mui/material/styles';
 import { CssBaseline, CircularProgress, Box } from '@mui/material';
 import theme from './theme';
 import RutaProtegida from './features/auth/components/RutaProtegida';
-
-// 1. IMPORTAR REACT QUERY
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-// IMPORTACIONES PEREZOSAS
+// IMPORTACIONES PEREZOSAS USUARIO
 const Landing = lazy(() => import('pages/Landing/Landing'));
 const Home = lazy(() => import('pages/Usuario/Home/Home'));
-const Panel = lazy(() => import('pages/Admin/Panel/Panel'));
 const Portafolio = lazy(() => import('pages/Usuario/Portafolio/Portafolio'));
 const Mercado = lazy(() => import('pages/Usuario/Mercado/Mercado'));
+
+// IMPORTACIONES PEREZOSAS ADMIN (Aquí separamos en 3 vistas)
+const AdminTareas = lazy(() => import('pages/Admin/Tareas/Tareas'));
+const ComparadorIA = lazy(() => import('pages/Admin/ComparadorIA/ComparadorIA'));
+const AdminEmpresas = lazy(() => import('pages/Admin/Empresas/Empresas'));
 
 const conSuspense = (Componente) => (
   <Suspense fallback={
@@ -42,25 +44,24 @@ const router = createBrowserRouter([
   {
     element: <RutaProtegida rolPermitido="admin"><AdminLayout /></RutaProtegida>,
     children: [
-      { path: "panel", element: conSuspense(Panel) },
+      // Redirigir la raíz del admin a tareas por defecto
+      { path: "panel", element: <Navigate to="/admin/tareas" replace /> }, 
+      { path: "admin/tareas", element: conSuspense(AdminTareas) },
+      { path: "admin/comparador-ia", element: conSuspense(ComparadorIA) },
+      { path: "admin/empresas", element: conSuspense(AdminEmpresas) },
     ],
   },
   { path: "*", element: <Navigate to="/" replace /> }
 ]);
 
-// 2. CREAR EL CLIENTE DE REACT QUERY (Configuración por defecto)
 const queryClient = new QueryClient({
   defaultOptions: {
-    queries: {
-      refetchOnWindowFocus: false, // Evita que recargue datos solo por cambiar de pestaña en Chrome
-      retry: 1, // Si falla la API, lo intenta 1 vez más automáticamente
-    },
+    queries: { refetchOnWindowFocus: false, retry: 1 },
   },
 });
 
 function App() {
   return (
-    // 3. ENVOLVER LA APLICACIÓN CON EL QUERYCLIENTPROVIDER
     <QueryClientProvider client={queryClient}>
       <ThemeProvider theme={theme}>
         <CssBaseline /> 
