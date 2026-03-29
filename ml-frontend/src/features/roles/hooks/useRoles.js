@@ -1,23 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { rolService } from '../../../services';
 
 export const useRolesList = () => {
-    const [roles, setRoles] = useState([]);
-    const [cargando, setCargando] = useState(true);
+    const { data, isLoading } = useQuery({
+        queryKey: ['roles_lista'],
+        queryFn: () => rolService.getAll(),
+        staleTime: 1000 * 60 * 60, // Caché dura 1 hora
+    });
 
-    useEffect(() => {
-        const fetchRoles = async () => {
-            try {
-                const data = await rolService.getAll();
-                setRoles(data);
-            } catch (error) {
-                console.error("Error cargando roles");
-            } finally {
-                setCargando(false);
-            }
-        };
-        fetchRoles();
-    }, []);
-
-    return { roles, cargando };
+    return { 
+        roles: data || [], 
+        cargando: isLoading 
+    };
 };

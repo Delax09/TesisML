@@ -7,9 +7,10 @@ import { Toaster } from 'react-hot-toast';
 import { ThemeProvider } from '@mui/material/styles';
 import { CssBaseline, CircularProgress, Box } from '@mui/material';
 import theme from './theme';
-
-// 1. IMPORTACIÓN ACTUALIZADA DE RUTA PROTEGIDA (Ajusta según dónde la hayas movido)
 import RutaProtegida from './features/auth/components/RutaProtegida';
+
+// 1. IMPORTAR REACT QUERY
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 // IMPORTACIONES PEREZOSAS
 const Landing = lazy(() => import('pages/Landing/Landing'));
@@ -18,8 +19,6 @@ const Panel = lazy(() => import('pages/Admin/Panel/Panel'));
 const Portafolio = lazy(() => import('pages/Usuario/Portafolio/Portafolio'));
 const Mercado = lazy(() => import('pages/Usuario/Mercado/Mercado'));
 
-// 2. FUNCIÓN AYUDANTE PARA UX FLUIDO
-// Esto permite que el Layout NO desaparezca mientras el componente interno se descarga.
 const conSuspense = (Componente) => (
   <Suspense fallback={
     <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', minHeight: '60vh' }}>
@@ -30,18 +29,10 @@ const conSuspense = (Componente) => (
   </Suspense>
 );
 
-// CONFIGURACIÓN DE RUTAS
 const router = createBrowserRouter([
+  { path: "/", element: conSuspense(Landing) },
   {
-    path: "/",
-    element: conSuspense(Landing), // Aplicamos el suspense individualmente
-  },
-  {
-    element: (
-      <RutaProtegida rolPermitido="usuario">
-        <UserLayout />
-      </RutaProtegida>
-    ),
+    element: <RutaProtegida rolPermitido="usuario"><UserLayout /></RutaProtegida>,
     children: [
       { path: "home", element: conSuspense(Home) },
       { path: "portafolio", element: conSuspense(Portafolio) },
@@ -49,32 +40,36 @@ const router = createBrowserRouter([
     ],
   },
   {
-    element: (
-      <RutaProtegida rolPermitido="admin">
-        <AdminLayout />
-      </RutaProtegida>
-    ),
+    element: <RutaProtegida rolPermitido="admin"><AdminLayout /></RutaProtegida>,
     children: [
       { path: "panel", element: conSuspense(Panel) },
     ],
   },
-  {
-    path: "*",
-    element: <Navigate to="/" replace />,
-  }
+  { path: "*", element: <Navigate to="/" replace /> }
 ]);
 
-// COMPONENTE RAÍZ
+// 2. CREAR EL CLIENTE DE REACT QUERY (Configuración por defecto)
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false, // Evita que recargue datos solo por cambiar de pestaña en Chrome
+      retry: 1, // Si falla la API, lo intenta 1 vez más automáticamente
+    },
+  },
+});
+
 function App() {
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline /> 
-      <AuthProvider>
-        <Toaster position="top-center" reverseOrder={false} />
-        {/* RouterProvider ya no está envuelto en Suspense, los menús de Layout nunca parpadearán */}
-        <RouterProvider router={router} />
-      </AuthProvider>
-    </ThemeProvider>
+    // 3. ENVOLVER LA APLICACIÓN CON EL QUERYCLIENTPROVIDER
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider theme={theme}>
+        <CssBaseline /> 
+        <AuthProvider>
+          <Toaster position="top-center" reverseOrder={false} />
+          <RouterProvider router={router} />
+        </AuthProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
   );
 }
 

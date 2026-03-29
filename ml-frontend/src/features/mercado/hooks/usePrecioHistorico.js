@@ -1,52 +1,35 @@
 // src/features/mercado/hooks/usePrecioHistorico.js
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { precioService } from '../../../services';
 
 export const usePrecioHistorico = (empresaId) => {
-    const [datosOriginales, setDatosOriginales] = useState([]);
     const [rango, setRango] = useState('6M');
-    const [cargando, setCargando] = useState(false);
 
-    useEffect(() => {
-        if (!empresaId) return;
-        
-        const cargarPrecios = async () => {
-            setCargando(true);
-            try {
-                const data = await precioService.getByEmpresa(empresaId); 
-                setDatosOriginales(data);
-            } catch (error) {
-                console.error("Error al cargar gráfica", error);
-            } finally {
-                setCargando(false);
-            }
-        };
-        cargarPrecios();
-    }, [empresaId]);
+    // React Query maneja la llamada a la API
+    const { data: datosOriginales, isLoading: cargando } = useQuery({
+        queryKey: ['precios_historicos', empresaId],
+        queryFn: () => precioService.getByEmpresa(empresaId),
+        enabled: !!empresaId, // No busca si no hay empresa
+        staleTime: 1000 * 60 * 10, // 10 minutos de caché
+    });
 
     const handleCambioRango = (event, nuevoRango) => {
         if (nuevoRango !== null) setRango(nuevoRango);
     };
 
+    // Formateo de fechas local (Intacto de tu lógica original)
     const datosFiltrados = useMemo(() => {
         if (!datosOriginales || !datosOriginales.length) return [];
 
         const formatearParaGrafica = (item, tipoCorta = true) => {
             let fechaObj;
             try {
-                if (item.Fecha instanceof Date) {
-                    fechaObj = item.Fecha;
-                } else if (typeof item.Fecha === 'string') {
-                    const isoStr = item.Fecha.replace(' ', 'T').split('.')[0];
-                    fechaObj = new Date(isoStr);
-                } else if (typeof item.Fecha === 'number') {
-                    fechaObj = new Date(item.Fecha);
-                }
+                if (item.Fecha instanceof Date) fechaObj = item.Fecha;
+                else if (typeof item.Fecha === 'string') fechaObj = new Date(item.Fecha.replace(' ', 'T').split('.')[0]);
+                else if (typeof item.Fecha === 'number') fechaObj = new Date(item.Fecha);
 
-                if (!fechaObj || isNaN(fechaObj.getTime())) {
-                    fechaObj = new Date(item.Fecha);
-                }
-
+                if (!fechaObj || isNaN(fechaObj.getTime())) fechaObj = new Date(item.Fecha);
                 if (isNaN(fechaObj.getTime())) return { ...item, fechaValida: null, FechaCorta: 'Err' };
 
                 return {
@@ -62,11 +45,7 @@ export const usePrecioHistorico = (empresaId) => {
         };
 
         const datosProcesados = datosOriginales.map(d => formatearParaGrafica(d, rango !== 'TODO'));
-
-        datosProcesados.sort((a, b) => {
-            if (!a.fechaValida || !b.fechaValida) return 0;
-            return a.fechaValida.getTime() - b.fechaValida.getTime();
-        });
+        datosProcesados.sort((a, b) => (a.fechaValida && b.fechaValida ? a.fechaValida.getTime() - b.fechaValida.getTime() : 0));
         
         if (rango === 'TODO') return datosProcesados;
 

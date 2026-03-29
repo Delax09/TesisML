@@ -1,24 +1,27 @@
 // src/pages/Usuario/Mercado/Mercado.js
-import React, { useState, useCallback } from 'react';
-import { Box, Typography, Paper, Grid, Alert } from '@mui/material';
+import React, { useState, useCallback, useTransition } from 'react';
+import { Box, Typography, Paper, Grid, Alert, CircularProgress } from '@mui/material'; 
 import ShowChartIcon from '@mui/icons-material/ShowChart';
 
-// 1. Hook y componente de Empresas
+// Importaciones de features refactorizadas
 import { useEmpresas } from '../../../features/empresas/hooks/useEmpresas';
 import EmpresaTable from '../../../features/empresas/components/EmpresaTable';
-
-// 2. IMPORTACIONES ACTUALIZADAS A LAS NUEVAS FEATURES (AQUÍ ESTABA EL ERROR)
 import PrecioChart from '../../../features/mercado/components/PrecioChart';
 import ResultadoPanel from '../../../features/ia_analisis/components/ResultadoPanel';
 
 export default function Mercado() {
   const [empresaSeleccionada, setEmpresaSeleccionada] = useState({ id: null, nombre: "" });
+  
+  // useTransition permite que la UI siga respondiendo (scroll, clics) 
+  // mientras se prepara el renderizado pesado del gráfico.
+  const [isPending, startTransition] = useTransition(); 
+  
   const { empresas, sectores, cargando } = useEmpresas();
 
-
-  // CREAMOS UNA REFERENCIA ESTABLE PARA LA FUNCIÓN
   const manejarSeleccion = useCallback((id, nombre) => {
-      setEmpresaSeleccionada({ id, nombre });
+      startTransition(() => {
+          setEmpresaSeleccionada({ id, nombre });
+      });
   }, []);
 
   return (
@@ -47,14 +50,41 @@ export default function Mercado() {
         <Grid container spacing={3} alignItems="center" justifyContent="center">
             {/* Gráfico de Precios */}
             <Grid size={{ xs: 12, lg: 8 }}>
-                <Paper elevation={2} sx={{ p: {xs: 1, md: 2}, borderRadius: 3, height: '100%', minHeight: empresaSeleccionada.id ? '450px' : '100px', transition: 'min-height 0.3s ease' }}>
+                <Paper 
+                    elevation={2} 
+                    sx={{ 
+                        p: {xs: 1, md: 2}, 
+                        borderRadius: 3, 
+                        height: '100%', 
+                        minHeight: empresaSeleccionada.id ? '450px' : '100px', 
+                        transition: 'min-height 0.3s ease, opacity 0.2s ease',
+                        opacity: isPending ? 0.7 : 1,
+                        position: 'relative'
+                    }}
+                >
+                    {/* Usamos CircularProgress aquí para dar feedback visual y eliminar el warning de ESLint */}
+                    {isPending && (
+                        <Box sx={{ position: 'absolute', top: 20, right: 20, zIndex: 10 }}>
+                            <CircularProgress size={24} color="primary" />
+                        </Box>
+                    )}
                     <PrecioChart empresaId={empresaSeleccionada.id} nombreEmpresa={empresaSeleccionada.nombre} />
                 </Paper>
             </Grid>
             
             {/* Panel de Resultados IA */}
             <Grid size={{ xs: 12, lg: 4, xl: 3 }}>
-                <Paper elevation={2} sx={{ p: {xs: 1, md: 2}, borderRadius: 3, height: '100%', minHeight: empresaSeleccionada.id ? '320px' : '100px', transition: 'min-height 0.3s ease' }}>
+                <Paper 
+                    elevation={2} 
+                    sx={{ 
+                        p: {xs: 1, md: 2}, 
+                        borderRadius: 3, 
+                        height: '100%', 
+                        minHeight: empresaSeleccionada.id ? '320px' : '100px', 
+                        transition: 'min-height 0.3s ease, opacity 0.2s ease',
+                        opacity: isPending ? 0.7 : 1
+                    }}
+                >
                     <ResultadoPanel empresaId={empresaSeleccionada.id} />
                 </Paper>
             </Grid>
@@ -67,7 +97,6 @@ export default function Mercado() {
         </Typography>
         
         <Box sx={{ overflowX: 'auto' }}>
-            {/* Pasamos los datos puros al componente visual */}
             <EmpresaTable 
                 empresas={empresas}
                 sectores={sectores}

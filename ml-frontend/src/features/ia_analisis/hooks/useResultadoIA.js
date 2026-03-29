@@ -1,38 +1,20 @@
 // src/features/ia_analisis/hooks/useResultadoIA.js
-import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { resultadoService } from '../../../services';
 
 export const useResultadoIA = (empresaId) => {
-    const [resultado, setResultado] = useState(null);
-    const [cargando, setCargando] = useState(false);
+    const { data, isLoading } = useQuery({
+        queryKey: ['resultadoIA', empresaId], // La caché es única por empresa
+        queryFn: () => resultadoService.getByEmpresa(empresaId),
+        enabled: !!empresaId, // ¡No se ejecuta si empresaId es null!
+        staleTime: 1000 * 60 * 5, // 5 minutos de caché
+    });
 
-    useEffect(() => {
-        const cargarResultado = async () => {
-            if (!empresaId) return;
-            
-            setCargando(true);
-            try {
-                const data = await resultadoService.getByEmpresa(empresaId);
-                if (data && data.length > 0) {
-                    setResultado(data[data.length - 1]);
-                } else {
-                    setResultado(null);
-                }
-            } catch (error) {
-                console.error("Error cargando resultados:", error);
-                setResultado(null);
-            } finally {
-                setCargando(false);
-            }
-        };
-
-        cargarResultado();
-    }, [empresaId]);
-
-    // Lógica visual abstraída para que la vista solo pregunte "¿Es compra?"
+    // Lógica visual abstraída (se calcula sola cuando llegan los datos)
+    const resultado = data && data.length > 0 ? data[data.length - 1] : null;
     const recomendacionTexto = resultado?.Recomendacion || "Sin datos";
     const esCompra = recomendacionTexto.toLowerCase().includes('alcista') || 
                      recomendacionTexto.toLowerCase().includes('compra');
 
-    return { resultado, cargando, recomendacionTexto, esCompra };
+    return { resultado, cargando: isLoading, recomendacionTexto, esCompra };
 };
