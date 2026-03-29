@@ -8,7 +8,7 @@ export { default as EmpresaTable } from '../features/empresas/components/Empresa
 export { default as EntrenamientoSelector } from '../features/ia_analisis/components/EntrenamientoSelector';
 export { default as PrecioChart } from '../features/mercado/components/PrecioChart';
 export { default as ResultadoPanel } from '../features/ia_analisis/components/ResultadoPanel';
-export { default as RolList } from './RolList';
-export { default as SectorList } from './SectorList';
+export { default as RolList } from '../features/roles/components/RolList';
+export { default as SectorList } from '../features/sectores/components/SectorList';
 export { default as ListaPortafolio } from '../features/portafolio/components/ListaPortafolio';
-export { default as RutaProtegida } from './RutaProtegida'; 
+export { default as RutaProtegida } from '../features/auth/components/RutaProtegida'; 

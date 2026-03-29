@@ -1,24 +1,8 @@
-// src/components/RolList.js
-import React, { useState, useEffect } from 'react';
-import { rolService } from 'services';
+import React from 'react';
+import { useRolesList } from '../hooks/useRoles';
 
 function RolList() {
-    const [roles, setRoles] = useState([]);
-    const [cargando, setCargando] = useState(true);
-
-    useEffect(() => {
-        const fetchRoles = async () => {
-            try {
-                const data = await rolService.getAll();
-                setRoles(data);
-            } catch (error) {
-                console.error("Error cargando roles");
-            } finally {
-                setCargando(false);
-            }
-        };
-        fetchRoles();
-    }, []);
+    const { roles, cargando } = useRolesList();
 
     if (cargando) return <p>Cargando roles...</p>;
 
@@ -40,15 +24,7 @@ function RolList() {
 const estilos = {
     contenedor: { backgroundColor: '#fff', padding: '1rem', borderRadius: '8px', boxShadow: '0 2px 5px rgba(0,0,0,0.05)' },
     grid: { display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '10px' },
-    card: { 
-        display: 'flex', 
-        alignItems: 'center', 
-        gap: '8px', 
-        padding: '8px 15px', 
-        backgroundColor: '#f8f9fa', 
-        border: '1px solid #e9ecef', 
-        borderRadius: '20px' 
-    },
+    card: { display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 15px', backgroundColor: '#f8f9fa', border: '1px solid #e9ecef', borderRadius: '20px' },
     id: { fontSize: '0.7rem', color: '#adb5bd', fontWeight: 'bold' },
     nombre: { color: '#495057', fontSize: '0.9rem' }
 };
