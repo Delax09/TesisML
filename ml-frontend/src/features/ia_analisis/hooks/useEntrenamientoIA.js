@@ -1,6 +1,6 @@
 // src/features/ia_analisis/hooks/useEntrenamientoIA.js
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query'; // Aprovechando que ya tienes React Query
+import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query'; 
 import { iaService } from '../../../services';
 import toast from 'react-hot-toast';
 
@@ -11,14 +11,18 @@ export const useEntrenamientoIA = () => {
     const { data: modelos = [] } = useQuery({
         queryKey: ['modelos_activos'],
         queryFn: async () => {
-            const data = await iaService.obtenerModelosActivos();
-            if (data.length > 0) setModeloSeleccionado(data[0].IdModelo);
-            return data;
+            return await iaService.obtenerModelosActivos();
         },
         staleTime: 1000 * 60 * 60,
     });
 
-    // Eliminamos window.confirm de aquí. La función solo recibe la orden de entrenar.
+    // Sincronizamos el estado inicial para evitar el error de "undefined"
+    useEffect(() => {
+        if (modelos.length > 0 && !modeloSeleccionado) {
+            setModeloSeleccionado(modelos[0].IdModelo);
+        }
+    }, [modelos, modeloSeleccionado]);
+
     const ejecutarEntrenamiento = async () => {
         if (!modeloSeleccionado) return;
         setEntrenando(true);
