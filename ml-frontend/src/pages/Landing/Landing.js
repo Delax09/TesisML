@@ -1,5 +1,5 @@
 // src/pages/Landing/Landing.js
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../../context'; // Ajustado dependiendo de tu baseUrl
 
@@ -22,9 +22,9 @@ export default function Landing() {
     // 3. EJECUTAMOS EL HOOK PARA OBTENER LOS DATOS
     const { empresas, sectores, cargando } = useEmpresas();
 
-    const manejarSeleccionEmpresa = (id, nombre) => {
+    const manejarSeleccionEmpresa = useCallback((id, nombre) => {
         abrirModalAuth(true); // Abre el modal de registro automáticamente
-    };
+    }, []);
 
     const abrirModalAuth = (modoRegistro) => {
         setModalAuth({ open: true, esRegistro: modoRegistro });

@@ -1,5 +1,5 @@
 // src/features/empresas/components/EmpresaTable.js
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo, memo } from 'react';
 import { 
     Box, Paper, Typography, CircularProgress, Chip, IconButton, Tooltip,
     Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
@@ -21,15 +21,19 @@ function EmpresaTable({
     const [busqueda, setBusqueda] = useState(''); 
     const scrollRef = useRef(null);
 
-    const empresasAMostrar = empresas.filter((emp) => {
-        const coincideSector = sectorSeleccionado === 'todos' || emp.IdSector === sectorSeleccionado;
-        const termino = busqueda.toLowerCase().trim();
-        const coincideBusqueda = 
-            emp.NombreEmpresa.toLowerCase().includes(termino) || 
-            emp.Ticket.toLowerCase().includes(termino);
+    // 2. ENVOLVEMOS EL FILTRO EN useMemo
+    // Esto evita que el arreglo se recalcule si cambias de pestaña u otra cosa irrelevante
+    const empresasAMostrar = useMemo(() => {
+        return empresas.filter((emp) => {
+            const coincideSector = sectorSeleccionado === 'todos' || emp.IdSector === sectorSeleccionado;
+            const termino = busqueda.toLowerCase().trim();
+            const coincideBusqueda = 
+                emp.NombreEmpresa.toLowerCase().includes(termino) || 
+                emp.Ticket.toLowerCase().includes(termino);
 
-        return coincideSector && coincideBusqueda;
-    });
+            return coincideSector && coincideBusqueda;
+        });
+    }, [empresas, sectorSeleccionado, busqueda]);
 
     const desplazar = (direccion) => {
         if (scrollRef.current) {
@@ -233,4 +237,4 @@ function EmpresaTable({
     );
 }
 
-export default EmpresaTable;
+export default memo(EmpresaTable);

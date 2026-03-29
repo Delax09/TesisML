@@ -1,10 +1,10 @@
 // src/features/mercado/components/PrecioChart.js
-import React from 'react';
+import React, { memo } from 'react';
 import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
 import { Box, Paper, Typography, ToggleButton, ToggleButtonGroup, CircularProgress } from '@mui/material';
 import { usePrecioHistorico } from '../hooks/usePrecioHistorico';
 
-export default function PrecioChart({ empresaId, nombreEmpresa }) {
+function PrecioChart({ empresaId, nombreEmpresa }) {
     // 1. Consumimos nuestra lógica encapsulada
     const { datosFiltrados, rango, cargando, handleCambioRango } = usePrecioHistorico(empresaId);
 
@@ -70,3 +70,5 @@ export default function PrecioChart({ empresaId, nombreEmpresa }) {
         </Paper>
     );
 }
+
+export default memo(PrecioChart);

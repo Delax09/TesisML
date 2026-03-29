@@ -1,8 +1,8 @@
 // src/pages/Admin/Panel/Panel.js
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react'; // 1. Importamos useCallback
 import toast from 'react-hot-toast';
 
-// 1. Nuevas Importaciones por Features
+// Importaciones por Features
 import { useEmpresas } from '../../../features/empresas/hooks/useEmpresas';
 import EmpresaTable from '../../../features/empresas/components/EmpresaTable';
 import EmpresaForm from '../../../features/empresas/components/EmpresaForm';
@@ -21,21 +21,24 @@ import AddIcon from '@mui/icons-material/Add';
 
 export default function Panel() {
   const [tabActiva, setTabActiva] = useState('empresas');
-  
-  // Estados para la gestión de Empresas
   const [mostrarForm, setMostrarForm] = useState(false);
   const [empresaAEditar, setEmpresaAEditar] = useState(null);
 
-  // Consumimos los datos de las empresas para pasárselos a la tabla
   const { empresas, sectores, cargando, cargarDatos } = useEmpresas();
 
-  const manejarCambioTab = (event, newValue) => {
+  // 2. MEMOIZAMOS LAS FUNCIONES CON useCallback
+
+  const manejarCambioTab = useCallback((event, newValue) => {
     setTabActiva(newValue);
     setMostrarForm(false); 
-  };
+  }, []);
 
-  // CRUD Lógica de Empresas (Se mantiene aquí porque maneja vistas locales)
-  const manejarGuardar = async (datos) => {
+  const manejarEditar = useCallback((emp) => {
+    setEmpresaAEditar(emp);
+    setMostrarForm(true);
+  }, []);
+
+  const manejarGuardar = useCallback(async (datos) => {
     try {
       if (empresaAEditar) {
         await empresaService.actualizar(datos.IdEmpresa, datos);
@@ -46,30 +49,43 @@ export default function Panel() {
       }
       setMostrarForm(false);
       setEmpresaAEditar(null);
-      cargarDatos(); // <-- Recargamos la tabla
+      cargarDatos(); 
     } catch (error) {
       toast.error("Error en la operación.");
     }
-  };
+  }, [empresaAEditar, cargarDatos]); // Dependencias necesarias
 
-  const eliminarEmpresa = async (id) => {
+  const eliminarEmpresa = useCallback(async (id) => {
     if (window.confirm("¿Estás seguro de eliminar esta empresa?")) {
       try {
         await empresaService.eliminar(id);
         toast.success("Empresa eliminada");
-        cargarDatos(); // <-- Recargamos la tabla
+        cargarDatos(); 
       } catch(e) {
         toast.error("No se pudo eliminar la empresa");
       }
     }
-  };
+  }, [cargarDatos]);
+
+  const abrirNuevoForm = useCallback(() => {
+    setEmpresaAEditar(null);
+    setMostrarForm(true);
+  }, []);
+
+  const cancelarForm = useCallback(() => {
+    setMostrarForm(false);
+  }, []);
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, maxWidth: '1400px', margin: '0 auto' }}>
       
       <Paper elevation={1} sx={{ p: 3, borderRadius: 3 }}>
-        <Typography variant="h4" fontWeight="bold" color="text.primary" gutterBottom>Panel de Administración</Typography>
-        <Typography variant="body1" color="text.secondary">Gestión integral de activos, empresas y procesos de IA.</Typography>
+        <Typography variant="h4" fontWeight="bold" color="text.primary" gutterBottom>
+          Panel de Administración
+        </Typography>
+        <Typography variant="body1" color="text.secondary">
+          Gestión integral de activos, empresas y procesos de IA.
+        </Typography>
       </Paper>
 
       <Paper elevation={2} sx={{ borderRadius: 3, overflow: 'hidden' }}>
@@ -91,25 +107,28 @@ export default function Panel() {
                     <Typography variant="h5" fontWeight="bold" color="text.primary">Listado Maestro de Empresas</Typography>
                     <Button 
                       variant="contained" color="secondary" startIcon={<AddIcon />}
-                      onClick={() => { setEmpresaAEditar(null); setMostrarForm(true); }}
+                      onClick={abrirNuevoForm}
                       sx={{ fontWeight: 'bold', borderRadius: 2 }}
                     >
                       Nueva Empresa
                     </Button>
                   </Box>
                   
-                  {/* TABLA PASANDO PROPS */}
                   <EmpresaTable 
                     empresas={empresas}
                     sectores={sectores}
                     cargando={cargando}
                     esAdmin={true} 
-                    onEdit={(emp) => { setEmpresaAEditar(emp); setMostrarForm(true); }} 
-                    onDelete={eliminarEmpresa} 
+                    onEdit={manejarEditar} // Función estable
+                    onDelete={eliminarEmpresa} // Función estable
                   />
                 </>
               ) : (
-                <EmpresaForm empresaInicial={empresaAEditar} onSave={manejarGuardar} onCancel={() => setMostrarForm(false)} />
+                <EmpresaForm 
+                  empresaInicial={empresaAEditar} 
+                  onSave={manejarGuardar} 
+                  onCancel={cancelarForm} 
+                />
               )}
             </Box>
           )}
@@ -118,7 +137,7 @@ export default function Panel() {
             <Box sx={{ textAlign: 'center', py: 4 }}>
               <Typography variant="h6" gutterBottom fontWeight="bold" color="text.secondary">Ejecución de Modelos Predictivos</Typography>
               <Divider sx={{ mb: 4, width: '50%', mx: 'auto' }} />
-              <AnalisisIAButton onComplete={() => toast.success("Análisis Masivo Completado")} />
+              <AnalisisIAButton onComplete={cargarDatos} />
               <Box sx={{ mt: 6, display: 'flex', justifyContent: 'center' }}>
                 <EntrenamientoSelector />
               </Box>

@@ -1,5 +1,5 @@
 // src/pages/Usuario/Mercado/Mercado.js
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Box, Typography, Paper, Grid, Alert } from '@mui/material';
 import ShowChartIcon from '@mui/icons-material/ShowChart';
 
@@ -13,9 +13,13 @@ import ResultadoPanel from '../../../features/ia_analisis/components/ResultadoPa
 
 export default function Mercado() {
   const [empresaSeleccionada, setEmpresaSeleccionada] = useState({ id: null, nombre: "" });
-  
-  // Ejecutamos la lógica de negocio a nivel de Página
   const { empresas, sectores, cargando } = useEmpresas();
+
+
+  // CREAMOS UNA REFERENCIA ESTABLE PARA LA FUNCIÓN
+  const manejarSeleccion = useCallback((id, nombre) => {
+      setEmpresaSeleccionada({ id, nombre });
+  }, []);
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4, width: '100%', maxWidth: '1600px', margin: '0 auto', pb: 4 }}>
@@ -68,7 +72,7 @@ export default function Mercado() {
                 empresas={empresas}
                 sectores={sectores}
                 cargando={cargando}
-                onSelect={(id, nombre) => setEmpresaSeleccionada({ id, nombre })} 
+                onSelect={manejarSeleccion} 
                 esAdmin={false}
             />
         </Box>
