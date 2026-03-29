@@ -1,38 +1,31 @@
 // src/pages/Landing/Landing.js
 import React, { useState } from 'react';
 import { Navigate } from 'react-router-dom';
-import { useAuth } from 'context';
+import { useAuth } from '../../context'; // Ajustado dependiendo de tu baseUrl
 
 import { 
-    Button, 
-    Typography, 
-    Box, 
-    AppBar, 
-    Toolbar, 
-    Dialog, 
-    DialogContent, 
-    IconButton 
+    Button, Typography, Box, AppBar, Toolbar, Dialog, DialogContent, IconButton 
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 
-// Solo importamos los componentes que realmente se usan en la Landing
-import { 
-    AuthForm, 
-    EmpresaTable 
-} from 'components'; 
+// 1. IMPORTAMOS LOS COMPONENTES DESDE SUS NUEVOS FEATURES
+import AuthForm from '../../features/auth/components/AuthForm';
+import EmpresaTable from '../../features/empresas/components/EmpresaTable';
+
+// 2. IMPORTAMOS EL HOOK QUE TRAE LOS DATOS
+import { useEmpresas } from '../../features/empresas/hooks/useEmpresas';
 
 export default function Landing() {
-    // ESTADO: Maneja la visibilidad y el modo del modal
     const [modalAuth, setModalAuth] = useState({ open: false, esRegistro: false });
-    
     const { usuario } = useAuth();
-    const [empresaSeleccionada, setEmpresaSeleccionada] = useState({ id: null, nombre: '' });
+
+    // 3. EJECUTAMOS EL HOOK PARA OBTENER LOS DATOS
+    const { empresas, sectores, cargando } = useEmpresas();
 
     const manejarSeleccionEmpresa = (id, nombre) => {
-        setEmpresaSeleccionada({ id, nombre });
+        abrirModalAuth(true); // Abre el modal de registro automáticamente
     };
 
-    // Funciones para abrir y cerrar el modal dinámicamente
     const abrirModalAuth = (modoRegistro) => {
         setModalAuth({ open: true, esRegistro: modoRegistro });
     };
@@ -48,30 +41,24 @@ export default function Landing() {
     return (
         <Box sx={{ minHeight: '100vh', height: '100vh', overflowY: 'auto', backgroundColor: 'background.default', display: 'flex', flexDirection: 'column' }}>
             
-            {/* BARRA DE NAVEGACIÓN */}
             <AppBar position="static" color="inherit" elevation={1} sx={{ px: { xs: 2, md: '5%' } }}>
                 <Toolbar disableGutters sx={{ justifyContent: 'space-between' }}>
                     <Typography variant="h5" component="div" sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', color: 'text.primary' }}>
                         TesisML
                     </Typography>
                     
-                    {/* BOTONES DE LA BARRA SUPERIOR */}
                     <Box sx={{ display: 'flex', gap: 2 }}>
                         <Button 
-                            variant="outlined" 
-                            color="primary" 
-                            size="large"
-                            onClick={() => abrirModalAuth(false)} // Se abre en modo Login
+                            variant="outlined" color="primary" size="large"
+                            onClick={() => abrirModalAuth(false)} 
                             sx={{ fontWeight: 'bold', borderRadius: 2 }}
                         >
                             Iniciar Sesión
                         </Button>
                         <Button 
-                            variant="contained" 
-                            color="primary" 
-                            size="large"
-                            onClick={() => abrirModalAuth(true)} // Se abre en modo Registro
-                            sx={{ fontWeight: 'bold', borderRadius: 2, display: { xs: 'none', sm: 'flex' } }} // Se oculta en móviles muy pequeños
+                            variant="contained" color="primary" size="large"
+                            onClick={() => abrirModalAuth(true)} 
+                            sx={{ fontWeight: 'bold', borderRadius: 2, display: { xs: 'none', sm: 'flex' } }}
                         >
                             Registrarse
                         </Button>
@@ -81,7 +68,6 @@ export default function Landing() {
 
             <Box component="main" sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', p: { xs: 2, md: 4 }, gap: 6 }}>
                 
-                {/* SECCIÓN HERO (Banner Principal) */}
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-around', width: '100%', maxWidth: '1200px', flexWrap: 'wrap', gap: 4, mt: 4 }}>
                     <Box sx={{ maxWidth: '500px' }}>
                         <Typography variant="h3" component="h1" sx={{ fontWeight: '900', color: 'text.primary', mb: 2, lineHeight: 1.2 }}>
@@ -93,10 +79,8 @@ export default function Landing() {
                             con nuestros modelos predictivos de vanguardia.
                         </Typography>
                         <Button 
-                            variant="contained" 
-                            color="primary" 
-                            size="large"
-                            onClick={() => abrirModalAuth(true)} // Ahora envía directo al modo Registro
+                            variant="contained" color="primary" size="large"
+                            onClick={() => abrirModalAuth(true)} 
                             sx={{ py: 1.5, px: 4, fontSize: '1.1rem', fontWeight: 'bold', borderRadius: 2, boxShadow: 3 }}
                         >
                             Comenzar ahora
@@ -108,30 +92,26 @@ export default function Landing() {
                     </Box>
                 </Box>
 
-                {/* TABLA DE EMPRESAS (Reemplazo del div por Box con sx) */}
                 <Box sx={{ width: '100%', maxWidth: '1200px', mb: 4 }}>
-                    <EmpresaTable onSelect={manejarSeleccionEmpresa} />
+                    {/* 4. PASAMOS LOS DATOS AL COMPONENTE VISUAL */}
+                    <EmpresaTable 
+                        empresas={empresas}
+                        sectores={sectores}
+                        cargando={cargando}
+                        onSelect={manejarSeleccionEmpresa} 
+                    />
                 </Box>
 
             </Box>
 
-            {/* MODAL DE AUTENTICACIÓN */}
             <Dialog 
-                open={modalAuth.open} 
-                onClose={cerrarModalAuth}
-                maxWidth="xs"
-                fullWidth
+                open={modalAuth.open} onClose={cerrarModalAuth} maxWidth="xs" fullWidth
                 PaperProps={{ sx: { borderRadius: 4, p: 1 } }}
             >
                 <DialogContent sx={{ position: 'relative' }}>
-                    <IconButton 
-                        onClick={cerrarModalAuth}
-                        sx={{ position: 'absolute', right: 8, top: 8, color: 'text.secondary' }}
-                    >
+                    <IconButton onClick={cerrarModalAuth} sx={{ position: 'absolute', right: 8, top: 8, color: 'text.secondary' }}>
                         <CloseIcon />
                     </IconButton>
-                    
-                    {/* Le pasamos el modo actual al formulario */}
                     <AuthForm modoInicialRegistro={modalAuth.esRegistro} />
                 </DialogContent>
             </Dialog>

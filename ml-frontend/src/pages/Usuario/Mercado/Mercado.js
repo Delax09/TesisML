@@ -3,17 +3,18 @@ import React, { useState } from 'react';
 import { Box, Typography, Paper, Grid, Alert } from '@mui/material';
 import ShowChartIcon from '@mui/icons-material/ShowChart';
 
-// 1. Importamos el hook y el nuevo componente refactorizado
+// 1. Hook y componente de Empresas
 import { useEmpresas } from '../../../features/empresas/hooks/useEmpresas';
 import EmpresaTable from '../../../features/empresas/components/EmpresaTable';
 
-// Importaciones temporales (hasta que refactoricemos estos a sus features)
-import { PrecioChart, ResultadoPanel } from '../../../components';
+// 2. IMPORTACIONES ACTUALIZADAS A LAS NUEVAS FEATURES (AQUÍ ESTABA EL ERROR)
+import PrecioChart from '../../../features/mercado/components/PrecioChart';
+import ResultadoPanel from '../../../features/ia_analisis/components/ResultadoPanel';
 
 export default function Mercado() {
   const [empresaSeleccionada, setEmpresaSeleccionada] = useState({ id: null, nombre: "" });
   
-  // 2. Ejecutamos la lógica de negocio a nivel de Página
+  // Ejecutamos la lógica de negocio a nivel de Página
   const { empresas, sectores, cargando } = useEmpresas();
 
   return (
@@ -62,7 +63,7 @@ export default function Mercado() {
         </Typography>
         
         <Box sx={{ overflowX: 'auto' }}>
-            {/* 3. Pasamos los datos puros al componente visual */}
+            {/* Pasamos los datos puros al componente visual */}
             <EmpresaTable 
                 empresas={empresas}
                 sectores={sectores}
