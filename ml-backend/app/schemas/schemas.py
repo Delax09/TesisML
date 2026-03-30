@@ -228,6 +228,34 @@ class ModeloIAOut(BaseModel):
 
     model_config = {"from_attributes": True}
 
+class MetricasBase(BaseModel):
+    Loss: Optional[float] = Field(None, description="Valor de pérdida (loss) del modelo")
+    MAE: Optional[float] = Field(None, description="Error absoluto medio (MAE) del modelo")
+    ValLoss: Optional[float] = Field(None, description="Valor de pérdida (loss) en validación")
+    ValMAE: Optional[float] = Field(None, description="Error absoluto medio (MAE) en validación")
+    Accuracy: Optional[float] = Field(None, description="Precisión del modelo")
+    Precision: Optional[float] = Field(None, description="Precisión del modelo")
+    Recall: Optional[float] = Field(None, description="Recall del modelo")
+    F1_Score: Optional[float] = Field(None, description="Puntuación F1 del modelo")
+
+class MetricasCreate(MetricasBase):
+    pass
+
+class MetricasOut(BaseModel):
+    IdMetricas: int = Field(..., description="Id único de las métricas")
+    Loss: Optional[float] = Field(None, description="Valor de pérdida (loss) del modelo")
+    MAE: Optional[float] = Field(None, description="Error absoluto medio (MAE) del modelo")
+    ValLoss: Optional[float] = Field(None, description="Valor de pérdida (loss) en validación")
+    ValMAE: Optional[float] = Field(None, description="Error absoluto medio (MAE) en validación")
+    Accuracy: Optional[float] = Field(None, description="Precisión del modelo")
+    Precision: Optional[float] = Field(None, description="Precisión del modelo")
+    Recall: Optional[float] = Field(None, description="Recall del modelo")
+    F1_Score: Optional[float] = Field(None, description="Puntuación F1 del modelo")
+    FechaEntrenamiento: datetime = Field(..., description="Fecha del entrenamiento del modelo")
+    IdModelo: int = Field(..., description="Id del modelo al que pertenecen las métricas")
+
+    model_config = {"from_atributes": True}
+
 #Autenticacion 
 class Token(BaseModel):
     access_token: str
@@ -244,3 +272,5 @@ class RecuperarPassword(BaseModel):
 class ResetearPasswordRequest(BaseModel):
     token: str = Field(..., description="Token JWT enviado por email")
     nueva_password: str = Field(..., description="Nueva password")
+
+

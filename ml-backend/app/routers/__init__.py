@@ -13,6 +13,7 @@ from app.routers.ia import router as ia_router
 from app.routers.admin import router as admin_router
 from app.routers.auth import router as auth_router
 from app.routers.modelo_ia import router as modelo_ia_router
+from app.routers.metricas import router as metricas_router
 
 
 __all__ = ["sectors_router", 
@@ -25,5 +26,6 @@ __all__ = ["sectors_router",
             "ia_router",
             "admin_router",
             "auth_router",
-            "modelo_ia_router"
+            "modelo_ia_router",
+            "metricas_router"
 ]

@@ -1,0 +1,24 @@
+from sqlalchemy import Column, Integer, DECIMAL, DateTime, ForeignKey
+from sqlalchemy.orm import relationship
+from datetime import datetime
+from app.db.sessions import Base
+
+class MetricaModelo(Base):
+    __tablename__ = "MetricaModelo"
+
+    IdMetrica = Column(Integer, primary_key=True, index=True)
+    IdModelo = Column(Integer, ForeignKey("ModeloIA.IdModelo"))
+    FechaEntrenamiento = Column(DateTime, default = datetime.utcnow)
+
+    Loss = Column(DECIMAL(10,6))
+    MAE = Column(DECIMAL(10,6))
+    valLoss = Column(DECIMAL(10,6))
+    ValMAE = Column(DECIMAL(10,6))
+
+
+    Accuracy = Column(DECIMAL(10, 6))
+    Precision = Column(DECIMAL(10, 6))
+    Recall = Column(DECIMAL(10, 6))
+    F1_Score = Column(DECIMAL(10, 6))
+
+    modelo_ia = relationship("ModeloIA")

@@ -15,7 +15,8 @@ from app.routers import (auth_router,
                         resultado_router,
                         ia_router,
                         admin_router,
-                        modelo_ia_router)
+                        modelo_ia_router,
+                        metricas_router)
 from app.db.sessions import engine, Base
 from slowapi.errors import RateLimitExceeded
 from slowapi import _rate_limit_exceeded_handler
@@ -79,6 +80,7 @@ app.include_router(resultado_router)
 app.include_router(ia_router)
 app.include_router(admin_router)
 app.include_router(modelo_ia_router)
+app.include_router(metricas_router)
 
 
 @app.get("/")

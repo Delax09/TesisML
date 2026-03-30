@@ -10,8 +10,10 @@ from app.models.rol import Rol
 from app.models.usuario import Usuario
 from app.models.portafolio import Portafolio
 from app.models.precio_historico import PrecioHistorico
+from app.models.metrica_modelo import MetricaModelo
 
 __all__ = [
     "Sector", "Empresa", "Resultado", "Rol", 
-    "Usuario", "Portafolio", "PrecioHistorico"
+    "Usuario", "Portafolio", "PrecioHistorico",
+    "MetricaModelo"
 ]

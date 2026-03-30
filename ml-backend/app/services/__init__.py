@@ -9,6 +9,7 @@ from app.services.usuario_service import UsuarioService
 from app.services.portafolio_service import PortafolioService
 from app.services.precio_historico_service import PrecioHistoricoService
 from app.services.resultado_service import ResultadoService
+from app.services.metrica_service import MetricaService
 
 __all__ = ["SectorService", 
             "EmpresaService", 
@@ -16,5 +17,6 @@ __all__ = ["SectorService",
             "UsuarioService",
             "PortafolioService",
             "PrecioHistoricoService",
-            "ResultadoService"
+            "ResultadoService",
+            "MetricaService"
             ]

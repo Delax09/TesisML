@@ -7,7 +7,7 @@ def obtener_modelo_v2(shape_1, shape_2):
         Input(shape=(shape_1, shape_2)),
 
         Bidirectional(LSTM(128, return_sequences=True)),
-        Dropout(0.3),
+        Dropout(0.4),
 
         Bidirectional(LSTM(64, return_sequences=True)), 
         Dropout(0.2), 

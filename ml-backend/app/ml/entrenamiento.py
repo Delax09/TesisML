@@ -9,6 +9,8 @@ import joblib
 import os
 import concurrent.futures
 from tqdm import tqdm
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+from app.services.metrica_service import MetricaService
 
 from app.db.sessions import SessionLocal
 from app.models.empresa import Empresa
@@ -160,17 +162,47 @@ def entrenar_y_guardar(id_modelo_especifico: int = None):
             metrics=['mae']
         )
         
-        early_stopping = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
+        early_stopping = EarlyStopping(monitor='val_loss', patience=5, restore_best_weights=True)
         
         model.fit(
             x_train, y_train, 
-            epochs=100, 
-            batch_size=32, 
+            epochs=25, 
+            batch_size=64, 
             verbose=1, 
             validation_split=0.1, 
             callbacks=[early_stopping]
         )
         
+        #-------METRICAS DE EVALUACION -------
+        split_idx = int(len(x_train) * 0.9)
+        x_val = x_train[split_idx:]
+        y_val_real = y_train[split_idx:]
+
+        y_val_pred = model.predict(x_val).flatten()
+        
+        #Si la diferencia > 0, significa que el precio subio
+        ##Si no bajo
+        direccion_real = (np.diff(y_val_real.flatten()) > 0).astype(int)
+        direccion_pred = (np.diff(y_val_pred.flatten()) > 0).asptype(int)
+
+        acc = accuracy_score(direccion_real, direccion_pred)
+        prec = precision_score(direccion_real, direccion_pred, zero_division=0)
+        rec = recall_score(direccion_real, direccion_pred, zero_division=0)
+        f1 = f1_score(direccion_real, direccion_pred, zero_division=0)
+
+        metricas_finales = {
+            'loss': historial.history['loss'][-1],
+            'mae': historial.history['mae'][-1],
+            'val_loss': historial.history['val_loss'][-1],
+            'val_mae': historial.history['val_mae'][-1],
+            'accuracy': acc,
+            'precision': prec,
+            'recall': rec,
+            'f1_score': f1
+        }
+
+        MetricaService.guardar_metricas(db, modelo_db.IdModelo, metricas_finales)
+
         ruta_modelo = os.path.join(ruta_modelos, f'modelo_acciones_{modelo_db.Version}.keras')
         model.save(ruta_modelo)
         print(f"✅ Modelo {modelo_db.Nombre} guardado exitosamente.")
