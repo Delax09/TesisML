@@ -1,6 +1,8 @@
 // src/features/ia_analisis/components/TarjetaProyeccion.js
 import React from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import TrendingUpTwoToneIcon from '@mui/icons-material/TrendingUpTwoTone';
+import TrendingDownTwoToneIcon from '@mui/icons-material/TrendingDownTwoTone';
 
 const TarjetaProyeccion = ({ datos }) => {
     // 1. Validación de seguridad para evitar errores de undefined
@@ -64,7 +66,7 @@ const TarjetaProyeccion = ({ datos }) => {
 
             <div style={{ marginTop: '16px', padding: '12px', backgroundColor: colorFondoMensaje, borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <span style={{ fontSize: '1.2rem' }}>
-                    {datos.tendencia === 'ALZA' ? '📈' : '📉'}
+                    {datos.tendencia === 'ALZA' ? <TrendingUpTwoToneIcon /> : <TrendingDownTwoToneIcon />}
                 </span>
                 <p style={{ margin: 0, fontSize: 'clamp(0.85rem, 1.5vw, 0.95rem)', color: '#334155' }}>
                     <strong>Recomendación IA:</strong> {datos.tendencia === 'ALZA' 
