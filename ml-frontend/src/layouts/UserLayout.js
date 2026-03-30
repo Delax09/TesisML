@@ -12,6 +12,7 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import MenuIcon from '@mui/icons-material/Menu';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import AnalyticsIcon from '@mui/icons-material/Analytics';
+import AreaChartIcon from '@mui/icons-material/AreaChart';
 
 const drawerWidth = 250;
 
@@ -55,7 +56,7 @@ export default function UserLayout() {
 
 
 
-        {/* 3. GESTIONAR PORTAFOLIO */}
+        {/* 2. GESTIONAR PORTAFOLIO */}
         <ListItem disablePadding sx={{ mb: 1 }}>
           <ListItemButton 
             component={RouterLink} 
@@ -74,7 +75,29 @@ export default function UserLayout() {
           </ListItemButton>
         </ListItem>
 
-        {/* 2. NUEVO: ANÁLISIS DE MERCADO */}
+
+        {/* Proyecciones IA */}
+        <ListItem disablePadding sx={{ mb: 1 }}>
+          <ListItemButton 
+            component={RouterLink} 
+            to="/proyecciones-ia"
+            selected={isActivo('/proyecciones-ia')}
+            onClick={() => setMobileOpen(false)}
+            sx={{ 
+              borderRadius: 2,
+              '&.Mui-selected': { backgroundColor: '#34495e' },
+              '&.Mui-selected:hover': { backgroundColor: '#34495e' },
+              '&:hover': { backgroundColor: 'rgba(255,255,255,0.05)' }
+            }}
+          >
+            <ListItemIcon sx={{ color: 'inherit', minWidth: 40 }}><AreaChartIcon /></ListItemIcon>
+            <ListItemText primary="Proyecciones IA" primaryTypographyProps={{ fontWeight: 500 }} />
+          </ListItemButton>
+        </ListItem> 
+
+
+
+        {/* ANÁLISIS DE MERCADO */}
         <ListItem disablePadding sx={{ mb: 1 }}>
           <ListItemButton 
             component={RouterLink} 
@@ -92,6 +115,11 @@ export default function UserLayout() {
             <ListItemText primary="Análisis de Mercado" primaryTypographyProps={{ fontWeight: 500 }} />
           </ListItemButton>
         </ListItem> 
+
+    
+
+
+
 
       </List>
 

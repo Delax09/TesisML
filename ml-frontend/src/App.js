@@ -15,6 +15,7 @@ const Landing = lazy(() => import('pages/Landing/Landing'));
 const Home = lazy(() => import('pages/Usuario/Home/Home'));
 const Portafolio = lazy(() => import('pages/Usuario/Portafolio/Portafolio'));
 const Mercado = lazy(() => import('pages/Usuario/Mercado/Mercado'));
+const ProyeccionesIA = lazy(() => import('pages/Usuario/ProyeccionesIA/ProyeccionesIA'));
 
 // IMPORTACIONES PEREZOSAS ADMIN (Aquí separamos en 3 vistas)
 const AdminTareas = lazy(() => import('pages/Admin/Tareas/Tareas'));
@@ -39,6 +40,7 @@ const router = createBrowserRouter([
       { path: "home", element: conSuspense(Home) },
       { path: "portafolio", element: conSuspense(Portafolio) },
       { path: "mercado", element: conSuspense(Mercado) },
+      { path: "proyecciones-ia", element: conSuspense(ProyeccionesIA) },
     ],
   },
   {

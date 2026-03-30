@@ -28,7 +28,7 @@ export default function Portafolio() {
   );
 
   return (
-    <Box sx={{ width: '100%', pb: 4 }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4, width: '100%', maxWidth: '1400px', margin: '0 auto', pb: 4 }}>
       <Typography variant="h4" fontWeight="bold" color="text.primary" sx={{ mb: 4, pt: {xs: 2, lg: 0} }}>
         Gestionar Mi Portafolio
       </Typography>
