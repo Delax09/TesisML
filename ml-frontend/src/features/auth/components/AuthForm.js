@@ -88,7 +88,7 @@ function AuthForm({ modoInicialRegistro = false }) {
             {esRegistro && (
                 <Box sx={{ display: 'flex', gap: 2 }}>
                     <TextField 
-                        label="Nombre" variant="outlined" fullWidth required 
+                        label="Nombre" required 
                         value={nombre} onChange={(e) => setNombre(e.target.value)}
                         autoFocus
                         InputProps={{
@@ -98,7 +98,7 @@ function AuthForm({ modoInicialRegistro = false }) {
                         }}
                     />
                     <TextField 
-                        label="Apellido" variant="outlined" fullWidth required 
+                        label="Apellido" required 
                         value={apellido} onChange={(e) => setApellido(e.target.value)}
                         autoFocus
                     />
@@ -106,7 +106,7 @@ function AuthForm({ modoInicialRegistro = false }) {
             )}
 
             <TextField 
-                label="Correo Electrónico" type="email" variant="outlined" fullWidth required 
+                label="Correo Electrónico" type="email" required 
                 value={email} onChange={(e) => setEmail(e.target.value)} 
                 autoFocus
                 InputProps={{
@@ -115,7 +115,7 @@ function AuthForm({ modoInicialRegistro = false }) {
             />
             
             <TextField 
-                label="Contraseña" type="password" variant="outlined" fullWidth required 
+                label="Contraseña" type="password" required 
                 value={password} onChange={(e) => setPassword(e.target.value)} 
                 autoFocus
                 InputProps={{
@@ -127,7 +127,7 @@ function AuthForm({ modoInicialRegistro = false }) {
 
             <Button 
                 type="submit" variant="contained" color="primary" size="large" fullWidth disabled={cargando}
-                sx={{ py: 1.5, mt: 1, fontWeight: 'bold', borderRadius: 2, boxShadow: 3 }}
+                sx={{ mt: 1, boxShadow: 3 }}
             >
                 {cargando ? <CircularProgress size={24} color="inherit" /> : (esRegistro ? 'Registrarse' : 'Ingresar al sistema')}
             </Button>

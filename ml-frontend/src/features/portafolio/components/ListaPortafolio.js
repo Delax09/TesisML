@@ -64,25 +64,36 @@ export default function ListaPortafolio({
   const IconoMultiple = esRemover ? PlaylistRemoveIcon : PlaylistAddIcon;
   const textoBoton = esRemover ? 'Remover' : 'Agregar';
 
+  // ¡MAGIA PURA! Ahora esta función solo devuelve RUTAS DE TU THEME.JS
   const getEstilosTarjeta = (variacion) => {
     if (variacion === null || variacion === undefined) {
-        return { bg: 'background.paper', text: 'text.primary', border: '#e2e8f0', iconColor: '#94a3b8', badgeBg: '#f1f5f9', badgeText: '#64748b' };
+        return { 
+            bg: 'market.nullState.bg', text: 'market.nullState.text', border: 'market.nullState.border', 
+            iconColor: 'market.nullState.icon', badgeBg: 'market.nullState.badgeBg', badgeText: 'market.nullState.badgeText' 
+        };
     }
     
     const val = Number(variacion);
+    let estado = 'neutral';
     
+    if (val >= 1.5) estado = 'strongPositive';
+    else if (val > 0) estado = 'positive';
+    else if (val < 0 && val > -1.5) estado = 'negative';
+    else if (val <= -1.5) estado = 'strongNegative';
+
+    // Si estamos en la vista de remover, pintamos todo el fondo
     if (esRemover) {
-        if (val >= 1.5) return { bg: '#dcfce7', text: '#14532d', border: '#bbf7d0', iconColor: '#166534', badgeBg: '#bbf7d0', badgeText: '#166534' };       
-        if (val > 0) return { bg: '#f0fdf4', text: '#166534', border: '#dcfce7', iconColor: '#22c55e', badgeBg: '#bbf7d0', badgeText: '#166534' };          
-        if (val === 0) return { bg: '#f8fafc', text: '#334155', border: '#e2e8f0', iconColor: '#64748b', badgeBg: '#e2e8f0', badgeText: '#475569' };        
-        if (val < 0 && val > -1.5) return { bg: '#fef2f2', text: '#991b1b', border: '#fee2e2', iconColor: '#ef4444', badgeBg: '#fecaca', badgeText: '#991b1b' }; 
-        if (val <= -1.5) return { bg: '#fee2e2', text: '#7f1d1d', border: '#fecaca', iconColor: '#b91c1c', badgeBg: '#fecaca', badgeText: '#991b1b' };      
+        return { 
+            bg: `market.${estado}.bg`, text: `market.${estado}.text`, border: `market.${estado}.border`, 
+            iconColor: `market.${estado}.icon`, badgeBg: `market.${estado}.badgeBg`, badgeText: `market.${estado}.badgeText` 
+        };
     }
     
+    // Si estamos en la vista de agregar, fondo blanco pero íconos de color
     return { 
-        bg: '#ffffff', text: '#1e293b', border: '#cbd5e1', 
-        iconColor: val > 0 ? '#22c55e' : val < 0 ? '#ef4444' : '#64748b',
-        badgeBg: '#f8fafc', badgeText: '#475569' 
+        bg: 'market.cardDefault.bg', text: 'market.cardDefault.text', border: 'market.cardDefault.border', 
+        iconColor: val > 0 ? 'market.positive.icon' : val < 0 ? 'market.negative.icon' : 'market.neutral.icon',
+        badgeBg: 'market.nullState.badgeBg', badgeText: 'market.nullState.badgeText' 
     };
   };
 
@@ -106,7 +117,7 @@ export default function ListaPortafolio({
 
             <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
                 <TextField size="small" placeholder="Buscar..." value={busqueda} onChange={(e) => setBusqueda(e.target.value)} sx={{ flex: '1 1 140px' }} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment> }} />
-                <Button variant={esRemover ? "outlined" : "contained"} color={colorTema} startIcon={<IconoMultiple fontSize="small" />} disabled={seleccionadas.length === 0 || procesando} onClick={manejarAccionMultiple} size="small" sx={{ borderRadius: 2, fontWeight: 'bold', flex: '0 0 auto' }}>
+                <Button variant={esRemover ? "outlined" : "contained"} color={colorTema} startIcon={<IconoMultiple fontSize="small" />} disabled={seleccionadas.length === 0 || procesando} onClick={manejarAccionMultiple} size="small" sx={{ flex: '0 0 auto' }}>
                     {textoBoton} ({seleccionadas.length})
                 </Button>
             </Box>
@@ -145,16 +156,18 @@ export default function ListaPortafolio({
                   <Grid size={{ xs: 12, sm: 6, md: 12, lg: 6 }} key={idActual}>
                       <Paper 
                           elevation={estaSeleccionada ? 4 : 0}
-                          onClick={() => alternarSeleccion(idActual)} // <-- HACE QUE TODA LA TARJETA SEA CLICKEABLE
+                          onClick={() => alternarSeleccion(idActual)} 
                           sx={{ 
                               p: { xs: 1.5, sm: 2 }, 
                               borderRadius: '12px', 
                               bgcolor: estilos.bg, 
                               color: estilos.text,
-                              border: estaSeleccionada ? `2px solid #3b82f6` : `1px solid ${estilos.border}`,
+                              borderStyle: 'solid',
+                              borderWidth: estaSeleccionada ? 2 : 1,
+                              borderColor: estaSeleccionada ? 'secondary.main' : estilos.border,
                               display: 'flex', flexDirection: 'column', height: '100%',
                               transition: 'transform 0.2s, box-shadow 0.2s', overflow: 'hidden',
-                              cursor: 'pointer', // <-- CAMBIA EL PUNTERO DEL MOUSE A UNA "MANITO"
+                              cursor: 'pointer',
                               '&:hover': { transform: 'translateY(-2px)', boxShadow: 3 }
                           }}
                       >
@@ -162,16 +175,16 @@ export default function ListaPortafolio({
                               <Checkbox
                                   checked={estaSeleccionada} color="primary"
                                   onChange={() => alternarSeleccion(idActual)} size="small"
-                                  onClick={(e) => e.stopPropagation()} // <-- PREVIENE QUE SE DOBLE-CLICKE
+                                  onClick={(e) => e.stopPropagation()} 
                                   sx={{ p: 0, color: 'text.secondary' }}
                               />
                               <IconButton 
                                   edge="end" size="small" 
                                   onClick={(e) => {
-                                      e.stopPropagation(); // <-- PREVIENE QUE LA TARJETA SE SELECCIONE AL APRETAR EL BOTÓN DE ACCIÓN
+                                      e.stopPropagation(); 
                                       onAccionIndividual(idActual);
                                   }} 
-                                  sx={{ color: 'text.secondary', zIndex: 2 }} // zIndex asegura que el botón quede "arriba"
+                                  sx={{ color: 'text.secondary', zIndex: 2 }} 
                               >
                                   <IconoIndividual fontSize="small" />
                               </IconButton>
@@ -208,7 +221,8 @@ export default function ListaPortafolio({
                                           fontWeight: '800', fontSize: '0.65rem', height: '22px', maxWidth: '60%',
                                           bgcolor: estilos.badgeBg,
                                           color: estilos.badgeText,
-                                          border: `1px solid ${estilos.border}`
+                                          border: 1,
+                                          borderColor: estilos.border
                                       }} 
                                   />
                               )}

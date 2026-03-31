@@ -152,12 +152,12 @@ function EmpresaTable({
 
             <TableContainer>
                 <Table size="medium">
-                    <TableHead sx={{ bgcolor: 'table.headerBg' }}>
+                    <TableHead>
                         <TableRow>
-                            <TableCell sx={{ fontWeight: '600', color: 'table.headerText', width: esAdmin ? '20%' : '30%' }}>TICKER</TableCell>
-                            <TableCell sx={{ fontWeight: '600', color: 'table.headerText', width: esAdmin ? '35%' : '40%' }}>NOMBRE DE EMPRESA</TableCell>
-                            <TableCell sx={{ fontWeight: '600', color: 'table.headerText', width: esAdmin ? '25%' : '30%' }}>SECTOR</TableCell>
-                            {esAdmin && <TableCell align="center" sx={{ fontWeight: '600', color: 'table.headerText', width: '20%' }}>ACCIONES</TableCell>}
+                            <TableCell sx={{ width: esAdmin ? '20%' : '30%' }}>TICKER</TableCell>
+                            <TableCell sx={{ width: esAdmin ? '35%' : '40%' }}>NOMBRE DE EMPRESA</TableCell>
+                            <TableCell sx={{ width: esAdmin ? '25%' : '30%' }}>SECTOR</TableCell>
+                            {esAdmin && <TableCell align="center" sx={{ width: '20%' }}>ACCIONES</TableCell>}
                         </TableRow>
                     </TableHead>
                     <TableBody>
@@ -167,10 +167,7 @@ function EmpresaTable({
                                     key={emp.IdEmpresa} 
                                     hover
                                     onClick={() => onSelect(emp.IdEmpresa, emp.NombreEmpresa)}
-                                    sx={{ 
-                                        cursor: 'pointer',
-                                        '&:hover': { bgcolor: (theme) => `${theme.palette.table.rowHover} !important` } 
-                                    }}
+                                    sx={{ cursor: 'pointer' }}
                                 >
                                     <TableCell sx={{ fontWeight: '800', color: 'table.cellTextPrimary' }}>{emp.Ticket}</TableCell>
                                     <TableCell sx={{ color: 'table.cellTextSecondary' }}>{emp.NombreEmpresa}</TableCell>

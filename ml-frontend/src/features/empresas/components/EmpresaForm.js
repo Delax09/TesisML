@@ -15,7 +15,7 @@ export default function EmpresaForm({ empresaInicial, onSave, onCancel }) {
         
         <TextField 
           label="Ticker (ej: AAPL)" 
-          size="small" fullWidth
+          size="small"
           {...register("Ticket", { required: "El Ticker es obligatorio" })}
           error={!!errors.Ticket}
           helperText={errors.Ticket?.message}
@@ -23,7 +23,7 @@ export default function EmpresaForm({ empresaInicial, onSave, onCancel }) {
 
         <TextField 
           label="Nombre de la Empresa" 
-          size="small" fullWidth
+          size="small"
           {...register("NombreEmpresa", { required: "El nombre es obligatorio" })}
           error={!!errors.NombreEmpresa}
           helperText={errors.NombreEmpresa?.message}
@@ -31,7 +31,7 @@ export default function EmpresaForm({ empresaInicial, onSave, onCancel }) {
 
         <TextField
           select label="Seleccione Sector" 
-          size="small" fullWidth defaultValue={empresaInicial?.IdSector || ""}
+          size="small" defaultValue={empresaInicial?.IdSector || ""}
           {...register("IdSector", { required: "Debes seleccionar un sector" })}
           error={!!errors.IdSector}
           helperText={errors.IdSector?.message}
@@ -52,7 +52,6 @@ export default function EmpresaForm({ empresaInicial, onSave, onCancel }) {
             variant="contained" 
             onClick={onCancel} 
             disableElevation 
-            sx={{ backgroundColor: 'grey.400', '&:hover': { backgroundColor: 'grey.500' } }}
           >
             Cancelar
           </Button>

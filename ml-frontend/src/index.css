@@ -6,9 +6,6 @@ html, body, #root {
   padding: 0;
   height: 100vh;
   width: 100vw;
-  overflow: hidden; /* Esto mata cualquier scroll fuera de tus vistas */
-  background-color: #f4f6f8; /* El mismo fondo de tu layout */
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 /* 2. Asegurar que los bordes y paddings no sumen tamaño extra a las cajas */

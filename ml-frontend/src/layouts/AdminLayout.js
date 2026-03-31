@@ -35,7 +35,8 @@ export default function AdminLayout() {
         sx={{ 
           p: 2.5, 
           textAlign: 'center', 
-          borderBottom: (theme) => `1px solid ${theme.palette.layout.sidebarBorder}`, 
+          borderBottom: '1px solid',
+          borderColor: 'layout.sidebarBorder', // <-- Simplificado con el tema
           fontWeight: 'bold' 
         }}
       >
@@ -44,22 +45,23 @@ export default function AdminLayout() {
       </Typography>
       
       <List sx={{ px: 2, pt: 2, flexGrow: 1 }}>
+        {/* BOTONES LIMPIOS SIN EL SX GIGANTE */}
         <ListItem disablePadding sx={{ mb: 1 }}>
-          <ListItemButton component={RouterLink} to="/admin/tareas" selected={isActivo('/admin/tareas')} onClick={() => setMobileOpen(false)} sx={{ borderRadius: 2, '&.Mui-selected': { backgroundColor: (theme) => theme.palette.layout.sidebarActive }, '&.Mui-selected:hover': { backgroundColor: (theme) => theme.palette.layout.sidebarActive }, '&:hover': { backgroundColor: 'rgba(255,255,255,0.05)' } }}>
+          <ListItemButton component={RouterLink} to="/admin/tareas" selected={isActivo('/admin/tareas')} onClick={() => setMobileOpen(false)}>
             <ListItemIcon sx={{ color: 'inherit', minWidth: 40 }}><BuildIcon /></ListItemIcon>
             <ListItemText primary="Tareas ML" primaryTypographyProps={{ fontWeight: 500 }} />
           </ListItemButton>
         </ListItem>
 
         <ListItem disablePadding sx={{ mb: 1 }}>
-          <ListItemButton component={RouterLink} to="/admin/comparador-ia" selected={isActivo('/admin/comparador-ia')} onClick={() => setMobileOpen(false)} sx={{ borderRadius: 2, '&.Mui-selected': { backgroundColor: (theme) => theme.palette.layout.sidebarActive }, '&.Mui-selected:hover': { backgroundColor: (theme) => theme.palette.layout.sidebarActive }, '&:hover': { backgroundColor: 'rgba(255,255,255,0.05)' } }}>
+          <ListItemButton component={RouterLink} to="/admin/comparador-ia" selected={isActivo('/admin/comparador-ia')} onClick={() => setMobileOpen(false)}>
             <ListItemIcon sx={{ color: 'inherit', minWidth: 40 }}><AnalyticsIcon /></ListItemIcon>
             <ListItemText primary="Comparador IA" primaryTypographyProps={{ fontWeight: 500 }} />
           </ListItemButton>
         </ListItem>
 
         <ListItem disablePadding sx={{ mb: 1 }}>
-          <ListItemButton component={RouterLink} to="/admin/empresas" selected={isActivo('/admin/empresas')} onClick={() => setMobileOpen(false)} sx={{ borderRadius: 2, '&.Mui-selected': { backgroundColor: (theme) => theme.palette.layout.sidebarActive }, '&.Mui-selected:hover': { backgroundColor: (theme) => theme.palette.layout.sidebarActive }, '&:hover': { backgroundColor: 'rgba(255,255,255,0.05)' } }}>
+          <ListItemButton component={RouterLink} to="/admin/empresas" selected={isActivo('/admin/empresas')} onClick={() => setMobileOpen(false)}>
             <ListItemIcon sx={{ color: 'inherit', minWidth: 40 }}><BusinessIcon /></ListItemIcon>
             <ListItemText primary="Gestión Empresas" primaryTypographyProps={{ fontWeight: 500 }} />
           </ListItemButton>
@@ -68,7 +70,7 @@ export default function AdminLayout() {
 
       <List sx={{ px: 2, mb: 2 }}>
         <ListItem disablePadding>
-          <ListItemButton onClick={logout} sx={{ borderRadius: 2, color: '#e74c3c', '&:hover': { backgroundColor: 'rgba(231, 76, 60, 0.1)' } }}>
+          <ListItemButton onClick={logout} sx={{ color: '#e74c3c' }}>
             <ListItemIcon sx={{ color: 'inherit', minWidth: 40 }}><LogoutIcon /></ListItemIcon>
             <ListItemText primary="Cerrar Sesión" primaryTypographyProps={{ fontWeight: 'bold' }} />
           </ListItemButton>
@@ -79,7 +81,9 @@ export default function AdminLayout() {
 
   return (
     <Box sx={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
-      <AppBar position="fixed" sx={{ display: { lg: 'none' }, backgroundColor: (theme) => theme.palette.layout.sidebar, width: '100%' }}>
+      
+      {/* APPBAR SIMPLIFICADO */}
+      <AppBar position="fixed" sx={{ display: { lg: 'none' }, bgcolor: 'layout.sidebar', width: '100%' }}>
         <Toolbar>
           <IconButton color="inherit" edge="start" onClick={handleDrawerToggle} sx={{ mr: 2 }}><MenuIcon /></IconButton>
           {/* USAMOS LA VARIABLE AQUÍ */}
@@ -88,15 +92,27 @@ export default function AdminLayout() {
       </AppBar>
 
       <Box component="nav" sx={{ width: { xs: 0, lg: drawerWidth }, flexShrink: { lg: 0 } }}>
-        <Drawer variant="temporary" open={mobileOpen} onClose={handleDrawerToggle} ModalProps={{ keepMounted: true }} sx={{ display: { xs: 'block', lg: 'none' }, '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth, backgroundColor: (theme) => theme.palette.layout.sidebar, color: (theme) => theme.palette.layout.sidebarText } }}>
+        <Drawer 
+          variant="temporary" open={mobileOpen} onClose={handleDrawerToggle} ModalProps={{ keepMounted: true }} 
+          sx={{ 
+            display: { xs: 'block', lg: 'none' }, 
+            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth, bgcolor: 'layout.sidebar', color: 'layout.sidebarText' } 
+          }}
+        >
           {drawerContent}
         </Drawer>
-        <Drawer variant="permanent" sx={{ display: { xs: 'none', lg: 'block' }, '& .MuiDrawer-paper': { width: drawerWidth, boxSizing: 'border-box', backgroundColor: (theme) => theme.palette.layout.sidebar, color: (theme) => theme.palette.layout.sidebarText, borderRight: 'none' } }} open>
+        <Drawer 
+          variant="permanent" open
+          sx={{ 
+            display: { xs: 'none', lg: 'block' }, 
+            '& .MuiDrawer-paper': { width: drawerWidth, boxSizing: 'border-box', bgcolor: 'layout.sidebar', color: 'layout.sidebarText', borderRight: 'none' } 
+          }} 
+        >
           {drawerContent}
         </Drawer>
       </Box>
 
-      <Box component="main" sx={{ flexGrow: 1, p: { xs: 2, sm: 3, lg: 4 }, width: { xs: '100%', lg: `calc(100% - ${drawerWidth}px)` }, backgroundColor: 'background.default', overflowY: 'auto' }}>
+      <Box component="main" sx={{ flexGrow: 1, p: { xs: 2, sm: 3, lg: 4 }, width: { xs: '100%', lg: `calc(100% - ${drawerWidth}px)` }, bgcolor: 'background.default', overflowY: 'auto' }}>
         <Toolbar sx={{ display: { lg: 'none' } }} />
         <Outlet />
       </Box>
