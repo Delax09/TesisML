@@ -7,6 +7,7 @@ import {
     Button, Typography, Box, AppBar, Toolbar, Dialog, DialogContent, IconButton 
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
+import landing1 from 'assets/landing1.png';
 
 // IMPORTAMOS EL NOMBRE DE LA APP
 import { APP_NAME } from 'config'; 
@@ -90,8 +91,8 @@ export default function Landing() {
                         </Button>
                     </Box>
                     
-                    <Box sx={{ width: '400px', height: '300px', backgroundColor: 'grey.200', borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'text.secondary', border: '2px dashed', borderColor: 'grey.400' }}>
-                        <Typography variant="h6" fontWeight="bold">Poner alguna imagen en el futuro</Typography>
+                    <Box sx={{ width: '400px', height: '300px', borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px' }}>  
+                        <img src={landing1} alt="Ilustración de análisis financiero" style={{ maxWidth: '100%', maxHeight: '100%' }} />             
                     </Box>
                 </Box>
 
