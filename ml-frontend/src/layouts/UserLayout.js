@@ -31,7 +31,15 @@ export default function UserLayout() {
 
   const drawerContent = (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <Typography variant="h6" sx={{ p: 2.5, textAlign: 'center', borderBottom: '1px solid #34495e', fontWeight: 'bold' }}>
+      <Typography 
+        variant="h6" 
+        sx={{ 
+          p: 2.5, 
+          textAlign: 'center', 
+          borderBottom: (theme) => `1px solid ${theme.palette.layout.sidebarBorder}`, 
+          fontWeight: 'bold' 
+        }}
+      >
         TesisML - Usuario
       </Typography>
       
@@ -46,8 +54,8 @@ export default function UserLayout() {
             onClick={() => setMobileOpen(false)}
             sx={{ 
               borderRadius: 2,
-              '&.Mui-selected': { backgroundColor: '#34495e' },
-              '&.Mui-selected:hover': { backgroundColor: '#34495e' },
+              '&.Mui-selected': { backgroundColor: (theme) => theme.palette.layout.sidebarActive },
+              '&.Mui-selected:hover': { backgroundColor: (theme) => theme.palette.layout.sidebarActive },
               '&:hover': { backgroundColor: 'rgba(255,255,255,0.05)' }
             }}
           >
@@ -55,8 +63,6 @@ export default function UserLayout() {
             <ListItemText primary="Mi Resumen" primaryTypographyProps={{ fontWeight: 500 }} />
           </ListItemButton>
         </ListItem>
-
-
 
         {/* 2. GESTIONAR PORTAFOLIO */}
         <ListItem disablePadding sx={{ mb: 1 }}>
@@ -67,8 +73,8 @@ export default function UserLayout() {
             onClick={() => setMobileOpen(false)}
             sx={{ 
               borderRadius: 2,
-              '&.Mui-selected': { backgroundColor: '#34495e' },
-              '&.Mui-selected:hover': { backgroundColor: '#34495e' },
+              '&.Mui-selected': { backgroundColor: (theme) => theme.palette.layout.sidebarActive },
+              '&.Mui-selected:hover': { backgroundColor: (theme) => theme.palette.layout.sidebarActive },
               '&:hover': { backgroundColor: 'rgba(255,255,255,0.05)' }
             }}
           >
@@ -86,8 +92,8 @@ export default function UserLayout() {
             onClick={() => setMobileOpen(false)}
             sx={{ 
               borderRadius: 2,
-              '&.Mui-selected': { backgroundColor: '#34495e' },
-              '&.Mui-selected:hover': { backgroundColor: '#34495e' },
+              '&.Mui-selected': { backgroundColor: (theme) => theme.palette.layout.sidebarActive },
+              '&.Mui-selected:hover': { backgroundColor: (theme) => theme.palette.layout.sidebarActive },
               '&:hover': { backgroundColor: 'rgba(255,255,255,0.05)' }
             }}
           >
@@ -95,7 +101,6 @@ export default function UserLayout() {
             <ListItemText primary="Análisis de Portafolio" primaryTypographyProps={{ fontWeight: 500 }} />
           </ListItemButton>
         </ListItem>
-
 
         {/* Proyecciones IA */}
         <ListItem disablePadding sx={{ mb: 1 }}>
@@ -106,8 +111,8 @@ export default function UserLayout() {
             onClick={() => setMobileOpen(false)}
             sx={{ 
               borderRadius: 2,
-              '&.Mui-selected': { backgroundColor: '#34495e' },
-              '&.Mui-selected:hover': { backgroundColor: '#34495e' },
+              '&.Mui-selected': { backgroundColor: (theme) => theme.palette.layout.sidebarActive },
+              '&.Mui-selected:hover': { backgroundColor: (theme) => theme.palette.layout.sidebarActive },
               '&:hover': { backgroundColor: 'rgba(255,255,255,0.05)' }
             }}
           >
@@ -115,9 +120,6 @@ export default function UserLayout() {
             <ListItemText primary="Proyecciones IA" primaryTypographyProps={{ fontWeight: 500 }} />
           </ListItemButton>
         </ListItem> 
-
-
-
 
         {/* NOTICIAS FINANCIERAS */}
         <ListItem disablePadding sx={{ mb: 1 }}>
@@ -128,8 +130,8 @@ export default function UserLayout() {
             onClick={() => setMobileOpen(false)}
             sx={{ 
               borderRadius: 2,
-              '&.Mui-selected': { backgroundColor: '#34495e' },
-              '&.Mui-selected:hover': { backgroundColor: '#34495e' },
+              '&.Mui-selected': { backgroundColor: (theme) => theme.palette.layout.sidebarActive },
+              '&.Mui-selected:hover': { backgroundColor: (theme) => theme.palette.layout.sidebarActive },
               '&:hover': { backgroundColor: 'rgba(255,255,255,0.05)' }
             }}
           >
@@ -137,8 +139,6 @@ export default function UserLayout() {
             <ListItemText primary="Noticias Financieras" primaryTypographyProps={{ fontWeight: 500 }} />
           </ListItemButton>
         </ListItem>
-
-
 
         {/* ANÁLISIS DE MERCADO */}
         <ListItem disablePadding sx={{ mb: 1 }}>
@@ -149,8 +149,8 @@ export default function UserLayout() {
             onClick={() => setMobileOpen(false)}
             sx={{ 
               borderRadius: 2,
-              '&.Mui-selected': { backgroundColor: '#34495e' },
-              '&.Mui-selected:hover': { backgroundColor: '#34495e' },
+              '&.Mui-selected': { backgroundColor: (theme) => theme.palette.layout.sidebarActive },
+              '&.Mui-selected:hover': { backgroundColor: (theme) => theme.palette.layout.sidebarActive },
               '&:hover': { backgroundColor: 'rgba(255,255,255,0.05)' }
             }}
           >
@@ -159,14 +159,7 @@ export default function UserLayout() {
           </ListItemButton>
         </ListItem> 
 
-    
-
-
-
-
       </List>
-
-      
 
       <List sx={{ px: 2, mb: 2 }}>
         <ListItem disablePadding>
@@ -189,8 +182,8 @@ export default function UserLayout() {
         position="fixed"
         sx={{
           display: { lg: 'none' },
-          backgroundColor: '#2c3e50',
-          width: '100%' // Aseguramos que no se desborde
+          backgroundColor: (theme) => theme.palette.layout.sidebar,
+          width: '100%'
         }}
       >
         <Toolbar>
@@ -203,7 +196,6 @@ export default function UserLayout() {
         </Toolbar>
       </AppBar>
 
-      {/* Forzamos que el contenedor lateral tome 0px en tablets/móviles */}
       <Box component="nav" sx={{ width: { xs: 0, lg: drawerWidth }, flexShrink: { lg: 0 } }}>
         <Drawer
           variant="temporary"
@@ -212,7 +204,12 @@ export default function UserLayout() {
           ModalProps={{ keepMounted: true }}
           sx={{
             display: { xs: 'block', lg: 'none' },
-            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth, backgroundColor: '#2c3e50', color: '#ecf0f1' },
+            '& .MuiDrawer-paper': { 
+              boxSizing: 'border-box', 
+              width: drawerWidth, 
+              backgroundColor: (theme) => theme.palette.layout.sidebar, 
+              color: (theme) => theme.palette.layout.sidebarText 
+            },
           }}
         >
           {drawerContent}
@@ -222,7 +219,13 @@ export default function UserLayout() {
           variant="permanent"
           sx={{
             display: { xs: 'none', lg: 'block' },
-            '& .MuiDrawer-paper': { width: drawerWidth, boxSizing: 'border-box', backgroundColor: '#2c3e50', color: '#ecf0f1', borderRight: 'none' },
+            '& .MuiDrawer-paper': { 
+              width: drawerWidth, 
+              boxSizing: 'border-box', 
+              backgroundColor: (theme) => theme.palette.layout.sidebar, 
+              color: (theme) => theme.palette.layout.sidebarText, 
+              borderRight: 'none' 
+            },
           }}
           open
         >
@@ -230,26 +233,19 @@ export default function UserLayout() {
         </Drawer>
       </Box>
 
-      {/* Forzamos el ancho exacto del contenido */}
-      {/* CONTENIDO PRINCIPAL */}
       <Box 
         component="main" 
         sx={{ 
           flexGrow: 1, 
-          // p: Padding. Reducido en móvil, amplio en PC.
           p: { xs: 2, sm: 3, lg: 4 }, 
-          // Ancho: Ocupa todo el espacio sobrante que le deja el menú flexGrow
           width: '100%', 
-          // Altura: Ocupa toda la pantalla
           height: '100vh',
           backgroundColor: 'background.default', 
           overflowY: 'auto',
-          overflowX: 'hidden' // <-- ESTO EVITA QUE SE DESBORDE HACIA LA DERECHA
+          overflowX: 'hidden' 
         }}
       >
-        {/* Este Toolbar fantasma empuja tu contenido exactamente por debajo de la barra superior en móviles */}
         <Toolbar sx={{ display: { lg: 'none' } }} />
-        
         <Outlet />
       </Box>
     </Box>
