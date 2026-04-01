@@ -170,7 +170,7 @@ def entrenar_y_guardar(id_modelo_especifico: int = None):
             x_train, y_train, 
             epochs=25, 
             batch_size=64, 
-            verbose=0,
+            verbose=1,
             validation_split=0.1, 
             callbacks=[early_stopping, tqdm_callback] # Incluimos ambos callbacks
         )
