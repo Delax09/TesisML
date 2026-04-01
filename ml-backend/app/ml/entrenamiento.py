@@ -5,7 +5,6 @@ from sklearn.preprocessing import MinMaxScaler
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.losses import Huber
 from tensorflow.keras.callbacks import EarlyStopping
-from tqdm.keras import TqdmCallback # <-- NUEVO: Barra de progreso elegante para Keras
 import joblib
 import os
 import concurrent.futures
@@ -163,18 +162,17 @@ def entrenar_y_guardar(id_modelo_especifico: int = None):
         )
         
         early_stopping = EarlyStopping(monitor='val_loss', patience=5, restore_best_weights=True)
-        # Añadimos la barra visual a los callbacks
         
         historial = model.fit(
             x_train, y_train, 
             epochs=25, 
             batch_size=64, 
-            verbose=0,
+            verbose=1, # <-- RESTAURADO: Visualización clásica época por época
             validation_split=0.1, 
             callbacks=[early_stopping]
         )
         
-        #-------METRICAS DE EVALUACION -------
+        #------- METRICAS DE EVALUACION -------
         split_idx = int(len(x_train) * 0.9)
         x_val = x_train[split_idx:]
         y_val_real = y_train[split_idx:]
@@ -193,15 +191,18 @@ def entrenar_y_guardar(id_modelo_especifico: int = None):
         rec = recall_score(direccion_real, direccion_pred, zero_division=0)
         f1 = f1_score(direccion_real, direccion_pred, zero_division=0)
 
+        # <-- SOLUCIÓN EARLY STOPPING: Extraer las métricas de la MEJOR época, no la última
+        mejor_epoca_idx = np.argmin(historial.history['val_loss'])
+
         metricas_finales = {
-            'loss': historial.history['loss'][-1],
-            'mae': historial.history['mae'][-1],
-            'val_loss': historial.history['val_loss'][-1],
-            'val_mae': historial.history['val_mae'][-1],
-            'accuracy': acc,
-            'precision': prec,
-            'recall': rec,
-            'f1_score': f1
+            'loss': float(historial.history['loss'][mejor_epoca_idx]),
+            'mae': float(historial.history['mae'][mejor_epoca_idx]),
+            'val_loss': float(historial.history['val_loss'][mejor_epoca_idx]),
+            'val_mae': float(historial.history['val_mae'][mejor_epoca_idx]),
+            'accuracy': float(acc),
+            'precision': float(prec),
+            'recall': float(rec),
+            'f1_score': float(f1)
         }
 
         # Conectamos localmente a la BD para no perder la sesión durante entrenamientos largos
