@@ -192,10 +192,10 @@ export default function ListaPortafolio({
 
                           <Box sx={{ flex: 1, mb: 1, overflow: 'hidden' }}>
                               <Typography variant="h6" fontWeight="900" noWrap sx={{ lineHeight: 1.2, fontSize: { xs: '1.1rem', sm: '1rem', md: '1.15rem' } }}>
-                                  {emp.Ticket}
+                                  {emp.NombreEmpresa}
                               </Typography>
                               <Typography variant="caption" noWrap sx={{ opacity: 0.8, display: 'block' }}>
-                                  {emp.NombreEmpresa}
+                                  {emp.Ticket}
                               </Typography>
                               <Box sx={{ mt: 1 }}>
                                   <Chip label={emp.NombreSector} size="small" sx={{ fontSize: '0.65rem', height: '22px', maxWidth: '100%', bgcolor: 'rgba(0,0,0,0.05)', color: estilos.text, fontWeight: '600' }} />
