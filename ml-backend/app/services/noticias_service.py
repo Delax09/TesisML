@@ -1,4 +1,4 @@
-import http
+import httpx
 import datetime
 from sqlalchemy.orm import Session
 from app.models import Portafolio, Empresa
@@ -34,7 +34,7 @@ class NoticiasService:
         noticias_totales = []
         
         # 3. Consultar la API de Finnhub de forma asíncrona por cada ticker
-        async with http.AsyncClient() as client:
+        async with httpx.AsyncClient() as client:
             for ticker in tickers:
                 url = f"https://finnhub.io/api/v1/company-news?symbol={ticker}&from={str_inicio}&to={str_fin}&token={api_key}"
                 

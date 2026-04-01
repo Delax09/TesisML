@@ -82,6 +82,7 @@ app.include_router(ia_router)
 app.include_router(admin_router)
 app.include_router(modelo_ia_router)
 app.include_router(metricas_router)
+app.include_router(noticias.router)
 
 
 @app.get("/")
