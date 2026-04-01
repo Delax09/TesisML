@@ -144,7 +144,18 @@ function AuthForm({ modoInicialRegistro = false }) {
 
             <Divider sx={{ my: 1 }} />
 
-            <Box sx={{ backgroundColor: 'grey.100', p: 1.5, borderRadius: 2, textAlign: 'center' }}>
+            <Box 
+                sx={{ 
+                    // Cambiamos 'grey.100' por 'action.hover' o 'background.default'
+                    // Estas variables se invierten automáticamente en modo oscuro
+                    bgcolor: 'action.hover', 
+                    p: 1.5, 
+                    borderRadius: 2, 
+                    textAlign: 'center',
+                    border: '1px solid',
+                    borderColor: 'divider' // Añadimos un borde sutil que también es dinámico
+                }}
+            >
                 <Typography variant="caption" fontWeight="bold" color="text.secondary" display="block" gutterBottom>
                     Usuarios de Prueba:
                 </Typography>

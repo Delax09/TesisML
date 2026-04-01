@@ -1,7 +1,7 @@
 // src/layouts/UserLayout.js
 import React, { useState } from 'react';
 import { Outlet, Link as RouterLink, useLocation } from 'react-router-dom';
-import { useAuth } from 'context';
+import { useAuth, useThemeContext } from 'context';
 import { 
   Box, Drawer, List, ListItem, ListItemButton, ListItemIcon, 
   ListItemText, Typography, AppBar, Toolbar, IconButton 
@@ -18,6 +18,8 @@ import AnalyticsIcon from '@mui/icons-material/Analytics';
 import AreaChartIcon from '@mui/icons-material/AreaChart';
 import PieChartIcon from '@mui/icons-material/PieChart';
 import NewspaperIcon from '@mui/icons-material/Newspaper';
+import LightModeIcon from '@mui/icons-material/LightMode';
+import DarkModeIcon from '@mui/icons-material/DarkMode';
 
 const drawerWidth = 250; // ¡Necesitamos esto para saber el ancho del menú!
 
@@ -25,6 +27,7 @@ export default function UserLayout() {
   const location = useLocation();
   const isActivo = (ruta) => location.pathname.includes(ruta);
   const { logout } = useAuth();
+  const { mode, toggleTheme } = useThemeContext();
   
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -93,8 +96,23 @@ export default function UserLayout() {
         </ListItem> 
       </List>
 
-      {/* BOTÓN DE CERRAR SESIÓN (Mantiene su color rojo particular) */}
+      {/* BOTONES INFERIORES */}
       <List sx={{ px: 2, mb: 2 }}>
+
+        {/* 1. NUEVO BOTÓN DE TEMA */}
+        <ListItem disablePadding sx={{ mb: 1 }}>
+          <ListItemButton onClick={toggleTheme}>
+            <ListItemIcon sx={{ color: 'inherit', minWidth: 40 }}>
+              {mode === 'dark' ? <LightModeIcon sx={{ color: '#fbbf24' }} /> : <DarkModeIcon />}
+            </ListItemIcon>
+            <ListItemText 
+              primary={mode === 'dark' ? "Modo Claro" : "Modo Oscuro"} 
+              primaryTypographyProps={{ fontWeight: 500 }} 
+            />
+          </ListItemButton>
+        </ListItem>
+
+        {/* 2. BOTÓN DE CERRAR SESIÓN (Ya lo tenías) */}
         <ListItem disablePadding>
           <ListItemButton onClick={logout} sx={{ color: '#e74c3c' }}>
             <ListItemIcon sx={{ color: 'inherit', minWidth: 40 }}><LogoutIcon /></ListItemIcon>
