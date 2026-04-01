@@ -1,13 +1,12 @@
 // src/features/empresas/components/EmpresaTable.js
 import React, { useState, useRef, useMemo, memo } from 'react';
 import { 
-    Box, Paper, Typography, CircularProgress, Chip, IconButton, Tooltip,
+    Box, Typography, CircularProgress, Chip, IconButton, Tooltip,
     Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
     TextField, InputAdornment 
 } from '@mui/material';
 import { ChevronLeft, ChevronRight, Edit, Delete, Search } from '@mui/icons-material';
 
-// El componente AHORA recibe los datos por props, no los busca él mismo
 function EmpresaTable({ 
     empresas = [], 
     sectores = [], 
@@ -21,8 +20,6 @@ function EmpresaTable({
     const [busqueda, setBusqueda] = useState(''); 
     const scrollRef = useRef(null);
 
-    // 2. ENVOLVEMOS EL FILTRO EN useMemo
-    // Esto evita que el arreglo se recalcule si cambias de pestaña u otra cosa irrelevante
     const empresasAMostrar = useMemo(() => {
         return empresas.filter((emp) => {
             const coincideSector = sectorSeleccionado === 'todos' || emp.IdSector === sectorSeleccionado;
@@ -52,25 +49,14 @@ function EmpresaTable({
     }
 
     return (
-        <Paper 
-            elevation={0} 
-            sx={{ 
-                p: 3, 
-                borderRadius: '12px', 
-                boxShadow: '0 4px 6px rgba(0,0,0,0.05)', 
-                width: '100%', 
-                bgcolor: 'background.paper' 
-            }}
-        >
-            {/* Cabecera con Buscador */}
+        <Box sx={{ width: '100%' }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
                 <Box>
-                    <Typography variant="h6" fontWeight="bold" color="#1f2937" gutterBottom>
+                    <Typography variant="h6" fontWeight="bold" color="text.primary" gutterBottom>
                         Listado de Empresas
                     </Typography>
                 </Box>
                 
-                {/* CAMPO DE BÚSQUEDA */}
                 <TextField 
                     size="small"
                     variant="outlined"
@@ -80,20 +66,14 @@ function EmpresaTable({
                     InputProps={{
                         startAdornment: (
                             <InputAdornment position="start">
-                                <Search fontSize="small" />
+                                <Search fontSize="small" color="action" />
                             </InputAdornment>
                         ),
                     }}
-                    sx={{ 
-                        minWidth: { xs: '100%', sm: '250px' },
-                        bgcolor: '#f8fafc',
-                        borderRadius: '8px',
-                        '& fieldset': { borderRadius: '8px' }
-                    }}
+                    sx={{ minWidth: { xs: '100%', sm: '250px' } }}
                 />
             </Box>
 
-            {/* Contenedor del Carrusel con Flechas */}
             <Box 
                 sx={{ 
                     display: 'flex', 
@@ -101,79 +81,76 @@ function EmpresaTable({
                     gap: 1.5, 
                     mb: 2, 
                     pb: 1.5, 
-                    borderBottom: '1px solid #e2e8f0' 
+                    borderBottom: '1px solid', // <-- CORRECCIÓN BORDES
+                    borderColor: 'divider'     // <-- SE ADAPTA AL MODO OSCURO
                 }}
             >
-                {/* Botón Izquierda */}
+                {/* BOTÓN IZQUIERDO CORREGIDO */}
                 <IconButton 
                     onClick={() => desplazar('izq')} 
                     size="small" 
-                    sx={{ border: '1px solid #cbd5e1', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', bgcolor: '#fff' }}
-                    title="Desplazar a la izquierda"
+                    sx={{ 
+                        border: '1px solid', 
+                        borderColor: 'divider', 
+                        bgcolor: 'background.paper', // <-- EN VEZ DE #fff
+                        boxShadow: 1,
+                        '&:hover': { bgcolor: 'action.hover' }
+                    }}
                 >
                     <ChevronLeft fontSize="small" />
                 </IconButton>
 
-                {/* BARRA DE FILTROS POR SECTOR */}
                 <Box 
                     ref={scrollRef} 
                     sx={{ 
-                        display: 'flex', 
-                        gap: 1, 
-                        overflowX: 'auto', 
-                        flexGrow: 1,
-                        scrollbarWidth: 'none', 
-                        '&::-webkit-scrollbar': { display: 'none' } 
+                        display: 'flex', gap: 1, overflowX: 'auto', flexGrow: 1,
+                        scrollbarWidth: 'none', '&::-webkit-scrollbar': { display: 'none' } 
                     }}
                 >
+                    {/* CHIPS SIMPLIFICADOS PARA EVITAR FALLOS DE TEMA */}
                     <Chip
                         label="Todos los sectores"
                         onClick={() => setSectorSeleccionado('todos')}
-                        sx={{
-                            fontWeight: '600',
-                            bgcolor: sectorSeleccionado === 'todos' ? '#4f46e5' : '#f8fafc',
-                            color: sectorSeleccionado === 'todos' ? 'white' : '#475569',
-                            border: `1px solid ${sectorSeleccionado === 'todos' ? '#4338ca' : '#e2e8f0'}`,
-                            '&:hover': { bgcolor: sectorSeleccionado === 'todos' ? '#4338ca' : '#f1f5f9' }
-                        }}
+                        color={sectorSeleccionado === 'todos' ? "primary" : "default"}
+                        variant={sectorSeleccionado === 'todos' ? "filled" : "outlined"}
+                        sx={{ fontWeight: 'bold' }}
                     />
-
                     {sectores.map((sector) => (
                         <Chip
                             key={sector.IdSector}
                             label={sector.NombreSector}
                             onClick={() => setSectorSeleccionado(sector.IdSector)}
-                            sx={{
-                                fontWeight: '600',
-                                bgcolor: sectorSeleccionado === sector.IdSector ? '#4f46e5' : '#f8fafc',
-                                color: sectorSeleccionado === sector.IdSector ? 'white' : '#475569',
-                                border: `1px solid ${sectorSeleccionado === sector.IdSector ? '#4338ca' : '#e2e8f0'}`,
-                                '&:hover': { bgcolor: sectorSeleccionado === sector.IdSector ? '#4338ca' : '#f1f5f9' }
-                            }}
+                            color={sectorSeleccionado === sector.IdSector ? "primary" : "default"}
+                            variant={sectorSeleccionado === sector.IdSector ? "filled" : "outlined"}
+                            sx={{ fontWeight: 'bold' }}
                         />
                     ))}
                 </Box>
 
-                {/* Botón Derecha */}
+                {/* BOTÓN DERECHO CORREGIDO */}
                 <IconButton 
                     onClick={() => desplazar('der')} 
                     size="small" 
-                    sx={{ border: '1px solid #cbd5e1', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', bgcolor: '#fff' }}
-                    title="Desplazar a la derecha"
+                    sx={{ 
+                        border: '1px solid', 
+                        borderColor: 'divider', 
+                        bgcolor: 'background.paper', // <-- EN VEZ DE #fff
+                        boxShadow: 1,
+                        '&:hover': { bgcolor: 'action.hover' }
+                    }}
                 >
                     <ChevronRight fontSize="small" />
                 </IconButton>
             </Box>
 
-            {/* TABLA DE RESULTADOS */}
             <TableContainer>
                 <Table size="medium">
-                    <TableHead sx={{ bgcolor: '#f8fafc' }}>
+                    <TableHead>
                         <TableRow>
-                            <TableCell sx={{ fontWeight: '600', color: '#64748b', width: esAdmin ? '20%' : '30%' }}>TICKER</TableCell>
-                            <TableCell sx={{ fontWeight: '600', color: '#64748b', width: esAdmin ? '35%' : '40%' }}>NOMBRE DE EMPRESA</TableCell>
-                            <TableCell sx={{ fontWeight: '600', color: '#64748b', width: esAdmin ? '25%' : '30%' }}>SECTOR</TableCell>
-                            {esAdmin && <TableCell align="center" sx={{ fontWeight: '600', color: '#64748b', width: '20%' }}>ACCIONES</TableCell>}
+                            <TableCell sx={{ width: esAdmin ? '20%' : '30%' }}>TICKER</TableCell>
+                            <TableCell sx={{ width: esAdmin ? '35%' : '40%' }}>NOMBRE DE EMPRESA</TableCell>
+                            <TableCell sx={{ width: esAdmin ? '25%' : '30%' }}>SECTOR</TableCell>
+                            {esAdmin && <TableCell align="center" sx={{ width: '20%' }}>ACCIONES</TableCell>}
                         </TableRow>
                     </TableHead>
                     <TableBody>
@@ -183,18 +160,16 @@ function EmpresaTable({
                                     key={emp.IdEmpresa} 
                                     hover
                                     onClick={() => onSelect(emp.IdEmpresa, emp.NombreEmpresa)}
-                                    sx={{ 
-                                        cursor: 'pointer',
-                                        '&:hover': { bgcolor: '#f0fdf4 !important' } 
-                                    }}
+                                    sx={{ cursor: 'pointer' }}
                                 >
-                                    <TableCell sx={{ fontWeight: '800', color: '#0f172a' }}>{emp.Ticket}</TableCell>
-                                    <TableCell sx={{ color: '#334155' }}>{emp.NombreEmpresa}</TableCell>
+                                    <TableCell sx={{ fontWeight: '800', color: 'primary.main' }}>{emp.Ticket}</TableCell>
+                                    <TableCell sx={{ color: 'text.secondary' }}>{emp.NombreEmpresa}</TableCell>
                                     <TableCell>
                                         <Chip 
                                             label={emp.NombreSector} 
                                             size="small" 
-                                            sx={{ bgcolor: '#e0e7ff', color: '#4338ca', fontWeight: 'bold', fontSize: '0.75rem' }} 
+                                            variant="outlined"
+                                            sx={{ fontWeight: 'bold', fontSize: '0.75rem', borderColor: 'transparent', bgcolor: 'action.hover' }} 
                                         />
                                     </TableCell>
                                     {esAdmin && (
@@ -203,7 +178,7 @@ function EmpresaTable({
                                                 <IconButton 
                                                     onClick={(e) => { e.stopPropagation(); onEdit(emp); }} 
                                                     size="small"
-                                                    sx={{ color: '#64748b', '&:hover': { color: '#1976d2' } }}
+                                                    color="primary"
                                                 >
                                                     <Edit fontSize="small" />
                                                 </IconButton>
@@ -212,7 +187,7 @@ function EmpresaTable({
                                                 <IconButton 
                                                     onClick={(e) => { e.stopPropagation(); onDelete(emp.IdEmpresa); }} 
                                                     size="small"
-                                                    sx={{ color: '#64748b', '&:hover': { color: '#d32f2f' } }}
+                                                    color="error"
                                                 >
                                                     <Delete fontSize="small" />
                                                 </IconButton>
@@ -223,7 +198,7 @@ function EmpresaTable({
                             ))
                         ) : (
                             <TableRow>
-                                <TableCell colSpan={esAdmin ? 4 : 3} align="center" sx={{ py: 6, color: '#94a3b8' }}>
+                                <TableCell colSpan={esAdmin ? 4 : 3} align="center" sx={{ py: 6, color: 'text.disabled' }}>
                                     {busqueda 
                                         ? `No se encontraron resultados para "${busqueda}"` 
                                         : 'No hay empresas en la categoría seleccionada.'}
@@ -233,7 +208,7 @@ function EmpresaTable({
                     </TableBody>
                 </Table>
             </TableContainer>
-        </Paper>
+        </Box>
     );
 }
 

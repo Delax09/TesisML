@@ -2,13 +2,11 @@
 import React, { Suspense, lazy } from 'react';
 import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
 import { UserLayout, AdminLayout } from 'layouts'; 
-import { AuthProvider } from 'context';
 import { Toaster } from 'react-hot-toast';
-import { ThemeProvider } from '@mui/material/styles';
-import { CssBaseline, CircularProgress, Box } from '@mui/material';
-import theme from './theme';
+import { CircularProgress, Box } from '@mui/material';
 import RutaProtegida from './features/auth/components/RutaProtegida';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { AuthProvider, CustomThemeProvider } from './context';
 
 // IMPORTACIONES PEREZOSAS USUARIO
 const Landing = lazy(() => import('pages/Landing/Landing'));
@@ -16,6 +14,8 @@ const Home = lazy(() => import('pages/Usuario/Home/Home'));
 const Portafolio = lazy(() => import('pages/Usuario/Portafolio/Portafolio'));
 const Mercado = lazy(() => import('pages/Usuario/Mercado/Mercado'));
 const ProyeccionesIA = lazy(() => import('pages/Usuario/ProyeccionesIA/ProyeccionesIA'));
+const AnalisisPortafolio = lazy(() => import('pages/Usuario/AnalisisPortafolio/AnalisisPortafolio'));
+const Noticias = lazy(() => import('pages/Usuario/Noticias/Noticias'));
 
 // IMPORTACIONES PEREZOSAS ADMIN (Aquí separamos en 3 vistas)
 const AdminTareas = lazy(() => import('pages/Admin/Tareas/Tareas'));
@@ -39,6 +39,8 @@ const router = createBrowserRouter([
     children: [
       { path: "home", element: conSuspense(Home) },
       { path: "portafolio", element: conSuspense(Portafolio) },
+      { path: "analisis-portafolio", element: conSuspense(AnalisisPortafolio) },
+      { path: "noticias", element: conSuspense(Noticias) },
       { path: "mercado", element: conSuspense(Mercado) },
       { path: "proyecciones-ia", element: conSuspense(ProyeccionesIA) },
     ],
@@ -65,13 +67,12 @@ const queryClient = new QueryClient({
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider theme={theme}>
-        <CssBaseline /> 
+      <CustomThemeProvider>
         <AuthProvider>
           <Toaster position="top-center" reverseOrder={false} />
           <RouterProvider router={router} />
         </AuthProvider>
-      </ThemeProvider>
+      </CustomThemeProvider>
     </QueryClientProvider>
   );
 }

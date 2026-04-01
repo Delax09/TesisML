@@ -26,6 +26,8 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
 
+    FINNHUB_API_KEY: str
+
     class Config:
         """Configuración de Pydantic Settings."""
         env_file = ".env"

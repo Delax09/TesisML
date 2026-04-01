@@ -1,29 +1,30 @@
 // src/pages/Landing/Landing.js
 import React, { useState, useCallback } from 'react';
 import { Navigate } from 'react-router-dom';
-import { useAuth } from '../../context'; // Ajustado dependiendo de tu baseUrl
+import { useAuth, useThemeContext } from '../../context'; 
 
-import { 
-    Button, Typography, Box, AppBar, Toolbar, Dialog, DialogContent, IconButton 
+import {
+    Button, Typography, Box, AppBar, Toolbar, Dialog, DialogContent, IconButton, Tooltip
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
+import LightModeIcon from '@mui/icons-material/LightMode';
+import DarkModeIcon from '@mui/icons-material/DarkMode';
+import landing1 from 'assets/landing1.png';
 
-// 1. IMPORTAMOS LOS COMPONENTES DESDE SUS NUEVOS FEATURES
+import { APP_NAME } from 'config';
 import AuthForm from '../../features/auth/components/AuthForm';
 import EmpresaTable from '../../features/empresas/components/EmpresaTable';
-
-// 2. IMPORTAMOS EL HOOK QUE TRAE LOS DATOS
 import { useEmpresas } from '../../features/empresas/hooks/useEmpresas';
 
 export default function Landing() {
     const [modalAuth, setModalAuth] = useState({ open: false, esRegistro: false });
     const { usuario } = useAuth();
+    const { mode, toggleTheme } = useThemeContext();
 
-    // 3. EJECUTAMOS EL HOOK PARA OBTENER LOS DATOS
     const { empresas, sectores, cargando } = useEmpresas();
 
     const manejarSeleccionEmpresa = useCallback((id, nombre) => {
-        abrirModalAuth(true); // Abre el modal de registro automáticamente
+        abrirModalAuth(true); 
     }, []);
 
     const abrirModalAuth = (modoRegistro) => {
@@ -43,22 +44,35 @@ export default function Landing() {
             
             <AppBar position="static" color="inherit" elevation={1} sx={{ px: { xs: 2, md: '5%' } }}>
                 <Toolbar disableGutters sx={{ justifyContent: 'space-between' }}>
-                    <Typography variant="h5" component="div" sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', color: 'text.primary' }}>
-                        TesisML
+                    {/* LOGO / NOMBRE */}
+                    <Typography variant="h5" component="div" sx={{ fontWeight: 'bold', color: 'text.primary' }}>
+                        {APP_NAME}
                     </Typography>
                     
-                    <Box sx={{ display: 'flex', gap: 2 }}>
+                    {/* ACCIONES DERECHA */}
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 2 } }}>
+                        
+                        {/* BOTÓN DE MODO CLARO/OSCURO (Limpio y alineado) */}
+                        <Tooltip title={mode === 'dark' ? "Cambiar a Modo Claro" : "Cambiar a Modo Oscuro"}>
+                            <IconButton onClick={toggleTheme} color="inherit">
+                                {mode === 'dark' ? <LightModeIcon sx={{ color: '#fbbf24' }} /> : <DarkModeIcon />}
+                            </IconButton>
+                        </Tooltip>
+
                         <Button 
-                            variant="outlined" color="primary" size="large"
+                            variant="outlined" 
+                            color="primary"
                             onClick={() => abrirModalAuth(false)} 
-                            sx={{ fontWeight: 'bold', borderRadius: 2 }}
+                            sx={{ fontWeight: 'bold' }}
                         >
-                            Iniciar Sesión
+                            Ingresar
                         </Button>
+
                         <Button 
-                            variant="contained" color="primary" size="large"
+                            variant="contained" 
+                            color="primary"
                             onClick={() => abrirModalAuth(true)} 
-                            sx={{ fontWeight: 'bold', borderRadius: 2, display: { xs: 'none', sm: 'flex' } }}
+                            sx={{ fontWeight: 'bold', display: { xs: 'none', sm: 'flex' } }}
                         >
                             Registrarse
                         </Button>
@@ -73,27 +87,25 @@ export default function Landing() {
                         <Typography variant="h3" component="h1" sx={{ fontWeight: '900', color: 'text.primary', mb: 2, lineHeight: 1.2 }}>
                             Predicción Inteligente del Mercado
                         </Typography>
-                        <Typography variant="h6" sx={{ color: 'text.secondary', mb: 4, lineHeight: 1.6, fontWeight: 'normal' }}>
+                        <Typography variant="h6" sx={{ color: 'text.secondary', mb: 4, lineHeight: 1.6 }}>
                             Plataforma avanzada de análisis financiero impulsada por Machine Learning. 
-                            Gestiona tu portafolio, visualiza tendencias y toma decisiones informadas 
-                            con nuestros modelos predictivos de vanguardia.
+                            Visualiza tendencias y toma decisiones informadas con modelos predictivos de vanguardia.
                         </Typography>
                         <Button 
                             variant="contained" color="primary" size="large"
                             onClick={() => abrirModalAuth(true)} 
-                            sx={{ py: 1.5, px: 4, fontSize: '1.1rem', fontWeight: 'bold', borderRadius: 2, boxShadow: 3 }}
+                            sx={{ boxShadow: 3 }}
                         >
                             Comenzar ahora
                         </Button>
                     </Box>
                     
-                    <Box sx={{ width: '400px', height: '300px', backgroundColor: 'grey.200', borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'text.secondary', border: '2px dashed', borderColor: 'grey.400' }}>
-                        <Typography variant="h6" fontWeight="bold">Poner alguna imagen en el futuro</Typography>
+                    <Box sx={{ width: '400px', height: '300px', borderRadius: 4, display: { xs: 'none', md: 'flex' }, alignItems: 'center', justifyContent: 'center' }}>  
+                        <img src={landing1} alt="Análisis financiero" style={{ maxWidth: '100%', maxHeight: '100%', borderRadius: '16px' }} />            
                     </Box>
                 </Box>
-
+                
                 <Box sx={{ width: '100%', maxWidth: '1200px', mb: 4 }}>
-                    {/* 4. PASAMOS LOS DATOS AL COMPONENTE VISUAL */}
                     <EmpresaTable 
                         empresas={empresas}
                         sectores={sectores}
@@ -101,12 +113,14 @@ export default function Landing() {
                         onSelect={manejarSeleccionEmpresa} 
                     />
                 </Box>
-
             </Box>
 
             <Dialog 
-                open={modalAuth.open} onClose={cerrarModalAuth} maxWidth="xs" fullWidth
-                PaperProps={{ sx: { borderRadius: 4, p: 1 } }}
+                open={modalAuth.open} 
+                onClose={cerrarModalAuth} 
+                maxWidth="xs" 
+                fullWidth
+                disableRestoreFocus
             >
                 <DialogContent sx={{ position: 'relative' }}>
                     <IconButton onClick={cerrarModalAuth} sx={{ position: 'absolute', right: 8, top: 8, color: 'text.secondary' }}>

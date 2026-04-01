@@ -1,10 +1,11 @@
 // src/pages/Usuario/Portafolio/Portafolio.js
 import React from 'react';
-import { Box, Typography, Paper, Grid, CircularProgress } from '@mui/material';
+import { Box, Paper, Grid, CircularProgress } from '@mui/material';
 import { useAuth } from '../../../context'; // Ajustar ruta
 import { usePortafolio } from '../../../features/portafolio/hooks/usePortafolio';
 import ListaPortafolio from '../../../features/portafolio/components/ListaPortafolio';
 import ShowChartIcon from '@mui/icons-material/ShowChart';
+import PageHeader from '../../../components/PageHeader';
 
 export default function Portafolio() {
   const { usuario } = useAuth();
@@ -31,22 +32,16 @@ export default function Portafolio() {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4, width: '100%', maxWidth: '1400px', margin: '0 auto', pb: 4 }}>
 
-      <Paper elevation={2} sx={{ p: 3, borderRadius: 3, display: 'flex', alignItems: 'center', gap: 3 }}>
-            <Box sx={{ backgroundColor: 'primary.main', p: 1.5, borderRadius: 2, display: 'flex', color: 'white', boxShadow: 2 }}>
-            <ShowChartIcon fontSize="large" />
-            </Box>
-            <Box>
-                <Typography variant="h4" fontWeight="bold" color="text.primary">
-                Gestionar Mi Portafolio
-                </Typography>
-            </Box>
-        </Paper>
+      <PageHeader 
+        titulo="Gestionar Mi Portafolio"
+        icono={ShowChartIcon} 
+      />
 
       <Grid container spacing={{ xs: 2, md: 3, lg: 4 }} alignItems="stretch">
         
         {/* PANEL: MIS EMPRESAS */}
         <Grid size={{ xs: 12, md: 6 }}>
-          <Paper elevation={2} sx={{ p: { xs: 1.5, sm: 2, md: 3 }, borderRadius: 3, height: '100%' }}>
+          <Paper sx={{ p: { xs: 1.5, sm: 2, md: 3 }, height: '100%' }}>
             <ListaPortafolio 
               titulo="Empresas en Seguimiento"
               empresas={misEmpresas}
@@ -63,7 +58,7 @@ export default function Portafolio() {
 
         {/* PANEL: EMPRESAS DISPONIBLES */}
         <Grid size={{ xs: 12, md: 6 }}>
-          <Paper elevation={2} sx={{ p: { xs: 1.5, sm: 2, md: 3 }, borderRadius: 3, height: '100%' }}>
+          <Paper sx={{ p: { xs: 1.5, sm: 2, md: 3 }, height: '100%' }}>
             <ListaPortafolio 
               titulo="Mercado Disponible"
               empresas={empresasDisponibles}

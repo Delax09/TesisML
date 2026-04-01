@@ -1,9 +1,12 @@
 from datetime import datetime
+from sqlalchemy import func
 from sqlalchemy.orm import Session
-from app.models import Portafolio, Empresa, Usuario
+from app.models import Portafolio, Empresa, Usuario, Sector, PrecioHistorico
 from app.schemas.schemas import PortafolioCreate, PortafolioUpdate
 from app.exceptions import ResourceNotFoundError, InvalidDataError, DuplicateResourceError
 from app.utils.horaformateada import obtener_hora_formateada as HoraFormat
+import datetime
+import math
 
 class PortafolioService:
     @staticmethod
@@ -117,3 +120,115 @@ class PortafolioService:
         db.refresh(portafolio_item)
         
         return True
+    
+
+    @staticmethod
+    def obtener_analisis_portafolio(db: Session, usuario_id: int):
+        import datetime
+        import math
+        from collections import defaultdict
+        from app.models import Sector, Empresa, PrecioHistorico
+
+        # 1. Obtener portafolios activos
+        portafolios = db.query(Portafolio).filter(
+            Portafolio.IdUsuario == usuario_id,
+            Portafolio.Activo == True
+        ).all()
+        
+        if not portafolios:
+            return {"distribucion_sectores": [], "rendimiento_historico": [], "metricas": {"volatilidad": 0.0, "sharpe_ratio": 0.0}}
+            
+        empresa_ids = [p.IdEmpresa for p in portafolios]
+        
+        # 2. Distribución por Sectores
+        empresas = db.query(Empresa, Sector).join(Sector, Empresa.IdSector == Sector.IdSector)\
+                     .filter(Empresa.IdEmpresa.in_(empresa_ids)).all()
+                     
+        sectores_count = {}
+        for emp, sec in empresas:
+            sectores_count[sec.NombreSector] = sectores_count.get(sec.NombreSector, 0) + 1
+            
+        total_empresas = len(empresas)
+        distribucion = [
+            {"sector": k, "cantidad": v, "porcentaje": round((v / total_empresas) * 100, 2)}
+            for k, v in sectores_count.items()
+        ]
+        
+        # 3. Rendimiento Histórico Consolidado (Extracción y limpieza de NaNs)
+        hace_30_dias = datetime.datetime.now() - datetime.timedelta(days=30)
+        
+        # Obtenemos todos los registros sueltos ordenados por fecha
+        registros = db.query(PrecioHistorico).filter(
+            PrecioHistorico.IdEmpresa.in_(empresa_ids),
+            PrecioHistorico.Fecha >= hace_30_dias
+        ).order_by(PrecioHistorico.Fecha).all()
+        
+        # Agrupamos en un diccionario por fecha y luego por empresa
+        fechas_dict = defaultdict(dict)
+        for r in registros:
+            try:
+                precio = float(r.PrecioCierre)
+                # Si el precio es NaN, lo saltamos para que no corrompa el día
+                if math.isnan(precio):
+                    continue
+                
+                fecha_str = str(r.Fecha)[:10]
+                fechas_dict[fecha_str][r.IdEmpresa] = precio
+            except (ValueError, TypeError):
+                continue
+                
+        fechas_ordenadas = sorted(fechas_dict.keys())
+        
+        rendimiento = []
+        ultimo_precio_conocido = {} # Usaremos esto para el "Forward-Fill"
+        
+        for fecha in fechas_ordenadas:
+            total_dia = 0.0
+            for emp_id in empresa_ids:
+                # Si la empresa reportó un precio válido hoy, lo actualizamos
+                if emp_id in fechas_dict[fecha]:
+                    ultimo_precio_conocido[emp_id] = fechas_dict[fecha][emp_id]
+                
+                # Sumamos el precio al total del día. 
+                # Si hoy hubo NaN, se sumará pacíficamente el precio de ayer.
+                total_dia += ultimo_precio_conocido.get(emp_id, 0.0)
+                
+            if total_dia > 0:
+                rendimiento.append({"fecha": fecha, "valor_total": round(total_dia, 2)})
+        
+        # 4. Cálculo Matemático de Métricas de Riesgo
+        volatilidad = 0.0
+        sharpe_ratio = 0.0
+        
+        if len(rendimiento) > 1:
+            valores = [r["valor_total"] for r in rendimiento]
+            retornos = []
+            
+            for i in range(1, len(valores)):
+                precio_ayer = valores[i-1]
+                precio_hoy = valores[i]
+                if precio_ayer > 0:
+                    retornos.append((precio_hoy - precio_ayer) / precio_ayer)
+                else:
+                    retornos.append(0.0)
+            
+            if len(retornos) > 0:
+                media_retorno = sum(retornos) / len(retornos)
+                varianza = sum((r - media_retorno) ** 2 for r in retornos) / len(retornos)
+                
+                # Volatilidad anualizada (252 días hábiles de bolsa)
+                volatilidad = math.sqrt(varianza) * math.sqrt(252)
+                
+                # Sharpe Ratio asumiendo 2% libre de riesgo
+                tasa_libre_riesgo_diaria = 0.02 / 252
+                if varianza > 0:
+                    sharpe_ratio = (media_retorno - tasa_libre_riesgo_diaria) / (math.sqrt(varianza)) * math.sqrt(252)
+                
+        return {
+            "distribucion_sectores": distribucion,
+            "rendimiento_historico": rendimiento,
+            "metricas": {
+                "volatilidad": round(volatilidad * 100, 2),
+                "sharpe_ratio": round(sharpe_ratio, 2)
+            }
+        }

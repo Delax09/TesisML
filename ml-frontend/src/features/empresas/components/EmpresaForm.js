@@ -4,12 +4,10 @@ import { Box, Paper, Typography, TextField, MenuItem, FormControlLabel, Checkbox
 import { useEmpresaForm } from '../hooks/useEmpresaForm';
 
 export default function EmpresaForm({ empresaInicial, onSave, onCancel }) {
-  // Consumimos el hook que ahora nos entrega las herramientas de react-hook-form
   const { sectores, register, errors, onSubmit } = useEmpresaForm(empresaInicial, onSave);
 
   return (
-    <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8fafc', borderRadius: '12px' }}>
-      {/* Usamos onSubmit directamente sin preventDefault, RHF lo maneja por nosotros */}
+    <Paper elevation={0} sx={{ p: 3, backgroundColor: 'background.default', borderRadius: '12px' }}>
       <Box component="form" onSubmit={onSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
         <Typography variant="h6" fontWeight="bold" color="text.primary">
           {empresaInicial ? 'Editar' : 'Nueva'} Empresa
@@ -17,7 +15,7 @@ export default function EmpresaForm({ empresaInicial, onSave, onCancel }) {
         
         <TextField 
           label="Ticker (ej: AAPL)" 
-          size="small" fullWidth
+          size="small"
           {...register("Ticket", { required: "El Ticker es obligatorio" })}
           error={!!errors.Ticket}
           helperText={errors.Ticket?.message}
@@ -25,7 +23,7 @@ export default function EmpresaForm({ empresaInicial, onSave, onCancel }) {
 
         <TextField 
           label="Nombre de la Empresa" 
-          size="small" fullWidth
+          size="small"
           {...register("NombreEmpresa", { required: "El nombre es obligatorio" })}
           error={!!errors.NombreEmpresa}
           helperText={errors.NombreEmpresa?.message}
@@ -33,7 +31,7 @@ export default function EmpresaForm({ empresaInicial, onSave, onCancel }) {
 
         <TextField
           select label="Seleccione Sector" 
-          size="small" fullWidth defaultValue={empresaInicial?.IdSector || ""}
+          size="small" defaultValue={empresaInicial?.IdSector || ""}
           {...register("IdSector", { required: "Debes seleccionar un sector" })}
           error={!!errors.IdSector}
           helperText={errors.IdSector?.message}
@@ -49,10 +47,22 @@ export default function EmpresaForm({ empresaInicial, onSave, onCancel }) {
         />
 
         <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end', mt: 1 }}>
-          <Button variant="contained" onClick={onCancel} disableElevation sx={{ backgroundColor: '#94a3b8', '&:hover': { backgroundColor: '#64748b' } }}>
+          {/* Usamos colores estándar del sistema (grey) para cancelar */}
+          <Button 
+            variant="contained" 
+            onClick={onCancel} 
+            disableElevation 
+          >
             Cancelar
           </Button>
-          <Button type="submit" variant="contained" disableElevation sx={{ backgroundColor: '#4f46e5', '&:hover': { backgroundColor: '#4338ca' } }}>
+
+          {/* Pasando color="primary", Material-UI aplica tu verde esmeralda configurado en theme.js */}
+          <Button 
+            type="submit" 
+            variant="contained" 
+            color="primary"
+            disableElevation 
+          >
             Guardar Cambios
           </Button>
         </Box>

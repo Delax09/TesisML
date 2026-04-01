@@ -2,10 +2,11 @@
 import React, { memo } from 'react';
 import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
 import { Box, Paper, Typography, ToggleButton, ToggleButtonGroup, CircularProgress } from '@mui/material';
+import { useTheme } from '@mui/material/styles'; // 1. IMPORTAMOS USETHEME
 import { usePrecioHistorico } from '../hooks/usePrecioHistorico';
 
 function PrecioChart({ empresaId, nombreEmpresa }) {
-    // 1. Consumimos nuestra lógica encapsulada
+    const theme = useTheme(); // 2. INSTANCIAMOS EL TEMA
     const { datosFiltrados, rango, cargando, handleCambioRango } = usePrecioHistorico(empresaId);
 
     if (!empresaId) {
@@ -35,9 +36,10 @@ function PrecioChart({ empresaId, nombreEmpresa }) {
     ];
 
     return (
-        <Paper elevation={0} sx={{ p: 3, borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', mt: 2, bgcolor: 'background.paper' }}>
+        // 3. LIMPIEZA DEL PAPER GIGANTE
+        <Paper sx={{ p: 3, mt: 2 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2, mb: 3 }}>
-                <Typography variant="h6" component="h4" fontWeight="bold">
+                <Typography variant="h6" component="h4" fontWeight="bold" color="text.primary">
                     Historial de Precios: {nombreEmpresa}
                 </Typography>
                 
@@ -55,15 +57,17 @@ function PrecioChart({ empresaId, nombreEmpresa }) {
                     <AreaChart data={datosFiltrados}>
                         <defs>
                             <linearGradient id="colorPrecio" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#1a73e8" stopOpacity={0.3}/>
-                                <stop offset="95%" stopColor="#1a73e8" stopOpacity={0}/>
+                                {/* 4. USAMOS EL COLOR PRIMARIO DEL TEMA PARA EL GRÁFICO */}
+                                <stop offset="5%" stopColor={theme.palette.primary.main} stopOpacity={0.3}/>
+                                <stop offset="95%" stopColor={theme.palette.primary.main} stopOpacity={0}/>
                             </linearGradient>
                         </defs>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
-                        <XAxis dataKey="FechaCorta" fontSize={10} tick={{fill: '#666'}} minTickGap={30}/>
-                        <YAxis domain={['auto', 'auto']} fontSize={10} orientation="right" tick={{fill: '#666'}} />
+                        {/* 5. COLORES DEL TEMA PARA LAS LÍNEAS DE LA GRILLA Y LOS TEXTOS */}
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={theme.palette.divider} />
+                        <XAxis dataKey="FechaCorta" fontSize={10} tick={{fill: theme.palette.text.secondary}} minTickGap={30}/>
+                        <YAxis domain={['auto', 'auto']} fontSize={10} orientation="right" tick={{fill: theme.palette.text.secondary}} />
                         <Tooltip contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)'}} />
-                        <Area type="monotone" dataKey="PrecioCierre" stroke="#1a73e8" strokeWidth={2} fillOpacity={1} fill="url(#colorPrecio)" />
+                        <Area type="monotone" dataKey="PrecioCierre" stroke={theme.palette.primary.main} strokeWidth={2} fillOpacity={1} fill="url(#colorPrecio)" />
                     </AreaChart>
                 </ResponsiveContainer>
             </Box>

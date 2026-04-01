@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.db.sessions import get_db
-from app.schemas.schemas import PortafolioCreate, PortafolioOut, PortafolioUpdate
+from app.schemas.schemas import PortafolioCreate, PortafolioOut, PortafolioUpdate, AnalisisPortafolioOut
 from app.services.portafolio_service import PortafolioService
 from app.exceptions import ResourceNotFoundError, InvalidDataError, DuplicateResourceError
 
@@ -63,3 +63,10 @@ def eliminar_del_portafolio(portafolio_id: int, db: Session = Depends(get_db)):
         )
         
     return {"message": "Empresa removida del portafolio (Desactivada)"}
+
+@router.get("/analisis/{usuario_id}", response_model=AnalisisPortafolioOut)
+def obtener_analisis_del_portafolio(usuario_id: int, db: Session = Depends(get_db)):
+    try:
+        return PortafolioService.obtener_analisis_portafolio(db, usuario_id)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))

@@ -1,3 +1,4 @@
+// src/pages/Admin/Tareas/Tareas.js
 import React from 'react';
 import AdminPanelTareas from '../../../features/admin/components/AdminPanelTareas';
 import AnalisisIAButton from '../../../features/ia_analisis/components/AnalisisIAButton';
@@ -5,43 +6,43 @@ import EntrenamientoSelector from '../../../features/ia_analisis/components/Entr
 import { useEmpresas } from '../../../features/empresas/hooks/useEmpresas';
 
 import { Box, Typography, Paper, Divider } from '@mui/material';
+import BuildIcon from '@mui/icons-material/Build'; // Importamos un ícono para el Header
+import PageHeader from '../../../components/PageHeader'; // Importamos tu componente Header
 
 const AdminTareas = () => {
   const { cargarDatos } = useEmpresas();
 
   return (
-    // CAMBIO: Quitamos maxWidth y agregamos width: '100%'
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, maxWidth: '1400px', margin: '0 auto' }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4, width: '100%', maxWidth: '1400px', margin: '0 auto', pb: 4 }}>
 
-        <Paper elevation={1} sx={{ p: 3, borderRadius: 3 }}>
-            <Typography variant="h4" fontWeight="bold" color="text.primary" gutterBottom>
-            Tareas y Mantenimiento ML
-            </Typography>
-            <Typography variant="body1" color="text.secondary">
-            Ejecución de scripts de base de datos y operaciones de Inteligencia Artificial.
-            </Typography>
-        </Paper>
+        {/* REEMPLAZAMOS EL PAPER GIGANTE POR EL PAGEHEADER */}
+        <PageHeader 
+            titulo="Tareas y Mantenimiento ML"
+            subtitulo="Ejecución de scripts de base de datos y operaciones de Inteligencia Artificial."
+            icono={BuildIcon} 
+        />
 
         {/* SECCIÓN: IA y Modelos */}
-        <Paper elevation={2} sx={{ p: 3, borderRadius: 3, width: '100%' }}>
-            
-            <Typography variant="h6" fontWeight="bold" gutterBottom color="primary">
-            Ejecutar Inteligencia Artificial Predictiva
+        {/* LIMPIAMOS EL PAPER (sin elevation ni borderRadius manual) */}
+        <Paper sx={{ p: 3, width: '100%' }}>
+            <Typography variant="h6" fontWeight="bold" gutterBottom color="primary.main">
+                Ejecutar Inteligencia Artificial Predictiva
             </Typography>
             <Divider sx={{ mb: 3 }} />
-            {/* Botón para ejecutar análisis IA */}
+            
             <Box sx={{ textAlign: 'center', py: 4 }}>
                 <AnalisisIAButton onComplete={cargarDatos} />
                 <Box sx={{ mt: 6, display: 'flex', justifyContent: 'center' }}>
-                <EntrenamientoSelector />
+                    <EntrenamientoSelector />
                 </Box>
             </Box>
         </Paper>
 
         {/* SECCIÓN: Web Scraping / BD */}
-        <Paper elevation={2} sx={{ p: 3, borderRadius: 3, width: '100%' }}>
-            <Typography variant="h6" fontWeight="bold" gutterBottom color="primary">
-            Extracción de Datos (Yahoo Finance)
+        {/* LIMPIAMOS EL PAPER */}
+        <Paper sx={{ p: 3, width: '100%' }}>
+            <Typography variant="h6" fontWeight="bold" gutterBottom color="primary.main">
+                Extracción de Datos (Yahoo Finance)
             </Typography>
             <Divider sx={{ mb: 3 }} />
             

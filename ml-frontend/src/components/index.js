@@ -12,3 +12,5 @@ export { default as RolList } from '../features/roles/components/RolList';
 export { default as SectorList } from '../features/sectores/components/SectorList';
 export { default as ListaPortafolio } from '../features/portafolio/components/ListaPortafolio';
 export { default as RutaProtegida } from '../features/auth/components/RutaProtegida'; 
+export { default as ErrorBoundary } from './ErrorBoundary';
+export { default as PageHeader } from './PageHeader';

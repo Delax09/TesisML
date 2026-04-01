@@ -1,32 +1,52 @@
+// src/features/roles/components/RolList.js
 import React from 'react';
 import { useRolesList } from '../hooks/useRoles';
+import { Box, Paper, Typography, CircularProgress, Chip } from '@mui/material';
 
 function RolList() {
     const { roles, cargando } = useRolesList();
 
-    if (cargando) return <p>Cargando roles...</p>;
+    if (cargando) {
+        return (
+            <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+                <CircularProgress />
+            </Box>
+        );
+    }
 
     return (
-        <div style={estilos.contenedor}>
-            <h3>Roles del Sistema</h3>
-            <div style={estilos.grid}>
+        <Paper sx={{ p: 3 }}>
+            <Typography variant="h6" fontWeight="bold" gutterBottom color="text.primary">
+                Roles del Sistema
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mt: 2 }}>
                 {roles.map((rol) => (
-                    <div key={rol.IdRol} style={estilos.card}>
-                        <span style={estilos.id}>#{rol.IdRol}</span>
-                        <strong style={estilos.nombre}>{rol.NombreRol}</strong>
-                    </div>
+                    <Chip 
+                        key={rol.IdRol} 
+                        label={
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 'bold' }}>
+                                    #{rol.IdRol}
+                                </Typography>
+                                <Typography variant="body2" sx={{ fontWeight: 'bold', color: 'text.primary' }}>
+                                    {rol.NombreRol}
+                                </Typography>
+                            </Box>
+                        }
+                        sx={{ 
+                            p: 1.5, 
+                            height: 'auto', // Permite que el contenido dicte la altura
+                            bgcolor: 'background.default', 
+                            border: '1px solid', 
+                            borderColor: 'divider',
+                            borderRadius: '20px',
+                            '& .MuiChip-label': { padding: 0 } // Limpiamos el padding interno extra del chip
+                        }}
+                    />
                 ))}
-            </div>
-        </div>
+            </Box>
+        </Paper>
     );
 }
-
-const estilos = {
-    contenedor: { backgroundColor: '#fff', padding: '1rem', borderRadius: '8px', boxShadow: '0 2px 5px rgba(0,0,0,0.05)' },
-    grid: { display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '10px' },
-    card: { display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 15px', backgroundColor: '#f8f9fa', border: '1px solid #e9ecef', borderRadius: '20px' },
-    id: { fontSize: '0.7rem', color: '#adb5bd', fontWeight: 'bold' },
-    nombre: { color: '#495057', fontSize: '0.9rem' }
-};
 
 export default RolList;

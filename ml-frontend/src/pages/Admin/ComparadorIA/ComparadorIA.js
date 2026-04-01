@@ -1,20 +1,24 @@
-// ml-frontend/src/pages/Admin/ComparadorIA/ComparadorIA.js
+// src/pages/Admin/ComparadorIA/ComparadorIA.js
 import React from 'react';
 import ComparadorIAComponent from '../../../features/ia_analisis/components/ComparadorIA';
-import { Box, Typography, Paper } from '@mui/material';
-
+import { Box } from '@mui/material';
+import AnalyticsIcon from '@mui/icons-material/Analytics'; // Ícono para el Header
+import PageHeader from '../../../components/PageHeader'; // Importamos tu componente
 
 const ComparadorIAPage = () => {
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, maxWidth: '1400px', margin: '0 auto' }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4, width: '100%', maxWidth: '1400px', margin: '0 auto', pb: 4 }}>
       
-      <Paper elevation={1} sx={{ p: 3, borderRadius: 3 }}>
-        <Typography variant="h4" fontWeight="bold" color="text.primary" gutterBottom>
-          Rendimiento de Modelos IA
-        </Typography>
-      </Paper>
+      {/* HEADER ESTANDARIZADO */}
+      <PageHeader 
+        titulo="Rendimiento de Modelos IA"
+        subtitulo="Compara la precisión y el margen de error de las distintas arquitecturas de redes neuronales."
+        icono={AnalyticsIcon} 
+      />
 
+      {/* COMPONENTE PRINCIPAL */}
       <ComparadorIAComponent />
+      
     </Box>
   );
 };

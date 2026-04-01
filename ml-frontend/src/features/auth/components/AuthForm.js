@@ -88,8 +88,9 @@ function AuthForm({ modoInicialRegistro = false }) {
             {esRegistro && (
                 <Box sx={{ display: 'flex', gap: 2 }}>
                     <TextField 
-                        label="Nombre" variant="outlined" fullWidth required 
+                        label="Nombre" required 
                         value={nombre} onChange={(e) => setNombre(e.target.value)}
+                        autoFocus
                         InputProps={{
                             startAdornment: (
                                 <InputAdornment position="start"><PersonIcon color="action" fontSize="small" /></InputAdornment>
@@ -97,23 +98,26 @@ function AuthForm({ modoInicialRegistro = false }) {
                         }}
                     />
                     <TextField 
-                        label="Apellido" variant="outlined" fullWidth required 
+                        label="Apellido" required 
                         value={apellido} onChange={(e) => setApellido(e.target.value)}
+                        autoFocus
                     />
                 </Box>
             )}
 
             <TextField 
-                label="Correo Electrónico" type="email" variant="outlined" fullWidth required 
+                label="Correo Electrónico" type="email" required 
                 value={email} onChange={(e) => setEmail(e.target.value)} 
+                autoFocus
                 InputProps={{
                     startAdornment: (<InputAdornment position="start"><EmailIcon color="action" /></InputAdornment>),
                 }}
             />
             
             <TextField 
-                label="Contraseña" type="password" variant="outlined" fullWidth required 
+                label="Contraseña" type="password" required 
                 value={password} onChange={(e) => setPassword(e.target.value)} 
+                autoFocus
                 InputProps={{
                     startAdornment: (<InputAdornment position="start"><LockIcon color="action" /></InputAdornment>),
                 }}
@@ -123,7 +127,7 @@ function AuthForm({ modoInicialRegistro = false }) {
 
             <Button 
                 type="submit" variant="contained" color="primary" size="large" fullWidth disabled={cargando}
-                sx={{ py: 1.5, mt: 1, fontWeight: 'bold', borderRadius: 2, boxShadow: 3 }}
+                sx={{ mt: 1, boxShadow: 3 }}
             >
                 {cargando ? <CircularProgress size={24} color="inherit" /> : (esRegistro ? 'Registrarse' : 'Ingresar al sistema')}
             </Button>
@@ -140,7 +144,18 @@ function AuthForm({ modoInicialRegistro = false }) {
 
             <Divider sx={{ my: 1 }} />
 
-            <Box sx={{ backgroundColor: 'grey.100', p: 1.5, borderRadius: 2, textAlign: 'center' }}>
+            <Box 
+                sx={{ 
+                    // Cambiamos 'grey.100' por 'action.hover' o 'background.default'
+                    // Estas variables se invierten automáticamente en modo oscuro
+                    bgcolor: 'action.hover', 
+                    p: 1.5, 
+                    borderRadius: 2, 
+                    textAlign: 'center',
+                    border: '1px solid',
+                    borderColor: 'divider' // Añadimos un borde sutil que también es dinámico
+                }}
+            >
                 <Typography variant="caption" fontWeight="bold" color="text.secondary" display="block" gutterBottom>
                     Usuarios de Prueba:
                 </Typography>

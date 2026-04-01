@@ -1,24 +1,23 @@
+// src/pages/Admin/Empresas/Empresas.js
 import React from 'react';
 import { useEmpresas } from '../../../features/empresas/hooks/useEmpresas';
 import EmpresaTable from '../../../features/empresas/components/EmpresaTable';
-import { Box, Typography, Paper, Alert } from '@mui/material';
+import { Box, Paper, Alert } from '@mui/material';
+import BusinessIcon from '@mui/icons-material/Business'; // Ícono para el Header
+import PageHeader from '../../../components/PageHeader'; // Importamos tu componente
 
 const AdminEmpresas = () => {
-  // Ya no necesitamos la función de eliminar, solo traemos los datos
   const { empresas, sectores, cargando } = useEmpresas();
 
   return (
-    // CAMBIO: Quitamos maxWidth y agregamos width: '100%'
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, maxWidth: '1400px', margin: '0 auto' }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4, width: '100%', maxWidth: '1400px', margin: '0 auto', pb: 4 }}>
 
-        <Paper elevation={1} sx={{ p: 3, borderRadius: 3 }}>
-            <Typography variant="h4" fontWeight="bold" color="text.primary" gutterBottom>
-            Directorio de Empresas
-            </Typography>
-            <Typography variant="body1" color="text.secondary">
-            Administración de activos cargados automáticamente desde Yahoo Finance.
-            </Typography>
-        </Paper>
+      {/* HEADER ESTANDARIZADO */}
+      <PageHeader 
+        titulo="Directorio de Empresas"
+        subtitulo="Administración de activos cargados automáticamente desde Yahoo Finance."
+        icono={BusinessIcon} 
+      />
 
       {empresas.length === 0 && !cargando && (
         <Alert severity="info" sx={{ borderRadius: 2 }}>
@@ -26,8 +25,8 @@ const AdminEmpresas = () => {
         </Alert>
       )}
 
-      <Paper elevation={2} sx={{ p: { xs: 2, md: 3 }, borderRadius: 3, width: '100%' }}>
-        {/* CAMBIO: Pasamos esAdmin={false} y quitamos onDelete para ocultar las acciones */}
+      {/* PAPER LIMPIO SIN ELEVATION NI BORDERRADIUS QUEMADO */}
+      <Paper sx={{ p: { xs: 2, md: 3 }, width: '100%' }}>
         <EmpresaTable 
           empresas={empresas}
           sectores={sectores}

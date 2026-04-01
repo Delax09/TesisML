@@ -13,6 +13,8 @@ import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recha
 // Context & Hooks
 import { useAuth } from '../../../context';
 import { useDashboard } from '../../../features/dashboard/hooks/useDashboard';
+import PageHeader from '../../../components/PageHeader';
+import { useTheme } from '@mui/material/styles';
 
 // Iconos
 import BusinessCenterIcon from '@mui/icons-material/BusinessCenter';
@@ -31,6 +33,7 @@ const COLORES_SECTORES = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
 export default function Home() {
   const { usuario } = useAuth();
   const { cargando, estadisticas } = useDashboard(usuario);
+  const theme = useTheme();
 
   if (cargando) {
       return (
@@ -41,9 +44,9 @@ export default function Home() {
   }
 
   const obtenerColorSentimiento = (sentimiento) => {
-      if (sentimiento?.includes('Alcista')) return { color: '#10b981', bg: '#d1fae5' }; 
-      if (sentimiento?.includes('Bajista')) return { color: '#ef4444', bg: '#fee2e2' }; 
-      return { color: '#f59e0b', bg: '#fef3c7' }; 
+      if (sentimiento?.includes('Alcista')) return { color: theme.palette.market.positive.icon, bg: theme.palette.market.positive.bg }; 
+      if (sentimiento?.includes('Bajista')) return { color: theme.palette.market.negative.icon, bg: theme.palette.market.negative.bg }; 
+      return { color: theme.palette.warning.main, bg: '#fef3c7' }; 
   };
 
   const sentimientoColor = obtenerColorSentimiento(estadisticas.sentimientoGeneral);
@@ -58,26 +61,17 @@ export default function Home() {
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4, width: '100%', maxWidth: '1400px', margin: '0 auto', pb: 4 }}>
       
         {/* HEADER: Saludo */}
-
-        <Paper elevation={2} sx={{ p: 3, borderRadius: 3, display: 'flex', alignItems: 'center', gap: 3 }}>
-            <Box sx={{ backgroundColor: 'primary.main', p: 1.5, borderRadius: 2, display: 'flex', color: 'white', boxShadow: 2 }}>
-            <ShowChartIcon fontSize="large" />
-            </Box>
-            <Box>
-                <Typography variant="h4" fontWeight="bold" color="text.primary">
-                ¡Hola, {usuario?.nombre?.split(' ')[0] || 'Inversor'}!
-                </Typography>
-                <Typography variant="body1" color="text.secondary">
-                Aquí tienes un resumen de tu portafolio y las últimas señales del mercado.
-                </Typography>
-            </Box>
-        </Paper>
+        <PageHeader 
+            titulo={"¡Hola, " + (usuario?.nombre?.split(' ')[0] || 'Inversor') + "!"}
+            subtitulo="Aquí tienes un resumen de tu portafolio y las últimas señales del mercado."
+            icono={ShowChartIcon} 
+        />
 
 
       {/* SECCIÓN 1: KPIs Principales */}
       <Grid container spacing={3}>
         <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-            <Card elevation={2} sx={{ borderRadius: 3, height: '100%' }}>
+            <Card sx={{ height: '100%' }}>
                 <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2, p: 3 }}>
                     <Avatar sx={{ bgcolor: 'primary.light', width: 56, height: 56 }}>
                         <BusinessCenterIcon fontSize="medium" />
@@ -91,7 +85,7 @@ export default function Home() {
         </Grid>
 
         <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-            <Card elevation={2} sx={{ borderRadius: 3, height: '100%' }}>
+            <Card sx={{ height: '100%' }}>
                 <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2, p: 3 }}>
                     <Avatar sx={{ bgcolor: 'secondary.light', width: 56, height: 56 }}>
                         <PieChartIcon fontSize="medium" />
@@ -105,7 +99,7 @@ export default function Home() {
         </Grid>
 
         <Grid size={{ xs: 12, sm: 12, md: 4 }}>
-            <Card elevation={2} sx={{ borderRadius: 3, height: '100%', bgcolor: sentimientoColor.bg, border: `1px solid ${sentimientoColor.color}40` }}>
+            <Card sx={{ height: '100%', bgcolor: sentimientoColor.bg, border: `1px solid ${sentimientoColor.color}40` }}>
                 <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2, p: 3 }}>
                     <Avatar sx={{ bgcolor: sentimientoColor.color, color: 'white', width: 56, height: 56 }}>
                         <AutoGraphIcon fontSize="medium" />
@@ -124,7 +118,7 @@ export default function Home() {
       {/* SECCIÓN 2: Panel IA y Accesos Rápidos */}
       <Grid container spacing={4}>
         <Grid size={{ xs: 12, lg: 7 }}>
-            <Paper elevation={2} sx={{ p: 3, borderRadius: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
+            <Paper sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
                 <Typography variant="h6" fontWeight="bold" sx={{ mb: 2, color: 'text.primary', display: 'flex', alignItems: 'center', gap: 1 }}>
                     <AutoGraphIcon color="primary" /> Oportunidades IA en Portafolio
                 </Typography>
@@ -147,7 +141,7 @@ export default function Home() {
                                     mb: 1.5, 
                                     borderRadius: 2, 
                                     p: 2, 
-                                    borderLeft: `4px solid ${emp.tendencia === 'Alcista' ? '#10b981' : emp.tendencia === 'Bajista' ? '#ef4444' : '#f59e0b'}` 
+                                    borderLeft: `4px solid ${emp.tendencia === 'Alcista' ? theme.palette.market.positive.icon : emp.tendencia === 'Bajista' ? theme.palette.market.negative.icon : theme.palette.warning.main}` 
                                 }}
                             >
                                 <ListItemAvatar>
@@ -193,7 +187,7 @@ export default function Home() {
         </Grid>
 
         <Grid size={{ xs: 12, lg: 5 }}>
-            <Paper elevation={2} sx={{ p: 3, borderRadius: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
+            <Paper sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
                 <Typography variant="h6" fontWeight="bold" sx={{ mb: 2, color: 'text.primary' }}>¿Qué deseas hacer hoy?</Typography>
                 <Divider sx={{ mb: 3 }} />
                 
