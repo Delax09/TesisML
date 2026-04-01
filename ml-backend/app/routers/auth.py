@@ -142,17 +142,38 @@ def solicitar_recuperacion(request: RecuperarPassword, db: Session = Depends(get
     )
     
     enlace = f"http://localhost:3000/reset-password?token={token_recuperacion}"
+    
+    # --- NUEVA PLANTILLA HTML DE RECUPERACIÓN ---
+    plantilla_recuperacion = f"""
+    <html>
+    <body style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px; margin: 0;">
+        <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 30px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+            <div style="text-align: center; border-bottom: 2px solid #d32f2f; padding-bottom: 20px;">
+                <h2 style="color: #d32f2f; margin: 0;">Recuperación de Contraseña</h2>
+            </div>
+            <div style="padding: 20px 0;">
+                <p style="font-size: 16px; color: #333;">Hola <strong>{usuario.Nombre}</strong>,</p>
+                <p style="font-size: 16px; color: #333;">Has solicitado restablecer tu contraseña. Haz clic en el siguiente botón para crear una nueva:</p>
+                
+                <div style="text-align: center; margin: 30px 0;">
+                    <a href="{enlace}" style="background-color: #d32f2f; color: #ffffff; padding: 15px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">Restablecer Contraseña</a>
+                </div>
+                
+                <p style="font-size: 13px; color: #d32f2f; text-align: center; font-weight: bold;">Este enlace es válido por solo 15 minutos.</p>
+            </div>
+            <div style="font-size: 12px; color: #aaa; text-align: center; border-top: 1px solid #eee; padding-top: 20px;">
+                Si no solicitaste este cambio, por favor ignora este correo.
+            </div>
+        </div>
+    </body>
+    </html>
+    """
     # 2. Enviar el correo
     enviar_correo(
         destino=usuario.Email,
         asunto="TesisML - Recuperación de Contraseña",
-        mensaje=(
-            f"Hola {usuario.Nombre},\n\n"
-            "Has solicitado restablecer tu contraseña.\n\n"
-            f"Para crear una nueva contraseña, haz clic en el siguiente enlace de forma segura:\n\n"
-            f"{enlace}\n\n"
-            "Este enlace es válido por 15 minutos. Si no fuiste tú, por favor ignora este correo."
-        )
+        mensaje=plantilla_recuperacion,
+        es_html=True
     )
     
     return mensaje_exito
