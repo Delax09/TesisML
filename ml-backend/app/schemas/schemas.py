@@ -274,8 +274,6 @@ class ResetearPasswordRequest(BaseModel):
     nueva_password: str = Field(..., description="Nueva password")
 
 
-<<<<<<< HEAD
-=======
 # ========================= ANALISIS PORTAFOLIO SCHEMAS =========================
 class DistribucionSector(BaseModel):
     sector: str
@@ -306,4 +304,3 @@ class NoticiaOut(BaseModel):
     fuente: str = Field(..., description="Quién publicó la noticia (ej. Yahoo, Bloomberg)")
     fecha_publicacion: datetime = Field(..., description="Fecha de publicación")
     ticker_relacionado: str = Field(..., description="Símbolo de la empresa (ej. AAPL)")
->>>>>>> 7eb9140fa4aebc7a2bdbfdc3b5ca48fde1749782

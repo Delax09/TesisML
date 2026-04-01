@@ -5,6 +5,7 @@ from sklearn.preprocessing import MinMaxScaler
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.losses import Huber
 from tensorflow.keras.callbacks import EarlyStopping
+from tqdm.keras import TqdmCallback # <-- NUEVO: Barra de progreso elegante para Keras
 import joblib
 import os
 import concurrent.futures
@@ -155,7 +156,6 @@ def entrenar_y_guardar(id_modelo_especifico: int = None):
 
         model = funcion_arquitectura(x_train.shape[1], x_train.shape[2])
         
-        # --- NUEVO COMPILADOR ROBUSTO ---
         model.compile(
             optimizer=Adam(learning_rate=0.0005), 
             loss=Huber(delta=1.0), 
@@ -163,14 +163,16 @@ def entrenar_y_guardar(id_modelo_especifico: int = None):
         )
         
         early_stopping = EarlyStopping(monitor='val_loss', patience=5, restore_best_weights=True)
+        # Añadimos la barra visual a los callbacks
+        tqdm_callback = TqdmCallback(verbose=1) 
         
         historial = model.fit(
             x_train, y_train, 
             epochs=25, 
             batch_size=64, 
-            verbose=1, 
+            verbose=0,
             validation_split=0.1, 
-            callbacks=[early_stopping]
+            callbacks=[early_stopping, tqdm_callback] # Incluimos ambos callbacks
         )
         
         #-------METRICAS DE EVALUACION -------
@@ -182,10 +184,8 @@ def entrenar_y_guardar(id_modelo_especifico: int = None):
 
         if len(y_val_pred.shape) == 3:
             print("⚠️ Aviso: El modelo retornó secuencias 3D. Aplanando automáticamente...")
-            y_val_pred = y_val_pred[:, -1, 0] # Toma todas las filas, el último día, la única columna
+            y_val_pred = y_val_pred[:, -1, 0]
         
-        #Si la diferencia > 0, significa que el precio subio
-        ##Si no bajo
         direccion_real = (np.diff(y_val_real.flatten()) > 0).astype(int)
         direccion_pred = (np.diff(y_val_pred.flatten()) > 0).astype(int)
 
@@ -205,13 +205,18 @@ def entrenar_y_guardar(id_modelo_especifico: int = None):
             'f1_score': f1
         }
 
-        MetricaService.guardar_metricas(db, modelo_db.IdModelo, metricas_finales)
+        # Conectamos localmente a la BD para no perder la sesión durante entrenamientos largos
+        db_local = SessionLocal()
+        try:
+            MetricaService.guardar_metricas(db_local, modelo_db.IdModelo, metricas_finales)
+        finally:
+            db_local.close()
 
         ruta_modelo = os.path.join(ruta_modelos, f'modelo_acciones_{modelo_db.Version}.keras')
         model.save(ruta_modelo)
         print(f"✅ Modelo {modelo_db.Nombre} guardado exitosamente.")
 
-    # Guardar scaler global (compartido por todas las redes neuronales)
+    # Guardar scaler global
     ruta_scaler = os.path.join(ruta_modelos, 'scaler.pkl')
     joblib.dump(scaler, ruta_scaler)
     print("✅ ¡Entrenamiento masivo completado con éxito!")
