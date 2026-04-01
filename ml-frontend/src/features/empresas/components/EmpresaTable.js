@@ -1,7 +1,7 @@
 // src/features/empresas/components/EmpresaTable.js
 import React, { useState, useRef, useMemo, memo } from 'react';
 import { 
-    Box, Paper, Typography, CircularProgress, Chip, IconButton, Tooltip,
+    Box, Typography, CircularProgress, Chip, IconButton, Tooltip,
     Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
     TextField, InputAdornment 
 } from '@mui/material';
@@ -49,16 +49,7 @@ function EmpresaTable({
     }
 
     return (
-        <Paper 
-            elevation={0} 
-            sx={{ 
-                p: 3, 
-                borderRadius: '12px', 
-                boxShadow: '0 4px 6px rgba(0,0,0,0.05)', 
-                width: '100%', 
-                bgcolor: 'background.paper' 
-            }}
-        >
+        <Box sx={{ width: '100%' }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
                 <Box>
                     <Typography variant="h6" fontWeight="bold" color="text.primary" gutterBottom>
@@ -75,16 +66,11 @@ function EmpresaTable({
                     InputProps={{
                         startAdornment: (
                             <InputAdornment position="start">
-                                <Search fontSize="small" />
+                                <Search fontSize="small" color="action" />
                             </InputAdornment>
                         ),
                     }}
-                    sx={{ 
-                        minWidth: { xs: '100%', sm: '250px' },
-                        bgcolor: (theme) => theme.palette.background.default,
-                        borderRadius: '8px',
-                        '& fieldset': { borderRadius: '8px' }
-                    }}
+                    sx={{ minWidth: { xs: '100%', sm: '250px' } }}
                 />
             </Box>
 
@@ -95,13 +81,21 @@ function EmpresaTable({
                     gap: 1.5, 
                     mb: 2, 
                     pb: 1.5, 
-                    borderBottom: (theme) => `1px solid ${theme.palette.table.border || '#e2e8f0'}` 
+                    borderBottom: '1px solid', // <-- CORRECCIÓN BORDES
+                    borderColor: 'divider'     // <-- SE ADAPTA AL MODO OSCURO
                 }}
             >
+                {/* BOTÓN IZQUIERDO CORREGIDO */}
                 <IconButton 
                     onClick={() => desplazar('izq')} 
                     size="small" 
-                    sx={{ border: '1px solid #cbd5e1', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', bgcolor: '#fff' }}
+                    sx={{ 
+                        border: '1px solid', 
+                        borderColor: 'divider', 
+                        bgcolor: 'background.paper', // <-- EN VEZ DE #fff
+                        boxShadow: 1,
+                        '&:hover': { bgcolor: 'action.hover' }
+                    }}
                 >
                     <ChevronLeft fontSize="small" />
                 </IconButton>
@@ -113,38 +107,37 @@ function EmpresaTable({
                         scrollbarWidth: 'none', '&::-webkit-scrollbar': { display: 'none' } 
                     }}
                 >
+                    {/* CHIPS SIMPLIFICADOS PARA EVITAR FALLOS DE TEMA */}
                     <Chip
                         label="Todos los sectores"
                         onClick={() => setSectorSeleccionado('todos')}
-                        sx={{
-                            fontWeight: '600',
-                            bgcolor: sectorSeleccionado === 'todos' ? 'primary.main' : 'chip.defaultBg',
-                            color: sectorSeleccionado === 'todos' ? 'primary.contrastText' : 'chip.defaultText',
-                            border: (theme) => `1px solid ${sectorSeleccionado === 'todos' ? theme.palette.primary.dark : theme.palette.chip.defaultBorder}`,
-                            '&:hover': { bgcolor: sectorSeleccionado === 'todos' ? 'primary.dark' : 'chip.hoverBg' }
-                        }}
+                        color={sectorSeleccionado === 'todos' ? "primary" : "default"}
+                        variant={sectorSeleccionado === 'todos' ? "filled" : "outlined"}
+                        sx={{ fontWeight: 'bold' }}
                     />
-
                     {sectores.map((sector) => (
                         <Chip
                             key={sector.IdSector}
                             label={sector.NombreSector}
                             onClick={() => setSectorSeleccionado(sector.IdSector)}
-                            sx={{
-                                fontWeight: '600',
-                                bgcolor: sectorSeleccionado === sector.IdSector ? 'primary.main' : 'chip.defaultBg',
-                                color: sectorSeleccionado === sector.IdSector ? 'primary.contrastText' : 'chip.defaultText',
-                                border: (theme) => `1px solid ${sectorSeleccionado === sector.IdSector ? theme.palette.primary.dark : theme.palette.chip.defaultBorder}`,
-                                '&:hover': { bgcolor: sectorSeleccionado === sector.IdSector ? 'primary.dark' : 'chip.hoverBg' }
-                            }}
+                            color={sectorSeleccionado === sector.IdSector ? "primary" : "default"}
+                            variant={sectorSeleccionado === sector.IdSector ? "filled" : "outlined"}
+                            sx={{ fontWeight: 'bold' }}
                         />
                     ))}
                 </Box>
 
+                {/* BOTÓN DERECHO CORREGIDO */}
                 <IconButton 
                     onClick={() => desplazar('der')} 
                     size="small" 
-                    sx={{ border: '1px solid #cbd5e1', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', bgcolor: '#fff' }}
+                    sx={{ 
+                        border: '1px solid', 
+                        borderColor: 'divider', 
+                        bgcolor: 'background.paper', // <-- EN VEZ DE #fff
+                        boxShadow: 1,
+                        '&:hover': { bgcolor: 'action.hover' }
+                    }}
                 >
                     <ChevronRight fontSize="small" />
                 </IconButton>
@@ -169,18 +162,14 @@ function EmpresaTable({
                                     onClick={() => onSelect(emp.IdEmpresa, emp.NombreEmpresa)}
                                     sx={{ cursor: 'pointer' }}
                                 >
-                                    <TableCell sx={{ fontWeight: '800', color: 'table.cellTextPrimary' }}>{emp.Ticket}</TableCell>
-                                    <TableCell sx={{ color: 'table.cellTextSecondary' }}>{emp.NombreEmpresa}</TableCell>
+                                    <TableCell sx={{ fontWeight: '800', color: 'primary.main' }}>{emp.Ticket}</TableCell>
+                                    <TableCell sx={{ color: 'text.secondary' }}>{emp.NombreEmpresa}</TableCell>
                                     <TableCell>
                                         <Chip 
                                             label={emp.NombreSector} 
                                             size="small" 
-                                            sx={{ 
-                                                bgcolor: 'chip.sectorBg', 
-                                                color: 'chip.sectorText', 
-                                                fontWeight: 'bold', 
-                                                fontSize: '0.75rem' 
-                                            }} 
+                                            variant="outlined"
+                                            sx={{ fontWeight: 'bold', fontSize: '0.75rem', borderColor: 'transparent', bgcolor: 'action.hover' }} 
                                         />
                                     </TableCell>
                                     {esAdmin && (
@@ -189,7 +178,7 @@ function EmpresaTable({
                                                 <IconButton 
                                                     onClick={(e) => { e.stopPropagation(); onEdit(emp); }} 
                                                     size="small"
-                                                    sx={{ color: 'text.secondary', '&:hover': { color: 'primary.main' } }}
+                                                    color="primary"
                                                 >
                                                     <Edit fontSize="small" />
                                                 </IconButton>
@@ -198,7 +187,7 @@ function EmpresaTable({
                                                 <IconButton 
                                                     onClick={(e) => { e.stopPropagation(); onDelete(emp.IdEmpresa); }} 
                                                     size="small"
-                                                    sx={{ color: 'text.secondary', '&:hover': { color: 'error.main' } }}
+                                                    color="error"
                                                 >
                                                     <Delete fontSize="small" />
                                                 </IconButton>
@@ -219,7 +208,7 @@ function EmpresaTable({
                     </TableBody>
                 </Table>
             </TableContainer>
-        </Paper>
+        </Box>
     );
 }
 

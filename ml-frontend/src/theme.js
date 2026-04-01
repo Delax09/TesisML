@@ -124,12 +124,15 @@ const theme = createTheme({
         elevation: 0,
       },
       styleOverrides: {
-        root: {
-          borderRadius: 0, // <-- REVIERTE EL REDONDEO
-          backgroundColor: '#ffffff',
-          borderBottom: '1px solid #e2e8f0', 
+        root: ({ theme }) => ({
+          borderRadius: 0,
+          // Usamos el color de fondo del tema en lugar de #ffffff
+          backgroundColor: theme.palette.background.paper, 
+          // Usamos el separador nativo de MUI en lugar de #e2e8f0
+          borderBottom: `1px solid ${theme.palette.divider}`, 
           boxShadow: 'none', 
-        },
+          backgroundImage: 'none', // Necesario para que no haga cosas raras en modo oscuro
+        }),
       },
     },
 

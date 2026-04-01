@@ -1,46 +1,63 @@
+// src/features/sectores/components/SectorList.js
 import React from 'react';
 import { useSectoresList } from '../hooks/useSectores';
+import { 
+    Box, Paper, Typography, CircularProgress, 
+    Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip 
+} from '@mui/material';
 
 function SectorList() {
     const { sectores, cargando, error } = useSectoresList();
 
-    if (cargando) return <p>Cargando sectores...</p>;
-    if (error) return <p style={{ color: 'red' }}>{error}</p>;
+    if (cargando) {
+        return (
+            <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+                <CircularProgress />
+            </Box>
+        );
+    }
+
+    if (error) {
+        return <Typography color="error" sx={{ p: 2 }}>{error}</Typography>;
+    }
 
     return (
-        <div style={estilos.contenedor}>
-            <h3>Sectores Disponibles</h3>
-            <table style={estilos.tabla}>
-                <thead>
-                    <tr style={estilos.filaEncabezado}>
-                        <th>ID</th><th>Nombre del Sector</th><th>Estado</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {sectores.map((sector) => (
-                        <tr key={sector.IdSector} style={estilos.fila}>
-                            <td>{sector.IdSector}</td>
-                            <td>{sector.NombreSector}</td>
-                            <td>
-                                <span style={sector.Activo ? estilos.badgeActivo : estilos.badgeInactivo}>
-                                    {sector.Activo ? 'Activo' : 'Inactivo'}
-                                </span>
-                            </td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
-        </div>
+        <Paper sx={{ p: 3, mt: 4 }}>
+            <Typography variant="h6" fontWeight="bold" gutterBottom color="text.primary">
+                Sectores Disponibles
+            </Typography>
+            <TableContainer>
+                <Table>
+                    <TableHead>
+                        <TableRow>
+                            <TableCell sx={{ fontWeight: 'bold', width: '15%' }}>ID</TableCell>
+                            <TableCell sx={{ fontWeight: 'bold', width: '60%' }}>Nombre del Sector</TableCell>
+                            <TableCell sx={{ fontWeight: 'bold', width: '25%' }}>Estado</TableCell>
+                        </TableRow>
+                    </TableHead>
+                    <TableBody>
+                        {sectores.map((sector) => (
+                            <TableRow key={sector.IdSector} hover>
+                                <TableCell sx={{ color: 'text.secondary', fontWeight: 'bold' }}>
+                                    #{sector.IdSector}
+                                </TableCell>
+                                <TableCell>{sector.NombreSector}</TableCell>
+                                <TableCell>
+                                    <Chip 
+                                        label={sector.Activo ? 'Activo' : 'Inactivo'} 
+                                        size="small"
+                                        color={sector.Activo ? 'success' : 'error'}
+                                        variant={sector.Activo ? 'filled' : 'outlined'}
+                                        sx={{ fontWeight: 'bold' }}
+                                    />
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </TableContainer>
+        </Paper>
     );
 }
-
-const estilos = {
-    contenedor: { marginTop: '2rem', padding: '1rem', backgroundColor: 'white', borderRadius: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' },
-    tabla: { width: '100%', borderCollapse: 'collapse', textAlign: 'left' },
-    filaEncabezado: { borderBottom: '2px solid #eee', color: '#666' },
-    fila: { borderBottom: '1px solid #eee' },
-    badgeActivo: { backgroundColor: '#d4edda', color: '#155724', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8rem' },
-    badgeInactivo: { backgroundColor: '#f8d7da', color: '#721c24', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8rem' }
-};
 
 export default SectorList;

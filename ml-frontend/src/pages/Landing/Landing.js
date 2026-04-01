@@ -4,7 +4,7 @@ import { Navigate } from 'react-router-dom';
 import { useAuth } from '../../context'; // Ajustado dependiendo de tu baseUrl
 
 import { 
-    Button, Typography, Box, AppBar, Toolbar, Dialog, DialogContent, IconButton 
+    Button, Typography, Box, AppBar, Toolbar, Dialog, DialogContent, IconButton, 
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import landing1 from 'assets/landing1.png';
@@ -95,7 +95,7 @@ export default function Landing() {
                         <img src={landing1} alt="Ilustración de análisis financiero" style={{ maxWidth: '100%', maxHeight: '100%' }} />             
                     </Box>
                 </Box>
-
+                
                 <Box sx={{ width: '100%', maxWidth: '1200px', mb: 4 }}>
                     {/* 4. PASAMOS LOS DATOS AL COMPONENTE VISUAL */}
                     <EmpresaTable 
@@ -105,6 +105,7 @@ export default function Landing() {
                         onSelect={manejarSeleccionEmpresa} 
                     />
                 </Box>
+
 
             </Box>
 
