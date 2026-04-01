@@ -164,15 +164,14 @@ def entrenar_y_guardar(id_modelo_especifico: int = None):
         
         early_stopping = EarlyStopping(monitor='val_loss', patience=5, restore_best_weights=True)
         # Añadimos la barra visual a los callbacks
-        tqdm_callback = TqdmCallback(verbose=1) 
         
         historial = model.fit(
             x_train, y_train, 
             epochs=25, 
             batch_size=64, 
-            verbose=1,
+            verbose=0,
             validation_split=0.1, 
-            callbacks=[early_stopping, tqdm_callback] # Incluimos ambos callbacks
+            callbacks=[early_stopping]
         )
         
         #-------METRICAS DE EVALUACION -------
