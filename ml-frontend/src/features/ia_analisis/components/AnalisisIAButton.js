@@ -10,9 +10,12 @@ export default function AnalisisIAButton({ onComplete }) {
     return (
         <Box>
             <Button
-                variant="contained" onClick={() => setOpenConfirm(true)} disabled={ejecutando}
+                variant="contained" 
+                color="secondary" // Cambiado: Usamos el nombre del tema
+                onClick={() => setOpenConfirm(true)} 
+                disabled={ejecutando}
                 startIcon={ejecutando ? <CircularProgress size={20} color="inherit" /> : <RocketLaunchIcon />}
-                sx={{ bgcolor: '#4f46e5', color: 'white', p: '12px 24px', borderRadius: '8px', fontWeight: 'bold', '&:hover': { bgcolor: '#4338ca' } }}
+                size="large" // Usamos los tamaños predefinidos
             >
                 {ejecutando ? 'Analizando Mercado...' : 'Ejecutar IA Masiva'}
             </Button>
@@ -23,8 +26,8 @@ export default function AnalisisIAButton({ onComplete }) {
                     <DialogContentText>¿Deseas ejecutar el análisis de IA para todas las empresas?</DialogContentText>
                 </DialogContent>
                 <DialogActions sx={{ pb: 2, px: 3 }}>
-                    <Button onClick={() => setOpenConfirm(false)}>Cancelar</Button>
-                    <Button onClick={manejarEjecucionMasiva} variant="contained" sx={{ bgcolor: '#4f46e5' }}>Sí, ejecutar</Button>
+                    <Button onClick={() => setOpenConfirm(false)} color="inherit">Cancelar</Button>
+                    <Button onClick={manejarEjecucionMasiva} variant="contained" color="secondary">Sí, ejecutar</Button>
                 </DialogActions>
             </Dialog>
         </Box>
