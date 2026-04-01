@@ -164,7 +164,7 @@ def entrenar_y_guardar(id_modelo_especifico: int = None):
         
         early_stopping = EarlyStopping(monitor='val_loss', patience=5, restore_best_weights=True)
         
-        model.fit(
+        historial = model.fit(
             x_train, y_train, 
             epochs=25, 
             batch_size=64, 

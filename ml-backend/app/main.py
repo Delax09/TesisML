@@ -16,11 +16,7 @@ from app.routers import (auth_router,
                         ia_router,
                         admin_router,
                         modelo_ia_router,
-<<<<<<< HEAD
-                        metricas_router)
-=======
                         noticias)
->>>>>>> 7eb9140fa4aebc7a2bdbfdc3b5ca48fde1749782
 from app.db.sessions import engine, Base
 from slowapi.errors import RateLimitExceeded
 from slowapi import _rate_limit_exceeded_handler
