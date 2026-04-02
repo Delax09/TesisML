@@ -1,16 +1,16 @@
 name: Deploy Backend
 
 on:
-  # En lugar de reaccionar a un push, reacciona a la finalización de otro workflow
+  # El backend espera a que el frontend termine
   workflow_run:
-    workflows: ["Deploy Frontend"] # Este nombre debe ser idéntico al "name:" de tu otro archivo .yml
+    workflows: ["Deploy Frontend"] # Asegúrate de que el archivo del frontend tenga exactamente este "name"
     types:
       - completed
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    # ESTO ES CLAVE: Solo se ejecuta si el frontend terminó sin errores (success)
+    # Solo ejecuta si el frontend fue exitoso
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
 
     steps:
@@ -26,15 +26,12 @@ jobs:
             # 1. Traer los últimos cambios
             git pull origin main
             
-            # 2. Activar el entorno virtual de Python 3.13.12 y actualizar dependencias
+            # 2. Actualizar dependencias de Python
             source venv/bin/activate
             cd ml-backend/
             pip install -r requirement.txt
             
-            # 3. Detener el backend anterior si está corriendo
-            pkill -f "uvicorn app.main:app" || echo "El proceso no estaba corriendo"
+            # 3. Reiniciar el servicio de Ubuntu (Ahora el usuario github tiene permiso)
+            sudo systemctl restart tesisml
             
-            # 4. Iniciar el backend en segundo plano (nohup)
-            nohup uvicorn app.main:app --host 127.0.0.1 --port 8000 > backend_nohup.log 2>&1 &
-            
-            echo "Backend desplegado e iniciado tras la actualización del Frontend"
+            echo "Backend actualizado y servicio reiniciado exitosamente."
