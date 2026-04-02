@@ -32,25 +32,28 @@ jobs:
         run: npm run build
 
       - name: Parchear URLs de Localhost a Producción (/api)
+        # Usamos "set +e" para que si grep no encuentra nada, el script no se detenga
         run: |
-          # El "|| true" evita que la acción falle si no hay nada que reemplazar
-          grep -ril "http://localhost:8000" build/ | xargs -r sed -i 's|http://localhost:8000||g' || true
+          set +e
+          grep -ril "http://localhost:8000" build/ | xargs -r sed -i 's|http://localhost:8000||g'
+          echo "Parcheo completado o saltado porque no hay coincidencias."
 
-      - name: Configurar SSH y Deploy con rsync
+      - name: Deploy con rsync
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           SSH_HOST: ${{ secrets.SSH_HOST }}
           SSH_USER: ${{ secrets.SSH_USER }}
         run: |
+          # 1. Validar que los secrets no estén vacíos (para depurar)
+          if [ -z "$SSH_HOST" ]; then echo "ERROR: SSH_HOST está vacío"; exit 1; fi
+          
+          # 2. Configurar la llave SSH
           mkdir -p ~/.ssh
           echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           
-          # Añadir el host a known_hosts para evitar el prompt de confirmación
-          ssh-keyscan -H $SSH_HOST >> ~/.ssh/known_hosts
-          
-          # Sincronizar la carpeta build al servidor
+          # 3. Sincronizar (Usamos flags que ignoran la verificación de host para evitar que ssh-keyscan falle)
           rsync -avz --delete \
-          -e "ssh -i ~/.ssh/id_rsa" \
+          -e "ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o ConnectTimeout=10" \
           build/ \
           $SSH_USER@$SSH_HOST:/var/www/html/ml-frontend/build/
