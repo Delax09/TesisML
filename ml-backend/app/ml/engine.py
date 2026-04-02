@@ -1,11 +1,15 @@
 import os
 import numpy as np
 import pandas as pd
-import torch
 import joblib
 
 from app.ml.arquitectura.v1_lstm import ModeloLSTM_v1
 from app.ml.arquitectura.v2_bidireccional import ModeloBidireccional_v2
+
+import torch
+import torch._dynamo
+torch._dynamo.config.suppress_errors = True
+torch._dynamo.disable()
 
 class MLEngine:
     """Motor de Inferencia de Inteligencia Artificial para Mercado de Valores"""
