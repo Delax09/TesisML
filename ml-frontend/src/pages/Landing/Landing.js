@@ -6,11 +6,14 @@ import { useAuth, useThemeContext } from '../../context';
 import { Box, Dialog, DialogContent, IconButton, Grid, Paper } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 
+// Importación de imágenes
+import fondoClaro from '../../assets/modo-claro.jpg';
+import fondoOscuro from '../../assets/modo-oscuro.avif'; // Asegúrate de usar la extensión correcta
+
 import AuthForm from '../../features/auth/components/AuthForm';
 import EmpresaTable from '../../features/empresas/components/EmpresaTable';
 import { useEmpresas } from '../../features/empresas/hooks/useEmpresas';
 
-// Importamos los componentes del landing
 import LandingNavbar from '../../features/landing/components/LandingNavbar'; 
 import HeroSection from '../../features/landing/components/HeroSection';
 import MisionVisionSection from '../../features/landing/components/MisionVisionSection';
@@ -19,7 +22,7 @@ import ContactoSection from '../../features/landing/components/ContactoSection';
 
 export default function Landing() {
     const [modalAuth, setModalAuth] = useState({ open: false, esRegistro: false });
-    const [activeTab, setActiveTab] = useState(0); // 0: Inicio, 1: Nosotros, 2: FAQ, 3: Contacto
+    const [activeTab, setActiveTab] = useState(0); 
     
     const { usuario } = useAuth();
     const { mode, toggleTheme } = useThemeContext();
@@ -42,8 +45,32 @@ export default function Landing() {
     }
 
     return (
-        <Box sx={{ minHeight: '100vh', height: '100vh', overflowY: 'auto', backgroundColor: 'background.default', display: 'flex', flexDirection: 'column' }}>
+        <Box sx={{ 
+            minHeight: '100vh', 
+            height: '100vh', 
+            overflowY: 'auto', 
+            backgroundColor: 'background.default', 
+            display: 'flex', 
+            flexDirection: 'column',
+            position: 'relative', // Necesario para el posicionamiento del fondo
+        }}>
             
+            {/* CAPA DE FONDO CON OPACIDAD */}
+            <Box sx={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                zIndex: 0, // Por detrás de todo
+                backgroundImage: `url(${mode === 'dark' ? fondoOscuro : fondoClaro})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                opacity: mode === 'dark' ? 0.15 : 0.25, // Opacidad ajustable
+                transition: 'background-image 0.5s ease-in-out, opacity 0.5s ease-in-out',
+                pointerEvents: 'none', // Para que no interfiera con los clics
+            }} />
+
             <LandingNavbar 
                 mode={mode} 
                 toggleTheme={toggleTheme} 
@@ -52,9 +79,18 @@ export default function Landing() {
                 setActiveTab={setActiveTab}   
             />
 
-            <Box component="main" sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', p: { xs: 2, md: 4 }, pb: 8 }}>
+            {/* Contenedor principal con zIndex para estar sobre el fondo */}
+            <Box component="main" sx={{ 
+                flex: 1, 
+                display: 'flex', 
+                flexDirection: 'column', 
+                alignItems: 'center', 
+                p: { xs: 2, md: 4 }, 
+                pb: 8,
+                position: 'relative',
+                zIndex: 1 
+            }}>
                 
-                {/* PESTAÑA 0: INICIO (Hero Izquierda | Tabla Derecha) */}
                 {activeTab === 0 && (
                     <Grid 
                         container 
@@ -63,19 +99,16 @@ export default function Landing() {
                             width: '100%', 
                             maxWidth: '1400px', 
                             mx: 'auto', 
-                            alignItems: 'center', // <-- CAMBIO CLAVE: Centrado vertical
-                            minHeight: { md: '80vh' } // Asegura que el contenedor tenga altura suficiente
+                            alignItems: 'center',
+                            minHeight: { md: '80vh' }
                         }}
                     >
-                        
-                        {/* Lado Izquierdo: Hero Section */}
                         <Grid size={{ xs: 12, md: 5, lg: 5 }}>
                             <Box sx={{ pr: { md: 4 } }}>
                                 <HeroSection abrirModalAuth={abrirModalAuth} />
                             </Box>
                         </Grid>
 
-                        {/* Lado Derecho: Tabla de Empresas con Scroll */}
                         <Grid size={{ xs: 12, md: 7, lg: 7 }}>
                             <Paper elevation={0} sx={{ 
                                 p: { xs: 2, md: 4 }, 
@@ -85,10 +118,9 @@ export default function Landing() {
                                 borderColor: 'divider',
                                 display: 'flex',
                                 flexDirection: 'column',
-                                height: { xs: 'auto', md: '80vh' } 
+                                height: { xs: 'auto', md: '80vh' },
+                                backdropFilter: 'blur(4px)', // Opcional: difumina un poco el fondo tras la tabla
                             }}>
-                                
-                                {/* Contenedor con Scroll para la tabla */}
                                 <Box sx={{ flex: 1, overflowY: 'auto', pr: 1 }}>
                                     <EmpresaTable 
                                         empresas={empresas}
@@ -99,41 +131,17 @@ export default function Landing() {
                                 </Box>
                             </Paper>
                         </Grid>
-
                     </Grid>
                 )}
 
-                {/* PESTAÑA 1: NOSOTROS (Misión y Visión) */}
-                {activeTab === 1 && (
-                    <Box sx={{ width: '100%', mt: { xs: 4, md: 8 }, display: 'flex', justifyContent: 'center' }}>
-                        <MisionVisionSection />
-                    </Box>
-                )}
-
-                {/* PESTAÑA 2: FAQ */}
-                {activeTab === 2 && (
-                    <Box sx={{ width: '100%', mt: { xs: 4, md: 8 }, display: 'flex', justifyContent: 'center' }}>
-                        <FaqSection />
-                    </Box>
-                )}
-
-                {/* PESTAÑA 3: CONTACTO */}
-                {activeTab === 3 && (
-                    <Box sx={{ width: '100%', mt: { xs: 4, md: 8 }, display: 'flex', justifyContent: 'center' }}>
-                        <ContactoSection />
-                    </Box>
-                )}
+                {/* Resto de pestañas... */}
+                {activeTab === 1 && <Box sx={{ width: '100%', mt: { xs: 4, md: 8 }, display: 'flex', justifyContent: 'center' }}><MisionVisionSection /></Box>}
+                {activeTab === 2 && <Box sx={{ width: '100%', mt: { xs: 4, md: 8 }, display: 'flex', justifyContent: 'center' }}><FaqSection /></Box>}
+                {activeTab === 3 && <Box sx={{ width: '100%', mt: { xs: 4, md: 8 }, display: 'flex', justifyContent: 'center' }}><ContactoSection /></Box>}
 
             </Box>
 
-            {/* Modal de Autenticación */}
-            <Dialog 
-                open={modalAuth.open} 
-                onClose={cerrarModalAuth} 
-                maxWidth="xs" 
-                fullWidth
-                disableRestoreFocus
-            >
+            <Dialog open={modalAuth.open} onClose={cerrarModalAuth} maxWidth="xs" fullWidth disableRestoreFocus>
                 <DialogContent sx={{ position: 'relative', p: 4 }}>
                     <IconButton onClick={cerrarModalAuth} sx={{ position: 'absolute', right: 8, top: 8, color: 'text.secondary' }}>
                         <CloseIcon />
@@ -141,7 +149,6 @@ export default function Landing() {
                     <AuthForm modoInicialRegistro={modalAuth.esRegistro} />
                 </DialogContent>
             </Dialog>
-
         </Box>
     );
 }
