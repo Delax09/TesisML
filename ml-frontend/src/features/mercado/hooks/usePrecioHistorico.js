@@ -66,4 +66,4 @@ export const usePrecioHistorico = (empresaId) => {
     }, [datosOriginales, rango]);
 
     return { datosFiltrados, rango, cargando, handleCambioRango };
-};
+}; 
