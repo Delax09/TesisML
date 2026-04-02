@@ -16,3 +16,5 @@ scikit-learn>=1.5.0
 tensorflow>=2.18.0
 fastapi-cache2
 httpx>=0.27.0
+uninstall torch torchvision torchaudio -y
+install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124

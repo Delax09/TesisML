@@ -1,15 +1,22 @@
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, LSTM, Input, Dropout
+import torch.nn as nn
 
+class ModeloLSTM_v1(nn.Module):
+    def __init__(self, num_features):
+        super(ModeloLSTM_v1, self).__init__()
+        # batch_first=True permite que el tensor entre como (Lotes, Días, Features)
+        self.lstm = nn.LSTM(input_size=num_features, hidden_size=32, batch_first=True)
+        self.dropout = nn.Dropout(0.2)
+        self.fc1 = nn.Linear(32, 16)
+        self.relu = nn.ReLU()
+        self.fc2 = nn.Linear(16, 1)
 
-def obtener_modelo_v1(shape_1, shape_2):
-    """Modelo LSTM Clásico: Rápido y efectivo para tendencias cortas."""
-    return Sequential([
-        Input(shape=(shape_1, shape_2)),
+    def forward(self, x):
+        lstm_out, _ = self.lstm(x)
+        # Equivalente a return_sequences=False: tomamos el último paso temporal
+        ultimo_dia = lstm_out[:, -1, :] 
+        x = self.dropout(ultimo_dia)
+        x = self.relu(self.fc1(x))
+        return self.fc2(x)
 
-        LSTM(32, return_sequences=False),
-        Dropout(0.2),
-        
-        Dense(16, activation='relu'),
-        Dense(1, activation='linear')
-    ])
+def obtener_modelo_v1(dias_pasados, num_features):
+    return ModeloLSTM_v1(num_features)
