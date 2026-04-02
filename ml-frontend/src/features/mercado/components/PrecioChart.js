@@ -108,6 +108,6 @@ function PrecioChart({ empresaId, nombreEmpresa }) {
             </Box>
         </Box>
     );
-}
+} 
 
 export default memo(PrecioChart);
