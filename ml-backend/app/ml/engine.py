@@ -1,8 +1,13 @@
 import os
 import numpy as np
 import pandas as pd
-import tensorflow as tf
-import joblib
+
+try:
+    import tensorflow as tf
+    import joblib
+    IA_AVAILABLE = True
+except ImportError:
+    IA_AVAILABLE = False
 
 # --- CONFIGURACIÓN DE GPU (Opcional, previene errores de VRAM si usas gráfica) ---
 """gpus = tf.config.list_physical_devices('GPU')
@@ -26,6 +31,9 @@ class MLEngine:
             self.version = version
             self.model = model
             self.scaler = scaler
+
+            if not IA_AVAILABLE:
+                return
             
             # Solo cargar si no se pasaron como parámetros
             if self.model is None or self.scaler is None:

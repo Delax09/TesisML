@@ -1,6 +1,4 @@
 from contextlib import asynccontextmanager
-import tensorflow as tf
-import joblib
 import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -26,23 +24,36 @@ from app.core.limiter import limiter
 from fastapi_cache import FastAPICache
 from fastapi_cache.backends.inmemory import InMemoryBackend
 
+try:
+    import tensorflow as tf
+    import joblib
+    IA_AVAILABLE = True
+except ImportError:
+    IA_AVAILABLE = False
+
 
 # --- NUEVA ESTRUCTURA DE ARRANQUE (LIFESPAN) ---
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     FastAPICache.init(InMemoryBackend())
     
-    print("🚀 Cargando modelos de IA en memoria...")
-    base_path = os.path.join(os.path.dirname(__file__), "ml", "models")
-    try:
-        app.state.model_v1 = tf.keras.models.load_model(os.path.join(base_path, "modelo_acciones_v1.keras"))
-        app.state.model_v2 = tf.keras.models.load_model(os.path.join(base_path, "modelo_acciones_v2.keras"))
-        app.state.scaler = joblib.load(os.path.join(base_path, "scaler.pkl"))
-        print("✅ Modelos y escaladores cargados exitosamente.")
-    except Exception as e:
-        print(f"⚠️ Advertencia: No se pudieron cargar los modelos IA al inicio. Detalle: {e}")
-    
-    yield # La aplicación cede el control para empezar a recibir usuarios
+    if IA_AVAILABLE:
+        print("🚀 Cargando modelos de IA en memoria (Modo Local)...")
+        base_path = os.path.join(os.path.dirname(__file__), "ml", "models")
+        try:
+            app.state.model_v1 = tf.keras.models.load_model(os.path.join(base_path, "modelo_acciones_v1.keras"))
+            app.state.model_v2 = tf.keras.models.load_model(os.path.join(base_path, "modelo_acciones_v2.keras"))
+            app.state.scaler = joblib.load(os.path.join(base_path, "scaler.pkl"))
+            print("✅ Modelos y escaladores cargados exitosamente.")
+        except Exception as e:
+            print(f"⚠️ Error cargando modelos locales: {e}")
+    else:
+        print("⚠️ Modo Producción: IA desactivada. Operando solo como API de Base de Datos.")
+        app.state.model_v1 = None
+        app.state.model_v2 = None
+        app.state.scaler = None
+        
+    yield 
     
     print("🧹 Apagando servidor y liberando memoria RAM...")
     app.state.model_v1 = None

@@ -2,12 +2,16 @@
 from fastapi import APIRouter, Depends, BackgroundTasks, status, Request, HTTPException
 from sqlalchemy.orm import Session
 from app.db.sessions import get_db
-from app.auto.generar_predicciones import ejecutar_analisis_diario
-from app.ml.entrenamiento import entrenar_y_guardar
 import datetime
 import json
 import os
 import math
+try:
+    from app.auto.generar_predicciones import ejecutar_analisis_diario
+    from app.ml.entrenamiento import entrenar_y_guardar
+    IA_AVAILABLE = True
+except ImportError:
+    IA_AVAILABLE = False
 
 from app.models.precio_historico import PrecioHistorico
 from app.models.resultado import Resultado
@@ -16,12 +20,12 @@ router = APIRouter(prefix="/api/v1/ia", tags=["IA Engine"])
 
 @router.post("/analizar-todo")
 async def analizar_todas_las_empresas(background_tasks: BackgroundTasks):
-    background_tasks.add_task(ejecutar_analisis_diario)
+    if not IA_AVAILABLE:
+        raise HTTPException(status_code=501, detail="Procesos de IA no disponibles en el servidor de producción.")
     
-    return {
-        "status": "success",
-        "message": "Análisis masivo de IA iniciado en segundo plano."
-    }
+    background_tasks.add_task(ejecutar_analisis_diario)
+    return {"status": "success", "message": "Análisis masivo de IA iniciado en segundo plano."}
+
 @router.get("/metricas")
 def obtener_metricas_modelo():
     ruta_metricas = os.path.join(os.path.dirname(__file__), "..", "ml", "models", "metricas.json")
@@ -34,12 +38,10 @@ def obtener_metricas_modelo():
         return {"Error": "Metricas no encontradas"}
     
 @router.post("/entrenar-modelo/{id_modelo}", status_code=status.HTTP_202_ACCEPTED)
-def entrenar_modelo_individual(
-    id_modelo: int,
-    background_tasks: BackgroundTasks,
-    # current_user: Usuario = Depends(obtener_usuario_actual) # Descomenta esto si tu ruta está protegida con JWT
-):
-    """Inicia el entrenamiento en segundo plano de un solo modelo específico."""
+def entrenar_modelo_individual(id_modelo: int, background_tasks: BackgroundTasks):
+    if not IA_AVAILABLE:
+        raise HTTPException(status_code=501, detail="Entrenamiento no disponible en producción.")
+        
     background_tasks.add_task(entrenar_y_guardar, id_modelo_especifico=id_modelo)
     return {"message": f"Entrenamiento del modelo ID {id_modelo} iniciado en segundo plano."}
 

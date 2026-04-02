@@ -30,7 +30,7 @@ jobs:
             # 2. Actualizar dependencias de Python
             source venv/bin/activate
             cd ml-backend/
-            pip install -r requirement.txt
+            pip install -r requirements-prod.txt
             
             # 3. Reiniciar el servicio de Ubuntu (Ahora el usuario github tiene permiso)
             sudo systemctl restart tesisml

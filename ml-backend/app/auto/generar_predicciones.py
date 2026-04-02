@@ -1,13 +1,18 @@
 import gc
 import math
 import pandas as pd
-import tensorflow as tf
 from app.db.sessions import SessionLocal
 from app.models.empresa import Empresa
 from app.models.precio_historico import PrecioHistorico
 from app.models.modelo_ia import ModeloIA
 from app.ml.engine import MLEngine
 from app.services.resultado_service import ResultadoService
+
+try:
+    import tensorflow as tf
+    IA_AVAILABLE = True
+except ImportError:
+    IA_AVAILABLE = False
 
 def limpiar_numero(valor):
     try:
@@ -57,7 +62,8 @@ def ejecutar_analisis_diario():
                     except: db.rollback()
             
             del engine.model
-            tf.keras.backend.clear_session()
+            if IA_AVAILABLE:
+                tf.keras.backend.clear_session()
             gc.collect()
         print("\n🎉 Proceso completado.")
     finally: db.close()
