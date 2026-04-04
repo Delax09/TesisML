@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, String, DECIMAL, ForeignKey, DateTime, B
 from sqlalchemy.orm import relationship
 from app.db.sessions import Base
 from sqlalchemy.sql import func
+from app.utils.horaformateada import obtener_hora_formateada
 
 
 class Empresa(Base):
@@ -10,10 +11,10 @@ class Empresa(Base):
     Ticket = Column(String(50), unique=True, nullable=False)
     NombreEmpresa = Column(String(100), nullable=False)
     IdSector = Column(Integer, ForeignKey("Sector.IdSector"))
-    FechaAgregado = Column(DateTime, server_default=func.now())
+    FechaAgregado = Column(DateTime, default=obtener_hora_formateada)
 
     Activo = Column(Boolean, default = True)
-    FechaActualizacion = Column(DateTime)
+    FechaActualizacion = Column(DateTime, default=obtener_hora_formateada)
 
     sector = relationship("Sector", back_populates="empresas")
     resultados = relationship("Resultado", back_populates="empresa")

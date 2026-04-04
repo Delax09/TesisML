@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, DECIMAL, String, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 from app.db.sessions import Base
 from sqlalchemy.sql import func
+from app.utils.horaformateada import obtener_hora_formateada
 
 class Resultado(Base):
     __tablename__ = "Resultado"
@@ -17,7 +18,7 @@ class Resultado(Base):
     EMA50 = Column(DECIMAL, nullable=False)
     Recomendacion = Column(String(50))
     ProbAlcista = Column(DECIMAL, nullable= True)
-    FechaAnalisis = Column(DateTime, server_default=func.now())
+    FechaAnalisis = Column(DateTime, default=obtener_hora_formateada)
 
     IdEmpresa = Column(Integer, ForeignKey("Empresa.IdEmpresa"))
     IdModelo = Column(Integer, ForeignKey("ModeloIA.IdModelo"))

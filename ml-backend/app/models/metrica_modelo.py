@@ -2,13 +2,14 @@ from sqlalchemy import Column, Integer, DECIMAL, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from app.db.sessions import Base
+from app.utils.horaformateada import obtener_hora_formateada
 
 class MetricaModelo(Base):
     __tablename__ = "MetricaModelo"
 
     IdMetrica = Column(Integer, primary_key=True, index=True)
     IdModelo = Column(Integer, ForeignKey("ModeloIA.IdModelo"))
-    FechaEntrenamiento = Column(DateTime, default = datetime.utcnow)
+    FechaEntrenamiento = Column(DateTime, default=obtener_hora_formateada)
 
     Loss = Column(DECIMAL(10,6))
     MAE = Column(DECIMAL(10,6))

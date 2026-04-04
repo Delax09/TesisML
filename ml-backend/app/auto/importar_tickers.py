@@ -4,6 +4,7 @@ import os
 from datetime import datetime
 from sqlalchemy.orm import Session
 from app.models.models import Empresa, Sector # Usamos models.models como en tu original
+from app.utils.horaformateada import obtener_hora_formateada
 
 def importar_desde_csv(db: Session):
     # Localizamos el archivo
@@ -38,7 +39,7 @@ def importar_desde_csv(db: Session):
                     Ticket=ticket_val,
                     NombreEmpresa=nombre_e,
                     IdSector=sector.IdSector,
-                    FechaAgregado=datetime.now(), # Añadido como en tu original
+                    FechaAgregado=obtener_hora_formateada(), # Añadido como en tu original
                     Activo=True
                 )
                 db.add(nueva_empresa)

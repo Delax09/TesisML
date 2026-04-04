@@ -9,6 +9,7 @@ import re
 from app.utils.security import create_access_token
 from datetime import timedelta
 from app.templates import template_verificacion
+from app.utils.horaformateada import obtener_hora_formateada
 
 class UsuarioService: 
     # =========================================================================
@@ -65,7 +66,7 @@ class UsuarioService:
             PasswordU=hash_password(usuario.PasswordU),
             IdRol=usuario.IdRol,
             Activo=False,                      
-            FechaCreacion=datetime.utcnow(),  
+            FechaCreacion=obtener_hora_formateada(),  
         )
         
         db.add(db_usuario)

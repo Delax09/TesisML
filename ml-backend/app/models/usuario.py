@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, String, ForeignKey, Boolean, DateTime, t
 from sqlalchemy.orm import relationship
 from app.db.sessions import Base
 from sqlalchemy.sql import func
+from app.utils.horaformateada import obtener_hora_formateada
 
 
 class Usuario(Base):
@@ -14,6 +15,6 @@ class Usuario(Base):
     IdRol = Column(Integer, ForeignKey("Rol.IdRol"))
 
     Activo = Column(Boolean, default=True)
-    FechaCreacion = Column(DateTime, server_default=func.now())
+    FechaCreacion = Column(DateTime, default=obtener_hora_formateada)
     rol = relationship("Rol", back_populates="usuarios")
     portafolios = relationship("Portafolio", back_populates="usuario")

@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, DECIMAL, ForeignKey, Date, BigInteger, B
 from sqlalchemy.orm import relationship
 from app.db.sessions import Base
 from sqlalchemy.sql import func
+from app.utils.horaformateada import obtener_hora_formateada
 
 class PrecioHistorico(Base):
     __tablename__ = "PrecioHistorico"
@@ -11,7 +12,7 @@ class PrecioHistorico(Base):
     Fecha = Column(Date, nullable=False)
     PrecioCierre = Column(DECIMAL(18, 4), nullable=False)
     Volumen = Column(BigInteger, nullable=False)
-    Fecha = Column(DateTime, server_default=func.now())
+    FechaRegistro = Column(DateTime, default=obtener_hora_formateada)
 
     # Relación inversa con Empresa
     empresa = relationship("Empresa", back_populates="precios_historicos")

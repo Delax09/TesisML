@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session, joinedload
 from app.models import Empresa, Sector
 from app.schemas.schemas import EmpresaCreate, EmpresaUpdate
 from app.exceptions import ResourceNotFoundError, DuplicateResourceError, InvalidDataError
+from app.utils.horaformateada import obtener_hora_formateada
 
 
 class EmpresaService:
@@ -42,9 +43,9 @@ class EmpresaService:
             Ticket=empresa_data.Ticket,
             NombreEmpresa=empresa_data.NombreEmpresa,
             IdSector=empresa_data.IdSector,
-            FechaAgregado=datetime.utcnow(),
+            FechaAgregado=obtener_hora_formateada(),
             Activo = True,
-            FechaActualizacion = datetime.utcnow()
+            FechaActualizacion = obtener_hora_formateada()
         )
 
         db.add(nueva_empresa)
@@ -90,6 +91,9 @@ class EmpresaService:
         update_data = empresa_data.model_dump(exclude_unset=True)
         for key, value in update_data.items():
             setattr(db_empresa, key, value)
+        
+        # Actualizar FechaActualizacion con hora chilena
+        db_empresa.FechaActualizacion = obtener_hora_formateada()
 
         db.commit()
         db.refresh(db_empresa)
@@ -102,7 +106,7 @@ class EmpresaService:
             raise ResourceNotFoundError("No se puede desactivar una empresa que no existe", db_empresa)
         
         db_empresa.Activo = False
-        db_empresa.FechaActualizacion = datetime.utcnow()   
+        db_empresa.FechaActualizacion = obtener_hora_formateada()   
         db.commit()
         db.refresh(db_empresa)
         return db_empresa

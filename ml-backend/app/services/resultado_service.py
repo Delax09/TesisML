@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 from app.models.resultado import Resultado
 from datetime import datetime
 from app.exceptions import ResourceNotFoundError
+from app.utils.horaformateada import obtener_hora_formateada
 
 class ResultadoService:
     @staticmethod
@@ -20,7 +21,7 @@ class ResultadoService:
                 Score = float(data_ml['score']),
                 Recomendacion = data_ml['recomendacion'],
                 IdModelo = int(data_ml['id_modelo']),
-                FechaAnalisis = datetime.utcnow()
+                FechaAnalisis = obtener_hora_formateada()
             )
             db.add(nuevo_resultado)
             db.commit()

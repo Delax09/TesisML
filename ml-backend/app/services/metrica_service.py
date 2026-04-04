@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from app.models.metrica_modelo import MetricaModelo
 from datetime import datetime
+from app.utils.horaformateada import obtener_hora_formateada
 
 class MetricaService:
     @staticmethod
@@ -16,7 +17,7 @@ class MetricaService:
                 Precision = float(metricas_dict.get('precision', 0.0)),
                 Recall = float(metricas_dict.get('recall', 0.0)),
                 F1_Score = float(metricas_dict.get('f1_score', 0.0)),
-                FechaEntrenamiento = datetime.utcnow()
+                FechaEntrenamiento = obtener_hora_formateada()
             )
             db.add(nueva_metrica)
             db.commit()
