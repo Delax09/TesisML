@@ -27,10 +27,9 @@ def entrenar_agente_rl_optimizado(
     id_modelo_especifico: int = None,
     batch_empresas: int = 50,
     episodios: int = 10,
-    batch_size: int = 128,
+    batch_size: int = 256,
 ) -> None:
-    """Orquesta el entrenamiento RL completo con DQN."""
-    print("🚀 Iniciando entrenamiento RL optimizado...")
+    print("🚀 Iniciando entrenamiento RL ultra-optimizado...")
 
     ids_empresas, modelos_activos = cargar_empresas_y_modelos_rl(id_modelo_especifico)
     if not ids_empresas or not modelos_activos:
@@ -66,8 +65,20 @@ def entrenar_agente_rl_optimizado(
     for modelo_db in modelos_activos:
         print(f"\n🚀 Entrenando agente {modelo_db.Nombre} (v{modelo_db.Version})...")
 
+        # Crear y compilar modelos con JIT
         agente = ModeloDQN_v3(num_features=len(MLEngine.FEATURES)).to(device)
         target_net = ModeloDQN_v3(num_features=len(MLEngine.FEATURES)).to(device)
+        
+        # Compilación JIT para mejor rendimiento (si GPU disponible)
+        if device.type == 'cuda':
+            try:
+                print("⚡ Compilando modelos con torch.compile...")
+                agente = torch.compile(agente, mode='reduce-overhead')
+                target_net = torch.compile(target_net, mode='reduce-overhead')
+                print("✅ Compilación exitosa")
+            except Exception as e:
+                print(f"⚠️ Compilación JIT no disponible: {e}")
+        
         target_net.load_state_dict(agente.state_dict())
         target_net.eval()
 
@@ -80,6 +91,7 @@ def entrenar_agente_rl_optimizado(
                 device=device,
                 episodios=episodios,
                 batch_size=batch_size,
+                early_stopping_patience=3,
             )
 
         if mejores_pesos is None:

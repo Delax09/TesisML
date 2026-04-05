@@ -8,6 +8,8 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from torch.amp import autocast, GradScaler
+from torch.optim.lr_scheduler import StepLR
 from collections import deque
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 from tqdm import tqdm
@@ -44,22 +46,26 @@ def entrenar_dqn_agente(agente: nn.Module,
                         y_reg_entrenamiento: np.ndarray,
                         device: torch.device,
                         episodios: int = 10,
-                        batch_size: int = 128,
+                        batch_size: int = 256,
                         gamma: float = 0.95,
                         epsilon_inicial: float = 1.0,
                         epsilon_min: float = 0.05,
-                        decay_epsilon: float = 0.995) -> Tuple[Any, float, float]:
-    """Entrena el agente DQN y devuelve los mejores pesos y métricas de entrenamiento."""
+                        decay_epsilon: float = 0.995,
+                        early_stopping_patience: int = 3) -> Tuple[Any, float, float]:
+    """Entrena el agente DQN con optimizaciones: mixed precision, early stopping, learning rate scheduler."""
     optimizer = optim.Adam(agente.parameters(), lr=0.001)
+    scheduler = StepLR(optimizer, step_size=max(1, episodios // 3), gamma=0.5)  # Reducir LR cada tercio
+    scaler = GradScaler()  # Para mixed precision
     criterio_q = nn.MSELoss()
     criterio_precio = nn.HuberLoss(delta=1.0)
 
-    memoria = ReplayBuffer()
+    memoria = ReplayBuffer(capacidad=50000)  # Increased replay buffer
     epsilon = epsilon_inicial
 
     mejor_recompensa = -float('inf')
     mejores_pesos = None
     avg_loss = 0.0
+    episodios_sin_mejora = 0
 
     for episodio in range(episodios):
         agente.train()
@@ -99,21 +105,26 @@ def entrenar_dqn_agente(agente: nn.Module,
                 b_sig_estados = torch.tensor(np.array([b[3] for b in batch]), dtype=torch.float32).to(device)
                 b_precios = torch.tensor([b[4] for b in batch], dtype=torch.float32).to(device).unsqueeze(1)
 
-                pred_precios, q_actuales = agente(b_estados)
-                q_acciones_tomadas = q_actuales.gather(1, b_acciones).squeeze(1)
-
-                with torch.no_grad():
-                    _, q_siguientes = target_net(b_sig_estados)
-                    q_max_siguientes = q_siguientes.max(1)[0]
-                    q_targets = b_recompensas + (gamma * q_max_siguientes)
-
-                loss_q = criterio_q(q_acciones_tomadas, q_targets)
-                loss_precio = criterio_precio(pred_precios, b_precios)
-                loss_total = loss_q + loss_precio
-
+                # Mixed Precision Training
                 optimizer.zero_grad()
-                loss_total.backward()
-                optimizer.step()
+                with autocast(device_type=device.type):
+                    pred_precios, q_actuales = agente(b_estados)
+                    q_acciones_tomadas = q_actuales.gather(1, b_acciones).squeeze(1)
+
+                    with torch.no_grad():
+                        _, q_siguientes = target_net(b_sig_estados)
+                        q_max_siguientes = q_siguientes.max(1)[0]
+                        q_targets = b_recompensas + (gamma * q_max_siguientes)
+
+                    loss_q = criterio_q(q_acciones_tomadas, q_targets)
+                    loss_precio = criterio_precio(pred_precios, b_precios)
+                    loss_total = loss_q + loss_precio
+
+                scaler.scale(loss_total).backward()
+                scaler.unscale_(optimizer)
+                torch.nn.utils.clip_grad_norm_(agente.parameters(), 1.0)  # Gradient clipping
+                scaler.step(optimizer)
+                scaler.update()
 
                 loss_acumulado += loss_total.item()
                 pasos_entrenados += 1
@@ -121,21 +132,30 @@ def entrenar_dqn_agente(agente: nn.Module,
         if epsilon > epsilon_min:
             epsilon *= decay_epsilon
         target_net.load_state_dict(agente.state_dict())
+        scheduler.step()  # Update learning rate
 
         avg_loss = loss_acumulado / max(1, pasos_entrenados)
-        print(f"Episodio [{episodio+1}/{episodios}] - Recompensa neta: {recompensa_total:.2f} - Loss: {avg_loss:.4f} - Epsilon: {epsilon:.2f}")
+        print(f"📊 Episodio [{episodio+1}/{episodios}] - Recompensa: {recompensa_total:.2f} - Loss: {avg_loss:.4f} - Epsilon: {epsilon:.2f} - LR: {scheduler.get_last_lr()[0]:.6f}")
 
         if recompensa_total > mejor_recompensa:
             mejor_recompensa = recompensa_total
             mejores_pesos = copy.deepcopy(agente.state_dict())
+            episodios_sin_mejora = 0
+        else:
+            episodios_sin_mejora += 1
+
+        # Early Stopping
+        if episodios_sin_mejora >= early_stopping_patience and episodio >= episodios // 2:
+            print(f"⏹️ Early stopping: {episodios_sin_mejora} episodios sin mejora")
+            break
 
     return mejores_pesos, avg_loss, mejor_recompensa
 
 
 def evaluar_agente_dqn(agente: nn.Module,
-                       x_validacion: torch.Tensor,
-                       y_clf_validacion: np.ndarray,
-                       device: torch.device) -> Dict[str, float]:
+                        x_validacion: torch.Tensor,
+                        y_clf_validacion: np.ndarray,
+                        device: torch.device) -> Dict[str, float]:
     """Evalúa el agente en el conjunto de validación y retorna métricas comparables."""
     y_val_pred_list: List[np.ndarray] = []
     with torch.no_grad():
