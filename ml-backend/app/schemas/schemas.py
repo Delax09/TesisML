@@ -214,7 +214,7 @@ class ResultadoOut(BaseModel):
 class ModeloIABase(BaseModel):
     Nombre: str = Field(..., description="Nombre del modelo")
     Version: str = Field(..., description="Version del modelo")
-    Descripcion: str = Field(..., description="Descripcion breve del modelo")
+    Descripcion: Optional[str] = Field(None, description="Descripcion breve del modelo")
     Hiperparametros: Optional[Dict]= Field(..., description="Configuracion del modelo")
     Activo: bool = Field(..., description="Modelo activo")
 
@@ -225,8 +225,8 @@ class ModeloIAOut(BaseModel):
     IdModelo: int = Field(..., description="Id único del modelo") # <--- AGREGAR ESTA LÍNEA
     Nombre: str = Field(..., description="Nombre del modelo")
     Version: str = Field(..., description="Version del modelo")
-    Descripcion: str = Field(..., description="Descripcion breve del modelo")
-    Hiperparametros: dict = Field(..., description="Configuracion del modelo")
+    Descripcion: Optional[str] = Field(None, description="Descripcion breve del modelo")
+    Hiperparametros: Optional[dict] = Field(..., description="Configuracion del modelo")
 
     model_config = {"from_attributes": True}
 

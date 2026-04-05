@@ -6,11 +6,36 @@ import datetime
 import json
 import os
 import math
+import logging
+
+logger = logging.getLogger(__name__)
+
+IA_AVAILABLE = True
+import_errors = []
+
+try:
+    from app.ml.engine import MLEngine
+except ImportError as e:
+    logger.error(f"❌ Error importando MLEngine: {e}")
+    import_errors.append(f"MLEngine: {str(e)}")
+    IA_AVAILABLE = False
+
 try:
     from app.auto.generar_predicciones import ejecutar_analisis_diario
+except ImportError as e:
+    logger.error(f"❌ Error importando generar_predicciones: {e}")
+    import_errors.append(f"generar_predicciones: {str(e)}")
+    IA_AVAILABLE = False
+
+try:
     from app.ml.entrenamiento import entrenar_y_guardar
-    IA_AVAILABLE = True
-except ImportError:
+except ImportError as e:
+    logger.error(f"❌ Error importando ml.entrenamiento: {e}")
+    import_errors.append(f"ml.entrenamiento: {str(e)}")
+    IA_AVAILABLE = False
+except Exception as e:
+    logger.error(f"❌ Error inesperado importando ml.entrenamiento: {e}")
+    import_errors.append(f"ml.entrenamiento (error): {str(e)}")
     IA_AVAILABLE = False
 
 from app.models.precio_historico import PrecioHistorico
@@ -18,10 +43,23 @@ from app.models.resultado import Resultado
 
 router = APIRouter(prefix="/api/v1/ia", tags=["IA Engine"])
 
+@router.get("/diagnostico")
+def diagnostico_ia():
+    """Endpoint para verificar el estado del módulo ML y ver errores específicos."""
+    return {
+        "ia_available": IA_AVAILABLE,
+        "import_errors": import_errors if import_errors else "Ninguno",
+        "status": "OK ✅" if IA_AVAILABLE else "PROBLEMAS ❌",
+        "beta_status": "❌ REMOVIDO (por performance)",
+        "features_count": len(MLEngine.FEATURES) if hasattr(MLEngine, 'FEATURES') else 0,
+        "features": MLEngine.FEATURES if hasattr(MLEngine, 'FEATURES') else []
+    }
+
 @router.post("/analizar-todo")
 async def analizar_todas_las_empresas(background_tasks: BackgroundTasks):
     if not IA_AVAILABLE:
-        raise HTTPException(status_code=501, detail="Procesos de IA no disponibles en el servidor de producción.")
+        error_msg = "Procesos de IA no disponibles. Errores: " + "; ".join(import_errors) if import_errors else "Módulo ML deshabilitado"
+        raise HTTPException(status_code=501, detail=error_msg)
     
     background_tasks.add_task(ejecutar_analisis_diario)
     return {"status": "success", "message": "Análisis masivo de IA iniciado en segundo plano."}
@@ -36,11 +74,39 @@ def obtener_metricas_modelo():
             return metricas
     except FileNotFoundError:
         return {"Error": "Metricas no encontradas"}
+
+@router.get("/rendimiento-sistema")
+def obtener_rendimiento_sistema():
+    """Endpoint para monitorear el rendimiento del sistema en tiempo real"""
+    try:
+        from app.ml.entrenamiento import monitorear_recursos
+        import torch
+
+        recursos = monitorear_recursos()
+
+        rendimiento = {
+            "timestamp": datetime.datetime.now().isoformat(),
+            "cpu_percent": recursos.get("cpu_percent", 0),
+            "memoria_usada_gb": recursos.get("memoria_usada_gb", 0),
+            "memoria_total_gb": recursos.get("memoria_total_gb", 0),
+            "memoria_percent": recursos.get("memoria_percent", 0),
+            "gpu_disponible": torch.cuda.is_available(),
+            "gpu_count": torch.cuda.device_count() if torch.cuda.is_available() else 0,
+            "gpu_memoria_allocated_gb": recursos.get("gpu_mem_allocated", 0) if torch.cuda.is_available() else 0,
+            "gpu_memoria_reserved_gb": recursos.get("gpu_mem_reserved", 0) if torch.cuda.is_available() else 0,
+            "gpu_nombre": torch.cuda.get_device_name(0) if torch.cuda.is_available() else None
+        }
+
+        return rendimiento
+    except Exception as e:
+        logger.error(f"Error obteniendo rendimiento del sistema: {e}")
+        return {"error": f"No se pudo obtener rendimiento del sistema: {str(e)}"}
     
 @router.post("/entrenar-modelo/{id_modelo}", status_code=status.HTTP_202_ACCEPTED)
 def entrenar_modelo_individual(id_modelo: int, background_tasks: BackgroundTasks):
     if not IA_AVAILABLE:
-        raise HTTPException(status_code=501, detail="Entrenamiento no disponible en producción.")
+        error_msg = "Entrenamiento no disponible. Errores: " + "; ".join(import_errors) if import_errors else "Módulo ML deshabilitado"
+        raise HTTPException(status_code=501, detail=error_msg)
         
     background_tasks.add_task(entrenar_y_guardar, id_modelo_especifico=id_modelo)
     return {"message": f"Entrenamiento del modelo ID {id_modelo} iniciado en segundo plano."}

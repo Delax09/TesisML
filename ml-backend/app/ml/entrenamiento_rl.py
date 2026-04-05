@@ -66,9 +66,6 @@ def entrenar_agente_rl(id_modelo_especifico: int = None):
         print("⚠️ Faltan empresas activas o no hay modelos RL (v3) configurados en la BD.")
         return
 
-    print("🌐 Descargando métricas macroeconómicas (S&P 500) para calcular Betas...")
-    MLEngine.inicializar_mercado()
-
     print(f"⚡ Procesando en paralelo {len(ids_empresas)} empresas para el Entorno Virtual...")
     with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
         resultados = list(tqdm(executor.map(extraer_y_procesar_empresa, ids_empresas), total=len(ids_empresas), desc="Construyendo Entorno"))

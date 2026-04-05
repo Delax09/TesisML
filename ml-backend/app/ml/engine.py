@@ -2,7 +2,7 @@ import os
 import numpy as np
 import pandas as pd
 import joblib
-import yfinance as yf
+import logging
 
 # 🛑 PARCHE CRÍTICO PARA EL SERVIDOR WEB (PYTHON 3.13) 🛑
 import torch
@@ -19,19 +19,13 @@ class MLEngine:
     """Motor de Inferencia de Inteligencia Artificial para Mercado de Valores"""
     
     DIAS_MEMORIA_IA = 25 # Memoria reducida para evitar ruido y adivinanzas a largo plazo
-    FEATURES = ['Close', 'Volume', 'RSI', 'MACD', 'ATR', 'EMA20', 'EMA50', 'BB_Upper', 'BB_Lower', 'Beta']
-
-    _market_returns = None # Caché global para reciclar el S&P 500 sin gastar internet
+    FEATURES = ['Close', 'Volume', 'RSI', 'MACD', 'ATR', 'EMA20', 'EMA50', 'BB_Upper', 'BB_Lower']  # ❌ REMOVIDO: 'Beta'
 
     def __init__(self, version="v1", model=None, scaler=None):
         self.version = version
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.scaler = scaler
         self.model = model
-        
-        # Descargar el mercado (S&P 500) una sola vez en la RAM si no existe
-        if MLEngine._market_returns is None:
-            MLEngine.inicializar_mercado()
         
         # Si no se pasan en memoria, los cargamos desde el disco duro
         if self.model is None or self.scaler is None:
@@ -42,23 +36,30 @@ class MLEngine:
     # ==========================================
 
     @classmethod
+    def _obtener_cache_path(cls):
+        """Ya no se usa - Beta removido"""
+        return None
+
+    @classmethod
+    def _cargar_cache(cls):
+        """Ya no se usa - Beta removido"""
+        return None
+
+    @classmethod
+    def _guardar_cache(cls, market_returns):
+        """Ya no se usa - Beta removido"""
+        pass
+
+    @classmethod
+    def _descargar_sp500_con_timeout(cls, timeout_segundos=10):
+        """Ya no se usa - Beta removido"""
+        return None
+
+    @classmethod
     def inicializar_mercado(cls):
-        """Descarga el S&P 500 una sola vez en la RAM para calcular Betas"""
-        if cls._market_returns is None:
-            try:
-                market = yf.download('^GSPC', period="10y", progress=False)
-                market.index = pd.to_datetime(market.index).tz_localize(None) 
-                
-                # Manejar multi-index de versiones nuevas de yfinance
-                if isinstance(market.columns, pd.MultiIndex):
-                    close_col = market['Close'].iloc[:, 0] if isinstance(market['Close'], pd.DataFrame) else market['Close']
-                else:
-                    close_col = market['Close']
-                    
-                cls._market_returns = close_col.pct_change().dropna()
-            except Exception as e:
-                print(f"⚠️ Aviso: Error al obtener S&P 500 para Betas ({e}). Usando métrica neutral.")
-                cls._market_returns = pd.Series(dtype=float)
+        """Ya no se descarga mercado - Beta removido por performance"""
+        print("🚀 Inicialización de mercado omitida (Beta removido)")
+        cls._market_returns = None  # No se usa más
 
     def _inicializar_recursos(self):
         """Carga el Scaler y los pesos de la red neuronal (.pth) desde el disco duro"""
@@ -131,20 +132,9 @@ class MLEngine:
         df['BB_Upper'] = sma20 + (std20 * 2)
         df['BB_Lower'] = sma20 - (std20 * 2)
 
-        # BETA (Riesgo contra el Mercado)
-        df.index = pd.to_datetime(df.index).tz_localize(None) 
-        df['Rendimiento'] = close.pct_change()
+        # ❌ BETA REMOVIDO - Era muy pesado y tardado
+        # Ahora solo usamos indicadores técnicos locales
         
-        if hasattr(MLEngine, '_market_returns') and not MLEngine._market_returns.empty:
-            ret_df = pd.DataFrame({'Stock': df['Rendimiento'], 'Market': MLEngine._market_returns}).dropna()
-            cov = ret_df['Stock'].rolling(window=60).cov(ret_df['Market'])
-            var = ret_df['Market'].rolling(window=60).var()
-            beta = cov / var
-            df['Beta'] = beta.reindex(df.index).bfill().ffill()
-        else:
-            df['Beta'] = 1.0 
-            
-        df.drop('Rendimiento', axis=1, inplace=True)
         return df.dropna()
 
     def predecir(self, df_ind):
