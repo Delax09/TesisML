@@ -21,7 +21,7 @@ class ModeloBidireccional_v2(nn.Module):
         x = self.relu(self.fc1(x))
 
         precio_pred = self.cabeza_regresion(x)
-        dir_pred = torch.sigmoid(self.cabeza_clasificacion(x))
+        dir_pred = self.cabeza_clasificacion(x)  # Devolver logits, no probabilidades
 
         return precio_pred, dir_pred
 

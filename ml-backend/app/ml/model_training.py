@@ -46,7 +46,7 @@ def ejecutar_entrenamiento_pytorch_optimizado(model: nn.Module, train_loader: to
     from torch.cuda.amp import GradScaler, autocast
 
     criterion_reg = nn.HuberLoss(delta=1.0)
-    criterion_clf = nn.BCELoss()
+    criterion_clf = nn.BCEWithLogitsLoss()  # Compatible con autocast
     criterion_mae = nn.L1Loss()
 
     # AdamW para mejor regularizacion
@@ -199,6 +199,8 @@ def calcular_metricas_clasificacion(model: nn.Module, x_tensor: torch.Tensor, y_
             y_val_pred_list.append(pred_clf.cpu().numpy())
 
     probabilidades = np.vstack(y_val_pred_list)
+    # Aplicar sigmoid a los logits y convertir a predicciones binarias
+    probabilidades = torch.sigmoid(torch.tensor(probabilidades)).numpy()
     # Todo lo mayor a 50% de probabilidad se considera tendencia alcista (1)
     direccion_pred = (probabilidades > 0.5).astype(int)
 

@@ -163,7 +163,8 @@ class MLEngine:
                 # --- LÓGICA MULTI-TAREA SUPERVISADA (v1 y v2) ---
                 pred_reg_tensor, pred_clf_tensor = self.model(x_test_tensor)
                 prediccion_cruda = pred_reg_tensor.cpu().numpy()[0][0]
-                probabilidad_alcista = pred_clf_tensor.cpu().numpy()[0][0]
+                # Aplicar sigmoid a los logits para obtener probabilidades
+                probabilidad_alcista = torch.sigmoid(pred_clf_tensor).cpu().numpy()[0][0]
                 
                 if probabilidad_alcista > 0.65: 
                     recomendacion = "ALCISTA"; score = 1

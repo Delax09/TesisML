@@ -24,11 +24,12 @@ from app.ml.arquitectura.v2_bidireccional import obtener_modelo_v2
 from app.ml.data_processing import procesar_empresas_en_lotes, preparar_datos_masivos, crear_dataloaders
 from app.ml.model_training import ejecutar_entrenamiento_pytorch, calcular_metricas_clasificacion
 from app.ml.utils import Timer
+from app.ml.entrenamiento_rl import entrenar_agente_rl
 
 # Mapa de arquitecturas disponibles
 MAPA_ARQUITECTURAS = {
     "v1": obtener_modelo_v1,
-    "v2": obtener_modelo_v2
+    "v2": obtener_modelo_v2,
 }
 
 
@@ -92,6 +93,12 @@ def entrenar_y_guardar_optimizado(id_modelo_especifico: int = None, batch_empres
     # Entrenar cada modelo
     for modelo_db in modelos_activos:
         print(f"\n🚀 Entrenando {modelo_db.Nombre} (v{modelo_db.Version})...")
+
+        # Delegar modelos v3 a entrenamiento RL
+        if modelo_db.Version == "v3":
+            print(f"🔄 Delegando modelo v3 a pipeline RL...")
+            entrenar_agente_rl(modelo_db.IdModelo)
+            continue
 
         funcion_arquitectura = MAPA_ARQUITECTURAS.get(modelo_db.Version)
         if not funcion_arquitectura:
