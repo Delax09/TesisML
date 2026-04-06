@@ -12,6 +12,27 @@ from app.db.sessions import SessionLocal
 from app.models.precio_historico import PrecioHistorico
 from app.ml.engine import MLEngine
 
+def procesar_empresas_en_lotes(ids_empresas: List[int], batch_size: int = 50) -> List[pd.DataFrame]:
+    """Procesa empresas en lotes para optimizar memoria y rendimiento"""
+    datos_procesados = []
+    
+    print(f"Procesando {len(ids_empresas)} empresas en lotes de {batch_size}...")
+    
+    for i in tqdm(range(0, len(ids_empresas), batch_size), desc="Procesando lotes"):
+        batch_ids = ids_empresas[i:i+batch_size]
+        
+        # Procesar en paralelo dentro del lote
+        with concurrent.futures.ThreadPoolExecutor(max_workers=min(4, len(batch_ids))) as executor:
+            futuros = [executor.submit(extraer_y_procesar_empresa, id_empresa) for id_empresa in batch_ids]
+            for futuro in concurrent.futures.as_completed(futuros):
+                df = futuro.result()
+                if df is not None:
+                    datos_procesados.append(df)
+        
+        gc.collect()  # Liberar memoria después de cada lote
+    
+    return datos_procesados
+
 def extraer_y_procesar_empresa(id_empresa: int) -> Optional[pd.DataFrame]:
     db_thread = SessionLocal()
     try:

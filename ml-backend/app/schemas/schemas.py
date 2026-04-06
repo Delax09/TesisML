@@ -183,7 +183,7 @@ class ResultadoBase(BaseModel):
     ATR: Decimal = None
     EMA20: Decimal = None
     EMA50: Decimal = None
-    ProbAlcista: Decimal = Field(..., description = "Probabilidad de que el precio suba")
+    ProbAlcista: Optional[Decimal] = Field(None, description = "Probabilidad de que el precio suba", alias='prob_alcista')
     Recomendacion: str = Field(..., max_length=50, description="Recomendacion basada en el analisis")
     IdEmpresa: int = Field(..., description="Id de la empresa a la que pertence la prediccion")
     FechaAnalisis: Optional[datetime] = Field(None, description="fecha del analisis")
@@ -203,13 +203,13 @@ class ResultadoOut(BaseModel):
     ATR: Optional[Decimal] = None
     EMA20: Optional[Decimal] = None
     EMA50: Optional[Decimal] = None
-    ProbAlcista: Decimal = Field(..., description = "Probabilidad de que el precio suba")
+    ProbAlcista: Optional[Decimal] = Field(None, description = "Probabilidad de que el precio suba", alias='prob_alcista')
     Recomendacion: str = Field(..., description="Recomendacion")
     IdEmpresa: int = Field(..., description="Id de la empresa a la que pertence")
     FechaAnalisis: Optional[datetime] = Field(..., description="Fecha del analisis")
     IdModelo: int = Field(..., description="Modelo Ejecutado")
 
-    model_config = {"from_attributes": True}
+    model_config = {"from_attributes": True, "by_alias": True}
 
 class ModeloIABase(BaseModel):
     Nombre: str = Field(..., description="Nombre del modelo")

@@ -17,8 +17,8 @@ from app.ml.engine import MLEngine
 from app.ml.arquitectura.v1_lstm import obtener_modelo_v1
 from app.ml.arquitectura.v2_bidireccional import obtener_modelo_v2
 from app.ml.arquitectura.v3_cnn import obtener_modelo_v3
-from app.ml.data_processing import procesar_empresas_en_lotes, preparar_datos_masivos, crear_dataloaders
-from app.ml.model_training import ejecutar_entrenamiento_pytorch, calcular_metricas_clasificacion
+from app.ml.data_processing import procesar_empresas_en_lotes, preparar_datos_masivos_optimizado, crear_dataloaders_optimizados
+from app.ml.model_training import ejecutar_entrenamiento_pytorch_optimizado, calcular_metricas_clasificacion
 from app.ml.utils import Timer
 # Mapa de arquitecturas disponibles
 MAPA_ARQUITECTURAS = {
@@ -74,7 +74,7 @@ def entrenar_y_guardar_optimizado(id_modelo_especifico: int = None, batch_empres
 
     # Preparar datos de entrenamiento
     print("⚖️ Preparando datos de entrenamiento...")
-    x_train, y_reg, y_clf, scaler = preparar_datos_masivos(todos_los_datos)
+    x_train, y_reg, y_clf, scaler = preparar_datos_masivos_optimizado(todos_los_datos)
 
     if x_train is None or len(x_train) == 0:
         print("⚠️ No se pudieron preparar datos de entrenamiento")
@@ -83,7 +83,7 @@ def entrenar_y_guardar_optimizado(id_modelo_especifico: int = None, batch_empres
     print(f"🎯 Dataset final: {len(x_train)} secuencias de entrenamiento")
 
     # Crear DataLoaders optimizados
-    train_loader, val_loader, x_tensor, y_clf_tensor, split_idx = crear_dataloaders(x_train, y_reg, y_clf)
+    train_loader, val_loader, x_tensor, y_clf_tensor, split_idx = crear_dataloaders_optimizados(x_train, y_reg, y_clf)
 
     # Entrenar cada modelo
     for modelo_db in modelos_activos:
@@ -106,7 +106,7 @@ def entrenar_y_guardar_optimizado(id_modelo_especifico: int = None, batch_empres
 
         # Entrenar
         with Timer(f"Entrenamiento de {modelo_db.Nombre}"):
-            historial, mejores_pesos = ejecutar_entrenamiento_pytorch(model, train_loader, val_loader, device)
+            historial, mejores_pesos = ejecutar_entrenamiento_pytorch_optimizado(model, train_loader, val_loader, device)
 
         # Cargar mejores pesos y calcular métricas
         model.load_state_dict(mejores_pesos)
