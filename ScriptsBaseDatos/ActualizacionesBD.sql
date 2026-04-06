@@ -27,6 +27,9 @@ ALTER TABLE Usuario ADD
     IntentosFallidos INT DEFAULT 0;
 
 
+ALTER TABLE PrecioHistorico ADD 
+    FechaRegistro DATETIME2 DEFAULT SYSUTCDATETIME();
+
 ALTER TABLE Resultado ADD 
     MACD DECIMAL(18, 4),
     ATR DECIMAL(18, 4),

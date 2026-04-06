@@ -40,7 +40,7 @@ class ModeloCNN_v3(nn.Module):
         x = self.relu3(self.fc1(x))
         
         precio_predicho = self.cabeza_regresion(x)
-        direccion_predicha = torch.sigmoid(self.cabeza_clasificacion(x))
+        direccion_predicha = self.cabeza_clasificacion(x)
         
         return precio_predicho, direccion_predicha
 

@@ -33,9 +33,9 @@ def entrenar_cnn_supervisado(modelo: nn.Module,
     scheduler = StepLR(optimizer, step_size=max(1, epochs // 4), gamma=0.5)
     scaler = GradScaler()
 
-    # Pérdidas: Huber para regresión, BCE para clasificación
+    # Pérdidas: Huber para regresión, BCEWithLogits para clasificación (seguro con autocast)
     criterio_reg = nn.HuberLoss(delta=1.0)
-    criterio_clf = nn.BCELoss()
+    criterio_clf = nn.BCEWithLogitsLoss()
 
     mejor_loss_val = float('inf')
     mejores_pesos = None
@@ -93,7 +93,7 @@ def entrenar_cnn_supervisado(modelo: nn.Module,
         modelo.eval()
         with torch.no_grad():
             val_pred_reg, val_pred_clf = modelo(x_validacion)
-            val_pred_clf_binary = (val_pred_clf > 0.5).float()
+            val_pred_clf_binary = (torch.sigmoid(val_pred_clf) > 0.5).float()
 
             val_loss_reg = criterio_reg(val_pred_reg, torch.tensor(y_reg_validacion, dtype=torch.float32).to(device).unsqueeze(1))
             val_loss_clf = criterio_clf(val_pred_clf, torch.tensor(y_clf_validacion, dtype=torch.float32).to(device).unsqueeze(1))
@@ -135,7 +135,7 @@ def entrenar_cnn_supervisado(modelo: nn.Module,
     modelo.eval()
     with torch.no_grad():
         final_pred_reg, final_pred_clf = modelo(x_validacion)
-        final_pred_clf_binary = (final_pred_clf > 0.5).float()
+        final_pred_clf_binary = (torch.sigmoid(final_pred_clf) > 0.5).float()
 
         metricas = {
             'loss': float(mejor_loss_val),
@@ -160,7 +160,7 @@ def evaluar_cnn(modelo: nn.Module,
 
     with torch.no_grad():
         pred_reg, pred_clf = modelo(x_validacion)
-        pred_clf_binary = (pred_clf > 0.5).float().cpu().numpy()
+        pred_clf_binary = (torch.sigmoid(pred_clf) > 0.5).float().cpu().numpy()
 
         acc = accuracy_score(y_clf_validacion, pred_clf_binary)
         prec = precision_score(y_clf_validacion, pred_clf_binary, zero_division=0)

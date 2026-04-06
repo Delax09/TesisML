@@ -10,11 +10,6 @@ import gc
 import joblib
 import torch
 
-# PARCHE CRÍTICO PARA PYTHON 3.13
-import torch._dynamo
-torch._dynamo.config.suppress_errors = True
-torch._dynamo.disable()
-
 from app.db.sessions import SessionLocal
 from app.models.modelo_ia import ModeloIA
 from app.services.metrica_service import MetricaService
@@ -84,14 +79,15 @@ def entrenar_cnn_optimizado(
         # Crear modelo CNN
         modelo = ModeloCNN_v3(num_features=len(MLEngine.FEATURES)).to(device)
 
-        # Compilación JIT para mejor rendimiento (si GPU disponible)
-        if device.type == 'cuda':
-            try:
-                print("⚡ Compilando modelo con torch.compile...")
-                modelo = torch.compile(modelo, mode='reduce-overhead')
-                print("✅ Compilación exitosa")
-            except Exception as e:
-                print(f"⚠️ Compilación JIT no disponible: {e}")
+        # Compilación JIT deshabilitada temporalmente (requiere Triton)
+        # if device.type == 'cuda':
+        #     try:
+        #         print("⚡ Compilando modelo con torch.compile...")
+        #         modelo = torch.compile(modelo, mode='reduce-overhead')
+        #         print("✅ Compilación exitosa")
+        #     except Exception as e:
+        #         print(f"⚠️ Compilación JIT no disponible (requiere Triton): {e}")
+        #         print("   Continuando sin compilación JIT...")
 
         with Timer(f"Entrenamiento CNN de {modelo_db.Nombre}"):
             mejores_pesos, metricas_entrenamiento = entrenar_cnn_supervisado(

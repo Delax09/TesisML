@@ -8,11 +8,6 @@ import joblib
 import os
 import gc
 
-# PARCHE CRÍTICO PARA EL SERVIDOR WEB (PYTHON 3.13)
-import torch._dynamo
-torch._dynamo.config.suppress_errors = True
-torch._dynamo.disable()
-
 from app.services.metrica_service import MetricaService
 from app.db.sessions import SessionLocal
 from app.models.empresa import Empresa

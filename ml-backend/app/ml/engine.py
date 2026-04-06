@@ -4,12 +4,7 @@ import pandas as pd
 import joblib
 import logging
 
-# 🛑 PARCHE CRÍTICO PARA EL SERVIDOR WEB (PYTHON 3.13) 🛑
 import torch
-import torch._dynamo
-torch._dynamo.config.suppress_errors = True
-torch._dynamo.disable()
-# --------------------------------------------------------
 
 from app.ml.arquitectura.v1_lstm import ModeloLSTM_v1
 from app.ml.arquitectura.v2_bidireccional import ModeloBidireccional_v2
@@ -79,8 +74,17 @@ class MLEngine:
                 self.model = ModeloCNN_v3(len(self.FEATURES)).to(self.device)
                 
             # Cargar los pesos entrenados
-            self.model.load_state_dict(torch.load(model_path, map_location=self.device, weights_only=True))
-            self.model.eval() # Activar modo inferencia (congela Dropouts)
+            try:
+                state_dict = torch.load(model_path, map_location=self.device, weights_only=True)
+                # Manejar pesos guardados con torch.compile (tienen prefijo _orig_mod)
+                if any(key.startswith('_orig_mod.') for key in state_dict.keys()):
+                    state_dict = {k.replace('_orig_mod.', ''): v for k, v in state_dict.items()}
+                self.model.load_state_dict(state_dict)
+                self.model.eval() # Activar modo inferencia (congela Dropouts)
+                print(f"✅ Modelo {self.version} cargado exitosamente")
+            except Exception as e:
+                print(f"❌ Error cargando modelo {self.version}: {e}")
+                self.model = None
         else:
             if self.version != "dummy":
                 print(f"⚠️ Archivos para el modelo {self.version} no encontrados en .pth")
@@ -147,7 +151,13 @@ class MLEngine:
             # ¡Lógica unificada! Los 3 modelos (v1, v2 y v3) hacen exactamente lo mismo
             pred_reg_tensor, pred_clf_tensor = self.model(x_test_tensor)
             prediccion_cruda = pred_reg_tensor.cpu().numpy()[0][0]
-            probabilidad_alcista = pred_clf_tensor.cpu().numpy()[0][0]
+            
+            # Para v1 y v2 (LSTM): aplicar sigmoid a logits
+            # Para v3 (CNN): ya devuelve probabilidades
+            if self.version in ['v1', 'v2']:
+                probabilidad_alcista = torch.sigmoid(pred_clf_tensor).cpu().numpy()[0][0]
+            else:  # v3
+                probabilidad_alcista = pred_clf_tensor.cpu().numpy()[0][0]
             
             if probabilidad_alcista > 0.65: 
                 recomendacion = "ALCISTA"; score = 1
