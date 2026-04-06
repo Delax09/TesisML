@@ -10,6 +10,7 @@ class MetricaModelo(Base):
     IdMetrica = Column(Integer, primary_key=True, index=True)
     IdModelo = Column(Integer, ForeignKey("ModeloIA.IdModelo"))
     FechaEntrenamiento = Column(DateTime, default=obtener_hora_formateada)
+    DiasFuturo = Column(Integer, nullable=True)
 
     Loss = Column(DECIMAL(10,6))
     MAE = Column(DECIMAL(10,6))

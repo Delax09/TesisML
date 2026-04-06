@@ -183,7 +183,7 @@ class ResultadoBase(BaseModel):
     ATR: Decimal = None
     EMA20: Decimal = None
     EMA50: Decimal = None
-    prob_alcista: Decimal = Field(..., description = "Probabilidad de que el precio suba")
+    ProbAlcista: Decimal = Field(..., description = "Probabilidad de que el precio suba")
     Recomendacion: str = Field(..., max_length=50, description="Recomendacion basada en el analisis")
     IdEmpresa: int = Field(..., description="Id de la empresa a la que pertence la prediccion")
     FechaAnalisis: Optional[datetime] = Field(None, description="fecha del analisis")
@@ -203,7 +203,7 @@ class ResultadoOut(BaseModel):
     ATR: Optional[Decimal] = None
     EMA20: Optional[Decimal] = None
     EMA50: Optional[Decimal] = None
-    prob_alcista: Decimal = Field(..., description = "Probabilidad de que el precio suba")
+    ProbAlcista: Decimal = Field(..., description = "Probabilidad de que el precio suba")
     Recomendacion: str = Field(..., description="Recomendacion")
     IdEmpresa: int = Field(..., description="Id de la empresa a la que pertence")
     FechaAnalisis: Optional[datetime] = Field(..., description="Fecha del analisis")
