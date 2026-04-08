@@ -23,4 +23,13 @@ class MetricaModelo(Base):
     Recall = Column(DECIMAL(10, 6))
     F1_Score = Column(DECIMAL(10, 6))
 
+    #Area bajo la curva AUC
+    AUC = Column(DECIMAL(10,6))
+
+    #Matriz de confusion
+    TP = Column(Integer, nullable = True) #Verdaderos Positivos
+    TN = Column(Integer, nullable = True) #Verdaderos Negativos
+    FP = Column(Integer, nullable = True) #Falsos Positivos
+    FN = Column(Integer, nullable = True) #Falsos Negativos
+
     modelo_ia = relationship("ModeloIA")

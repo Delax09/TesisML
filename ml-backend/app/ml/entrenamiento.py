@@ -127,7 +127,7 @@ def entrenar_y_guardar_optimizado(id_modelo_especifico: int = None, batch_empres
 
         # Guardar modelo
         torch.save(mejores_pesos, os.path.join(ruta_modelos, f'modelo_acciones_{modelo_db.Version}.pth'))
-        print(f"✅ {modelo_db.Nombre} guardado - Accuracy: {metricas['accuracy']:.3f}")
+        print(f"✅ {modelo_db.Nombre} guardado - Accuracy: {metricas['accuracy']:.3f} - AUC: {metricas.get('auc', 0.0):.3f}")
 
         # Liberar memoria del modelo
         del model, historial, mejores_pesos

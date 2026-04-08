@@ -239,6 +239,15 @@ class MetricasBase(BaseModel):
     Precision: Optional[float] = Field(None, description="Precisión del modelo")
     Recall: Optional[float] = Field(None, description="Recall del modelo")
     F1_Score: Optional[float] = Field(None, description="Puntuación F1 del modelo")
+    DiasFuturo: Optional[int] = Field(None, description="Cantidad de días a futuro que predice el modelo")
+    AUC: Optional[float] = Field(None, description="Área bajo la curva ROC del modelo")
+    TP: Optional[int] = Field(None, description="Verdaderos Positivos")
+    TN: Optional[int] = Field(None, description="Verdaderos Negativos")
+    FP: Optional[int] = Field(None, description="Falsos Positivos")
+    FN: Optional[int] = Field(None, description="Falsos Negativos")
+    
+    FechaEntrenamiento: datetime = Field(..., description="Fecha del entrenamiento del modelo")
+    
 
 class MetricasCreate(MetricasBase):
     pass
@@ -254,6 +263,11 @@ class MetricasOut(MetricasBase):
     Recall: Optional[float] = Field(None, description="Recall del modelo")
     F1_Score: Optional[float] = Field(None, description="Puntuación F1 del modelo")
     FechaEntrenamiento: datetime = Field(..., description="Fecha del entrenamiento del modelo")
+    AUC: Optional[float] = Field(None, description="Área bajo la curva ROC del modelo")
+    TP: Optional[int] = Field(None, description="Verdaderos Positivos")
+    TN: Optional[int] = Field(None, description="Verdaderos Negativos")
+    FP: Optional[int] = Field(None, description="Falsos Positivos")
+    FN: Optional[int] = Field(None, description="Falsos Negativos")
     IdModelo: int = Field(..., description="Id del modelo al que pertenecen las métricas")
 
     model_config = {"from_attributes": True}

@@ -127,6 +127,12 @@ def entrenar_cnn_optimizado(
             'precision': metricas_finales['precision'],
             'recall': metricas_finales['recall'],
             'f1_score': metricas_finales['f1_score'],
+            'auc': metricas_finales['auc'],
+            'tp': metricas_finales['tp'],
+            'tn': metricas_finales['tn'],
+            'fp': metricas_finales['fp'],
+            'fn': metricas_finales['fn'],
+            'DiasFuturo': MLEngine.DIAS_PREDICCION
         }
 
         db_local = SessionLocal()
@@ -136,7 +142,7 @@ def entrenar_cnn_optimizado(
             db_local.close()
 
         torch.save(mejores_pesos, os.path.join(ruta_modelos, f'modelo_acciones_{modelo_db.Version}.pth'))
-        print(f"✅ CNN {modelo_db.Nombre} guardada - Acc: {metricas['accuracy']:.3f} - MAE: {metricas['mae']:.4f}")
+        print(f"✅ CNN {modelo_db.Nombre} guardada - Acc: {metricas['accuracy']:.3f} - AUC: {metricas['auc']:.3f} - MAE: {metricas['mae']:.4f}")
 
         del modelo, mejores_pesos
         if device.type == 'cuda':

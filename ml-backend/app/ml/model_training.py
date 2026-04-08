@@ -4,7 +4,7 @@ import torch.optim as optim
 import copy
 from tqdm import tqdm
 import numpy as np
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, confusion_matrix
 from app.ml.engine import MLEngine
 
 class EarlyStopping:
@@ -26,12 +26,12 @@ class EarlyStopping:
 
 def ejecutar_entrenamiento_pytorch_optimizado(model, train_loader, val_loader, device, epochs=25):
     criterion_reg = nn.HuberLoss(delta=1.0)
-    pesos_clases = torch.tensor([1.2]).to(device) # 👈 Penaliza la predicción optimista
-    criterion_clf = nn.BCEWithLogitsLoss(pos_weight=pesos_clases) # 👈 Seguro para Autocast
+    pesos_clases = torch.tensor([1.2]).to(device) #Penaliza la predicción optimista
+    criterion_clf = nn.BCEWithLogitsLoss(pos_weight=pesos_clases) #Seguro para Autocast
     criterion_mae = nn.L1Loss() 
     
     optimizer = optim.Adam(model.parameters(), lr=0.0005)
-    early_stopping = EarlyStopping(paciencia=3, delta=0.0) # 👈 Paciencia más estricta
+    early_stopping = EarlyStopping(paciencia=3, delta=0.0) #Paciencia más estricta
     
     historial = {'loss': [], 'mae': [], 'val_loss': [], 'val_mae': []}
     scaler_autocast = torch.amp.GradScaler(device.type) 
@@ -139,6 +139,25 @@ def calcular_metricas_clasificacion(model, val_loader, device):
 
     val_mae /= len(val_loader)
 
+    # Calcular AUC
+    try:
+        auc = roc_auc_score(y_val_real, y_val_pred)
+    except ValueError:
+        auc = 0.0  # En caso de que no haya clases positivas o negativas
+
+    # Calcular matriz de confusión
+    cm = confusion_matrix(y_val_real, y_val_pred_binary)
+    if cm.shape == (2, 2):
+        tn, fp, fn, tp = cm.ravel()
+    else:
+        # Si no es 2x2, por ejemplo si solo hay una clase
+        tp = tn = fp = fn = 0
+        if cm.shape[0] == 1:
+            if y_val_real[0] == 1:
+                tp = cm[0][0]
+            else:
+                tn = cm[0][0]
+
     return {
         'loss': 0.0,
         'mae': 0.0,
@@ -148,5 +167,10 @@ def calcular_metricas_clasificacion(model, val_loader, device):
         'precision': float(prec),
         'recall': float(rec),
         'f1_score': float(f1),
+        'auc': float(auc),
+        'tp': int(tp),
+        'tn': int(tn),
+        'fp': int(fp),
+        'fn': int(fn),
         'DiasFuturo': MLEngine.DIAS_PREDICCION
     }

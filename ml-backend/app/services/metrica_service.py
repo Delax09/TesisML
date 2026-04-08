@@ -18,6 +18,11 @@ class MetricaService:
                 Recall = float(metricas_dict.get('recall', 0.0)),
                 F1_Score = float(metricas_dict.get('f1_score', 0.0)),
                 DiasFuturo = int(metricas_dict.get('DiasFuturo', 0)),
+                AUC = float(metricas_dict.get('auc', 0.0)),
+                TP = int(metricas_dict.get('tp',0)),
+                TN = int(metricas_dict.get('tn',0)),
+                FP = int(metricas_dict.get('fp',0)),
+                FN = int(metricas_dict.get('fn',0)),
                 FechaEntrenamiento = obtener_hora_formateada()
             )
             db.add(nueva_metrica)

@@ -9,7 +9,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.amp import autocast, GradScaler
 from torch.optim.lr_scheduler import StepLR
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, mean_absolute_error, mean_squared_error
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, mean_absolute_error, mean_squared_error, roc_auc_score, confusion_matrix
 from tqdm import tqdm
 from typing import Any, Dict, List, Tuple
 
@@ -160,7 +160,8 @@ def evaluar_cnn(modelo: nn.Module,
 
     with torch.no_grad():
         pred_reg, pred_clf = modelo(x_validacion)
-        pred_clf_binary = (torch.sigmoid(pred_clf) > 0.5).float().cpu().numpy()
+        pred_clf_prob = torch.sigmoid(pred_clf).cpu().numpy().flatten()
+        pred_clf_binary = (pred_clf_prob > 0.5).astype(int)
 
         acc = accuracy_score(y_clf_validacion, pred_clf_binary)
         prec = precision_score(y_clf_validacion, pred_clf_binary, zero_division=0)
@@ -168,10 +169,33 @@ def evaluar_cnn(modelo: nn.Module,
         f1 = f1_score(y_clf_validacion, pred_clf_binary, zero_division=0)
         mae = mean_absolute_error(y_reg_validacion, pred_reg.cpu().numpy().flatten())
 
+        # Calcular AUC
+        try:
+            auc = roc_auc_score(y_clf_validacion, pred_clf_prob)
+        except ValueError:
+            auc = 0.0
+
+        # Calcular matriz de confusión
+        cm = confusion_matrix(y_clf_validacion, pred_clf_binary)
+        if cm.shape == (2, 2):
+            tn, fp, fn, tp = cm.ravel()
+        else:
+            tp = tn = fp = fn = 0
+            if cm.shape[0] == 1:
+                if y_clf_validacion[0] == 1:
+                    tp = cm[0][0]
+                else:
+                    tn = cm[0][0]
+
     return {
         'accuracy': float(acc),
         'precision': float(prec),
         'recall': float(rec),
         'f1_score': float(f1),
-        'mae': float(mae)
+        'mae': float(mae),
+        'auc': float(auc),
+        'tp': int(tp),
+        'tn': int(tn),
+        'fp': int(fp),
+        'fn': int(fn)
     }
