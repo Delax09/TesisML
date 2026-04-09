@@ -83,7 +83,22 @@ function PrecioChart({ empresaId, nombreEmpresa }) {
                                 </linearGradient>
                             </defs>
                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={theme.palette.divider} />
-                            <XAxis dataKey="FechaCorta" fontSize={10} tick={{fill: theme.palette.text.secondary}} minTickGap={30}/>
+                            <XAxis 
+                                dataKey="tiempoMs" 
+                                type="number" 
+                                domain={['dataMin', 'dataMax']}
+                                tickFormatter={(unixTime) => {
+                                    const date = new Date(unixTime);
+                                    // Si el rango es de días mostramos la hora, si es mayor mostramos fecha y año
+                                    if (rango === '1D' || rango === '5D') {
+                                        return date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+                                    }
+                                    return date.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: '2-digit' });
+                                }}
+                                fontSize={10} 
+                                tick={{fill: theme.palette.text.secondary}} 
+                                minTickGap={40}
+                            />
                             <YAxis domain={['auto', 'auto']} fontSize={10} orientation="right" tick={{fill: theme.palette.text.secondary}} />
                             <Tooltip 
                                 labelFormatter={(label, payload) => {

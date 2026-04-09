@@ -33,7 +33,7 @@ export default function AdminModelos() {
     };
 
     return (
-        <Box sx={{ width: '100%', maxWidth: '1200px', margin: '0 auto', pb: 4 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 2, sm: 4 }, width: '100%', maxWidth: '1400px', margin: '0 auto', pb: 4 }}>
             <PageHeader 
                 titulo="Gestión de Modelos IA"
                 subtitulo="Administra los modelos de predicción visibles para los usuarios finales en sus paneles."

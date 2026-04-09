@@ -27,8 +27,8 @@ export const usePrecioHistorico = (empresaId) => {
         // 1. LIMPIEZA Y PARSEO ESTRÍCTO
         let datosLimpios = datosOriginales.map(item => {
             // Manejar distintos formatos de fecha que puede escupir el backend
-            let fechaStr = typeof item.Fecha === 'string' ? item.Fecha : String(item.Fecha);
-            // Reemplazar espacios por 'T' asegura compatibilidad en Safari/Firefox
+            let fechaBase = item.FechaRegistro ? item.FechaRegistro : item.Fecha;         
+            let fechaStr = typeof fechaBase === 'string' ? fechaBase : String(fechaBase);
             fechaStr = fechaStr.replace(' ', 'T').split('.')[0]; 
             const fechaObj = new Date(fechaStr);
             

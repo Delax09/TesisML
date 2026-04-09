@@ -170,6 +170,7 @@ class PrecioHistoricoOut(BaseModel):
     IdEmpresa: int = Field(..., description="Id de la empresa a la que pertenece el precio historico")
     PrecioCierre: Decimal = Field(..., description="Precio de cierre de mercado")
     Fecha: datetime = Field(..., description="Fecha del precio historico")
+    FechaRegistro: datetime = Field(None, description="Fecha historica real")
 
 # # ========================= RESULTADO SCHEMAS =========================
 
