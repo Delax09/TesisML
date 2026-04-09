@@ -1,12 +1,12 @@
 // src/features/ia_analisis/components/ResultadoPanel.js
-import React from 'react';
-import { Box, Paper, Typography, CircularProgress, Chip, Divider, Stack } from '@mui/material';
+import React, { useState, useEffect } from 'react';
+import { Box, Paper, Typography, CircularProgress, Chip, Divider, Stack, FormControl, Select, MenuItem } from '@mui/material';
 import { useTheme } from '@mui/material/styles'; 
 import { useResultadoIA } from '../hooks/useResultadoIA';
+import api from '../../../services/api'; // Importamos tu instancia de axios
 
-// Componente auxiliar para el Medidor Semicircular del RSI
 const MedidorRSI = ({ rsi }) => {
-    const theme = useTheme(); // Aquí SÍ usamos el tema para el SVG
+    const theme = useTheme(); 
     const valorRSI = Number(rsi || 0);
     const rotacion = (valorRSI / 100) * 180 - 90;
     
@@ -51,8 +51,31 @@ const MedidorRSI = ({ rsi }) => {
 };
 
 export default function ResultadoPanel({ empresaId }) {
-    // ELIMINAMOS EL const theme = useTheme(); QUE NO SE USABA
-    const { resultado, cargando, recomendacionTexto, esCompra } = useResultadoIA(empresaId);
+    const [modelosActivos, setModelosActivos] = useState([]);
+    const [modeloSeleccionado, setModeloSeleccionado] = useState('');
+    
+    // El hook ahora reacciona a los cambios de modeloSeleccionado
+    const { resultado, cargando, recomendacionTexto, esCompra } = useResultadoIA(empresaId, modeloSeleccionado);
+
+    useEffect(() => {
+        let montado = true;
+        const fetchModelos = async () => {
+            try {
+                // Remova o '/api/v1' daqui
+                const response = await api.get('/modelos-ia/activos');
+                if (montado) {
+                    setModelosActivos(response.data);
+                    if (response.data.length > 0 && !modeloSeleccionado) {
+                        setModeloSeleccionado(response.data[0].IdModelo);
+                    }
+                }
+            } catch (error) {
+                console.error("Error cargando modelos:", error);
+            }
+        };
+        fetchModelos();
+        return () => { montado = false; };
+    }, [modeloSeleccionado]);
 
     if (!empresaId) {
         return (
@@ -70,10 +93,24 @@ export default function ResultadoPanel({ empresaId }) {
         <Paper sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 1, height: '100%', overflowY: 'auto', border: '1px solid', borderColor: 'divider' }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
                 <Typography variant="h6" component="h4" fontWeight="700" color="text.primary">
-                    Análisis Explicativo (XAI)
+                    Análisis Explicativo
                 </Typography>
-                {resultado && (
-                    <Chip label="Live" size="small" color="error" variant="outlined" sx={{ fontWeight: 'bold', borderRadius: '4px', textTransform: 'uppercase', height: '20px', fontSize: '0.7rem' }} />
+                
+                {/* Selector de Modelos */}
+                {modelosActivos.length > 0 && (
+                    <FormControl size="small" sx={{ minWidth: 140 }}>
+                        <Select
+                            value={modeloSeleccionado}
+                            onChange={(e) => setModeloSeleccionado(e.target.value)}
+                            sx={{ fontSize: '0.75rem', height: '28px', fontWeight: 'bold' }}
+                        >
+                            {modelosActivos.map((modelo) => (
+                                <MenuItem key={modelo.IdModelo} value={modelo.IdModelo} sx={{ fontSize: '0.8rem' }}>
+                                    {modelo.Nombre}
+                                </MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
                 )}
             </Box>
             
@@ -135,7 +172,7 @@ export default function ResultadoPanel({ empresaId }) {
                             sx={{ fontWeight: '600', fontSize: '0.75rem', bgcolor: volatilidadAlta ? '#fffbeb' : 'background.default' }} 
                         />
                         <Chip 
-                            label={`Fuerza de Señal (Score): ${Number(resultado.Score || 0).toFixed(2)}`}
+                            label={`Score: ${Number(resultado.Score || 0).toFixed(2)}`}
                             color="primary"
                             variant="outlined"
                             sx={{ fontWeight: '600', fontSize: '0.75rem', bgcolor: 'primary.light', color: 'primary.contrastText' }} 
@@ -149,9 +186,9 @@ export default function ResultadoPanel({ empresaId }) {
                     </Box>
                 </>
             ) : (
-                <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', p: 2 }}>
                     <Typography color="text.secondary" sx={{ fontSize: '0.85rem', lineHeight: 1.4, textAlign: 'center' }}>
-                        No existen predicciones para esta empresa. Ejecuta el análisis masivo para generar datos.
+                        Este modelo aún no tiene predicciones para esta empresa.
                     </Typography>
                 </Box>
             )}

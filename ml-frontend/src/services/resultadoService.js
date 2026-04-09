@@ -9,6 +9,13 @@ const obtenerTodos = async () => {
   return response.data;
 };
 
+const obtenerResultadoPorEmpresa = async (empresaId, modeloId = null) => {
+    // Si viene un modeloId, lo agregamos como Query Parameter
+    const params = modeloId ? { modelo_id: modeloId } : {};
+    const response = await api.get(`/resultados/empresa/${empresaId}`, { params });
+    return response.data;
+};
+
 /**
  * Obtiene un resultado específico por su ID.
  */
@@ -64,6 +71,7 @@ const eliminar = async (id) => {
 
 const resultadoService = {
   obtenerTodos,
+  obtenerResultadoPorEmpresa,
   obtenerPorId,
   obtenerPorEmpresa,
   obtenerUltimosResultados,

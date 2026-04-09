@@ -5,7 +5,7 @@ from typing import List
 
 from app.db.sessions import get_db
 from app.models.modelo_ia import ModeloIA
-from app.schemas.schemas import ModeloIAOut
+from app.schemas.schemas import ModeloIAOut, ModeloIAUpdate
 from app.utils.deps import obtener_usuario_actual
 from app.models.usuario import Usuario
 
@@ -39,4 +39,29 @@ def obtener_modelo_por_id(
     modelo = db.query(ModeloIA).filter(ModeloIA.IdModelo == id_modelo).first()
     if not modelo:
         raise HTTPException(status_code=404, detail="Modelo no encontrado")
+    return modelo
+
+
+@router.patch("/{id_modelo}", response_model=ModeloIAOut)
+def actualizar_estado_modelo(
+    id_modelo: int, 
+    modelo_data: ModeloIAUpdate,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(obtener_usuario_actual)
+):
+    """Actualiza los datos de un modelo, permitiendo al Admin cambiar su estado (Activo/Inactivo)."""
+    
+    # Opcional: Podrías validar aquí si current_user.IdRol == 2 (Administrador)
+    
+    modelo = db.query(ModeloIA).filter(ModeloIA.IdModelo == id_modelo).first()
+    if not modelo:
+        raise HTTPException(status_code=404, detail="Modelo no encontrado")
+
+    # Actualizamos solo el campo enviado (en este caso, Activo)
+    if modelo_data.Activo is not None:
+        modelo.Activo = modelo_data.Activo
+        
+    db.commit()
+    db.refresh(modelo)
+    
     return modelo

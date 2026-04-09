@@ -39,14 +39,19 @@ class ResultadoService:
         ).order_by(Resultado.FechaAnalisis.desc()).all()
 
     @staticmethod
-    def obtener_resultados_por_empresa(db: Session, empresa_id: int):
-        resultados = db.query(Resultado).filter(
-            Resultado.IdEmpresa == empresa_id
-        ).order_by(Resultado.FechaAnalisis.desc()).all()
+    def obtener_resultados_por_empresa(db: Session, empresa_id: int, modelo_id: int = None):
+        # 1. Base de la consulta
+        query = db.query(Resultado).filter(Resultado.IdEmpresa == empresa_id)
+        
+        # 2. Si se proporciona un modelo específico, filtramos
+        if modelo_id:
+            query = query.filter(Resultado.IdModelo == modelo_id)
+            
+        # 3. Ordenamos y ejecutamos
+        resultados = query.order_by(Resultado.FechaAnalisis.desc()).all()
         
         if not resultados:
-            # Levantamos la excepción que tu router ya está preparado para capturar
-            raise ResourceNotFoundError(message=f"No se encontraron resultados para la empresa {empresa_id}")
+            raise ResourceNotFoundError(message=f"No se encontraron resultados para la empresa {empresa_id} con esos parámetros")
             
         return resultados
     

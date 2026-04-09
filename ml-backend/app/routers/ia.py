@@ -1,6 +1,7 @@
 # app/routers/ia.py
-from fastapi import APIRouter, Depends, BackgroundTasks, status, Request, HTTPException
+from fastapi import APIRouter, Depends, BackgroundTasks, status, Request, HTTPException, Query
 from sqlalchemy.orm import Session
+from typing import Optional
 from app.db.sessions import get_db
 import datetime
 import json
@@ -112,10 +113,14 @@ def entrenar_modelo_individual(id_modelo: int, background_tasks: BackgroundTasks
     return {"message": f"Entrenamiento del modelo ID {id_modelo} iniciado en segundo plano."}
 
 @router.get("/prediccion/{empresa_id}")
-async def obtener_prediccion_empresa(empresa_id: int, db: Session = Depends(get_db)):
+async def obtener_prediccion_empresa(
+    empresa_id: int, 
+    modelo_id: Optional[int] = Query(None, description="Filtra por el ID del modelo de IA"),
+    db: Session = Depends(get_db)
+):
     """
     Devuelve el historial de precios y la predicción generada por la IA para una empresa específica,
-    formateado para el gráfico del frontend.
+    formateado para el gráfico del frontend. Permite filtrar por modelo de IA.
     """
     try:
         # 1. Obtener historial de precios reales (últimos 30 días)
@@ -134,7 +139,6 @@ async def obtener_prediccion_empresa(empresa_id: int, db: Session = Depends(get_
             else:
                 fecha_str = fecha_val.strftime("%d-%m")
 
-            # --- CORRECCIÓN AQUÍ ---
             precio_raw = float(h.PrecioCierre)
             precio_final = None if math.isnan(precio_raw) else precio_raw
             
@@ -143,10 +147,13 @@ async def obtener_prediccion_empresa(empresa_id: int, db: Session = Depends(get_
                 "precio": precio_final 
             })
 
-        # 2. Obtener las predicciones a futuro
-        resultados_db = db.query(Resultado).filter(
-            Resultado.IdEmpresa == empresa_id
-        ).order_by(Resultado.FechaAnalisis.asc()).all()
+        # 2. Obtener las predicciones a futuro filtrando por modelo si se provee
+        query_resultados = db.query(Resultado).filter(Resultado.IdEmpresa == empresa_id)
+        
+        if modelo_id is not None:
+            query_resultados = query_resultados.filter(Resultado.IdModelo == modelo_id)
+            
+        resultados_db = query_resultados.order_by(Resultado.FechaAnalisis.asc()).all()
 
         prediccion = []
         tendencia = "ESTABLE"
@@ -167,7 +174,6 @@ async def obtener_prediccion_empresa(empresa_id: int, db: Session = Depends(get_
                 else:
                     fecha_formateada = fecha_val.strftime("%d-%m")
 
-                # --- CORRECCIÓN AQUÍ ---
                 pred_raw = float(r.PrediccionIA)
                 pred_final = None if math.isnan(pred_raw) else pred_raw
 

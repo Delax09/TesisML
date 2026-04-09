@@ -1,20 +1,44 @@
 // src/features/ia_analisis/hooks/useResultadoIA.js
-import { useQuery } from '@tanstack/react-query';
-import { resultadoService } from '../../../services';
+import { useState, useEffect } from 'react';
+import resultadoService from '../../../services/resultadoService';
 
-export const useResultadoIA = (empresaId) => {
-    const { data, isLoading } = useQuery({
-        queryKey: ['resultadoIA', empresaId], // La caché es única por empresa
-        queryFn: () => resultadoService.obtenerPorEmpresa(empresaId),
-        enabled: !!empresaId, // ¡No se ejecuta si empresaId es null!
-        staleTime: 1000 * 60 * 5, // 5 minutos de caché
-    });
+export const useResultadoIA = (empresaId, modeloId = null) => {
+    const [resultado, setResultado] = useState(null);
+    const [cargando, setCargando] = useState(true);
+    const [error, setError] = useState(null);
 
-    // Lógica visual abstraída (se calcula sola cuando llegan los datos)
-    const resultado = data && data.length > 0 ? data[data.length - 1] : null;
-    const recomendacionTexto = resultado?.Recomendacion || "Sin datos";
-    const esCompra = recomendacionTexto.toLowerCase().includes('alcista') || 
-                     recomendacionTexto.toLowerCase().includes('compra');
+    useEffect(() => {
+        let montado = true;
 
-    return { resultado, cargando: isLoading, recomendacionTexto, esCompra };
+        const cargarResultado = async () => {
+            if (!empresaId) return;
+            
+            setCargando(true);
+            try {
+                // Pasamos el modeloId al servicio
+                const data = await resultadoService.obtenerResultadoPorEmpresa(empresaId, modeloId);
+                if (montado) {
+                    // Tomamos el primer resultado (el más reciente de ese modelo)
+                    setResultado(data && data.length > 0 ? data[0] : null);
+                }
+            } catch (err) {
+                if (montado) {
+                    console.error("Error obteniendo resultados:", err);
+                    setError(err.message);
+                    setResultado(null); // Limpiamos si hay error (ej. 404 no encontrado)
+                }
+            } finally {
+                if (montado) setCargando(false);
+            }
+        };
+
+        cargarResultado();
+
+        return () => { montado = false; };
+    }, [empresaId, modeloId]); // <-- Dependencias clave
+
+    const recomendacionTexto = resultado?.Recomendacion || 'MANTENER';
+    const esCompra = recomendacionTexto.toUpperCase() === 'ALCISTA';
+
+    return { resultado, cargando, error, recomendacionTexto, esCompra };
 };

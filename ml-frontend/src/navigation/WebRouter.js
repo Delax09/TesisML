@@ -20,6 +20,7 @@ const ResetPassword = lazy(() => import('../pages/Landing/ResetPassword'));
 const AdminTareas = lazy(() => import('pages/Admin/Tareas/Tareas'));
 const ComparadorIA = lazy(() => import('pages/Admin/ComparadorIA/ComparadorIA'));
 const AdminEmpresas = lazy(() => import('pages/Admin/Empresas/Empresas'));
+const AdminModelos = lazy(() => import('pages/Admin/Modelos/AdminModelos'));
 
 const conSuspense = (Componente) => (
   <Suspense fallback={
@@ -55,6 +56,7 @@ const router = createBrowserRouter([
       { path: "admin/tareas", element: conSuspense(AdminTareas) },
       { path: "admin/comparador-ia", element: conSuspense(ComparadorIA) },
       { path: "admin/empresas", element: conSuspense(AdminEmpresas) },
+      { path: "admin/modelos-ia", element: conSuspense(AdminModelos) },
     ],
   },
   { path: "*", element: <Navigate to="/" replace /> }
