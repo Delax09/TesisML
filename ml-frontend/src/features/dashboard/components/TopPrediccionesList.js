@@ -7,7 +7,8 @@ import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 import TrendingFlatIcon from '@mui/icons-material/TrendingFlat';
 
-export default function TopPrediccionesList({ predicciones }) {
+// AÑADIDO: Agregamos onSelectEmpresa como prop
+export default function TopPrediccionesList({ predicciones, onSelectEmpresa }) {
     const theme = useTheme();
 
     const obtenerIconoTendencia = (tendencia) => {
@@ -32,6 +33,8 @@ export default function TopPrediccionesList({ predicciones }) {
             {predicciones.map((emp) => (
                 <ListItem 
                     key={emp.IdEmpresa} 
+                    // AÑADIDO: Evento onClick para abrir el modal
+                    onClick={() => onSelectEmpresa && onSelectEmpresa(emp)}
                     sx={{ 
                         bgcolor: 'background.default', 
                         mb: 1.5, 
@@ -39,7 +42,14 @@ export default function TopPrediccionesList({ predicciones }) {
                         p: 2, 
                         borderLeftWidth: 4,
                         borderLeftStyle: 'solid',
-                        borderLeftColor: emp.tendencia === 'Alcista' ? theme.palette.market.positive.icon : emp.tendencia === 'Bajista' ? theme.palette.market.negative.icon : theme.palette.warning.main
+                        borderLeftColor: emp.tendencia === 'Alcista' ? theme.palette.market.positive.icon : emp.tendencia === 'Bajista' ? theme.palette.market.negative.icon : theme.palette.warning.main,
+                        // AÑADIDO: Estilos de cursor y hover
+                        cursor: 'pointer',
+                        transition: 'transform 0.2s, box-shadow 0.2s',
+                        '&:hover': {
+                            transform: 'translateY(-2px)',
+                            boxShadow: theme.shadows[3]
+                        }
                     }}
                 >
                     <ListItemAvatar>

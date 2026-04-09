@@ -56,7 +56,7 @@ function PrecioChart({ empresaId, nombreEmpresa }) {
             </Box>
 
             {/* CONTENEDOR DEL GRÁFICO: relative y flexGrow garantizan que ocupa el 100% de lo que sobra */}
-            <Box sx={{ width: '100%', flexGrow: 1, minHeight: 0, position: 'relative' }}>
+            <Box sx={{ width: '100%', flexGrow: 1, minHeight: 250, position: 'relative' }}>
                 
                 {!empresaId ? (
                     /* Centrado absoluto para que no rompa el flexbox del padre */

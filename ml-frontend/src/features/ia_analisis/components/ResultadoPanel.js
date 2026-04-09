@@ -67,7 +67,7 @@ export default function ResultadoPanel({ empresaId }) {
     const volatilidadAlta = porcentajeATR > 1.5;
 
     return (
-        <Paper sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 1.5, minHeight: '400px', border: '1px solid', borderColor: 'divider' }}>
+        <Paper sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 1, height: '100%', overflowY: 'auto', border: '1px solid', borderColor: 'divider' }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
                 <Typography variant="h6" component="h4" fontWeight="700" color="text.primary">
                     Análisis Explicativo (XAI)
@@ -88,13 +88,13 @@ export default function ResultadoPanel({ empresaId }) {
                 <>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 1 }}>
                         <Typography component="span" color="text.secondary">Predicción Cierre:</Typography>
-                        <Typography component="strong" sx={{ fontSize: '1.4rem', color: 'text.primary', fontWeight: '900' }}>
+                        <Typography component="strong" sx={{ fontSize: '1.25rem', color: 'text.primary', fontWeight: '900' }}>
                             ${Number(resultado.PrediccionIA || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                         </Typography>
                     </Box>
 
                     <Box sx={{ 
-                        p: 1.5, borderRadius: '12px', textAlign: 'center', fontWeight: '800', fontSize: '1.2rem', letterSpacing: '1px', 
+                        p: 1, borderRadius: '8px', textAlign: 'center', fontWeight: '800', fontSize: '1rem', letterSpacing: '1px', 
                         bgcolor: esCompra ? 'market.positive.bg' : 'market.negative.bg', 
                         color: esCompra ? 'market.positive.text' : 'market.negative.text', 
                         border: '1px solid',
