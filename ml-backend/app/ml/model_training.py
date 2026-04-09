@@ -24,14 +24,16 @@ class EarlyStopping:
             self.mejores_pesos = copy.deepcopy(modelo.state_dict())
             self.contador = 0
 
-def ejecutar_entrenamiento_pytorch_optimizado(model, train_loader, val_loader, device, epochs=25, class_weight=None):
+def ejecutar_entrenamiento_pytorch_optimizado(model, train_loader, val_loader, device, epochs=25):
     criterion_reg = nn.HuberLoss(delta=1.0)
-    if class_weight is None:
-        class_weight = torch.tensor([1.0], device=device)
-    criterion_clf = nn.BCEWithLogitsLoss(pos_weight=class_weight)
+    
+    # 👇 CAMBIO 1: Eliminamos el pos_weight para evitar el Mode Collapse
+    criterion_clf = nn.BCEWithLogitsLoss()
     criterion_mae = nn.L1Loss()
     
-    optimizer = optim.Adam(model.parameters(), lr=0.0005)
+    # 👇 CAMBIO 2: Reducimos LR e introducimos weight_decay para estabilizar las 31 variables
+    optimizer = optim.Adam(model.parameters(), lr=0.0001, weight_decay=1e-5)
+    
     early_stopping = EarlyStopping(paciencia=5, delta=1e-4)
     
     historial = {
@@ -60,6 +62,11 @@ def ejecutar_entrenamiento_pytorch_optimizado(model, train_loader, val_loader, d
                 mae = criterion_mae(pred_reg, y_reg_batch)
             
             scaler_autocast.scale(loss_total).backward()
+            
+            # 👇 CAMBIO 3: Clip de gradientes para evitar que la red neuronal explote
+            scaler_autocast.unscale_(optimizer) 
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+            
             scaler_autocast.step(optimizer)
             scaler_autocast.update()
             
@@ -127,16 +134,16 @@ def ejecutar_entrenamiento_pytorch_optimizado(model, train_loader, val_loader, d
             
     return historial, early_stopping.mejores_pesos
 
-def calcular_metricas_clasificacion(model, val_loader, device, class_weight=None):
+def calcular_metricas_clasificacion(model, val_loader, device):
     y_val_real = []
     y_val_pred = []
     val_mae = 0.0
     val_loss = 0.0
     criterion_mae = nn.L1Loss()
     criterion_reg = nn.HuberLoss(delta=1.0)
-    if class_weight is None:
-        class_weight = torch.tensor([1.0], device=device)
-    criterion_clf = nn.BCEWithLogitsLoss(pos_weight=class_weight)
+    
+    # También eliminamos el sesgo al calcular la métrica de validación final
+    criterion_clf = nn.BCEWithLogitsLoss()
 
     model.eval()
     with torch.no_grad():
@@ -159,13 +166,13 @@ def calcular_metricas_clasificacion(model, val_loader, device, class_weight=None
 
     if len(y_val_real) == 0:
         return {
-            'loss': 0.0,
-            'mae': 0.0,
-            'val_loss': 0.0,
+            'loss': 0.0, 
+            'mae': 0.0, 
+            'val_loss': 0.0, 
             'val_mae': 0.0,
-            'accuracy': 0.0,
-            'precision': 0.0,
-            'recall': 0.0,
+            'accuracy': 0.0, 
+            'precision': 0.0, 
+            'recall': 0.0, 
             'f1_score': 0.0,
             'DiasFuturo': MLEngine.DIAS_PREDICCION
         }
@@ -180,18 +187,15 @@ def calcular_metricas_clasificacion(model, val_loader, device, class_weight=None
     rec = recall_score(y_val_real, y_val_pred_binary, zero_division=0)
     f1 = f1_score(y_val_real, y_val_pred_binary, zero_division=0)
 
-    # Calcular AUC
     try:
         auc = roc_auc_score(y_val_real, y_val_pred)
     except ValueError:
-        auc = 0.0  # En caso de que no haya clases positivas o negativas
+        auc = 0.0 
 
-    # Calcular matriz de confusión
     cm = confusion_matrix(y_val_real, y_val_pred_binary)
     if cm.shape == (2, 2):
         tn, fp, fn, tp = cm.ravel()
     else:
-        # Si no es 2x2, por ejemplo si solo hay una clase
         tp = tn = fp = fn = 0
         if cm.shape[0] == 1:
             if y_val_real[0] == 1:

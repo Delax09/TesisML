@@ -7,6 +7,9 @@ class ModeloLSTM_v1(nn.Module): # Mantenemos el nombre para no romper los import
         
         self.gru = nn.GRU(input_size=num_features, hidden_size=32, batch_first=True)
         self.dropout = nn.Dropout(0.4) 
+
+        self.batch_norm = nn.BatchNorm1d(32) #Capa de estabilizacion 
+
         self.fc1 = nn.Linear(32, 16)
         self.relu = nn.ReLU()
         

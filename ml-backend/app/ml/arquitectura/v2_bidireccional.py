@@ -1,12 +1,15 @@
 import torch
 import torch.nn as nn
 
+#multiplica por 2 (32 * 2 = 64)
 class ModeloBidireccional_v2(nn.Module):
     def __init__(self, num_features):
         super(ModeloBidireccional_v2, self).__init__()
         
         self.gru = nn.GRU(input_size=num_features, hidden_size=32, batch_first=True, bidirectional=True)
         self.dropout = nn.Dropout(0.4)
+        
+        self.batch_norm = nn.BatchNorm1d(64) #Capa de estabilizacion 
         
         # Como es bidireccional, el hidden_size se multiplica por 2 (32 * 2 = 64)
         self.fc1 = nn.Linear(64, 16) 
