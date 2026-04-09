@@ -50,7 +50,7 @@ export const useProyeccionesIA = (usuarioId, modeloId = null) => {
 
             return { proyecciones, sectores };
         },
-        enabled: !!usuarioId,
+        enabled: !!usuarioId && modeloId !== '',
         staleTime: 1000 * 60 * 5, // Los datos se consideran "frescos" por 5 minutos (evita recargas innecesarias)
     });
 

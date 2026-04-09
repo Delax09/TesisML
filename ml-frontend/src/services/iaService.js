@@ -26,7 +26,7 @@ const iaService = {
     obtenerPrediccionesMasivas: async (empresasIds, modeloId = null) => {
         const body = {
             empresas_ids: empresasIds,
-            modelo_id: modeloId
+            modelo_id: modeloId ? Number(modeloId) : null
         };
         const response = await api.post(`${API_URL}/predicciones-masivas`, body);
         return response.data;
