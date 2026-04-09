@@ -86,8 +86,8 @@ class MLEngine:
         df = df.copy() 
         
         close = df['Close']
-        high = df['High']
-        low = df['Low']
+        high = df.get('High', close)
+        low = df.get('Low', close)
         volume = df['Volume']
         
         # ---------------------------------------------------------
@@ -142,8 +142,12 @@ class MLEngine:
         # 4. PRICE ACTION (Acción del Precio Cruda - Velas Japonesas)
         # ---------------------------------------------------------
         # Asumimos que la base de datos tiene Open, si no, usamos el Close de ayer como Open
-        apertura = df.get('Open', prev_close.fillna(close)) 
+        apertura = df.get('Open', prev_close.fillna(close))
         
+        # Si la base de datos no tiene High/Low reales, aproximamos con el rango entre apertura y cierre
+        high = np.maximum(high, np.maximum(close, apertura))
+        low = np.minimum(low, np.minimum(close, apertura))
+
         df['Body_Size'] = abs(close - apertura)
         df['Wick_Upper'] = high - np.maximum(close, apertura)
         df['Wick_Lower'] = np.minimum(close, apertura) - low

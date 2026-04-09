@@ -25,6 +25,7 @@ from fastapi_cache import FastAPICache
 from fastapi_cache.backends.inmemory import InMemoryBackend
 
 try:
+    import torch
     import tensorflow as tf
     import joblib
     IA_AVAILABLE = True
@@ -41,8 +42,9 @@ async def lifespan(app: FastAPI):
         print("🚀 Cargando modelos de IA en memoria (Modo Local)...")
         base_path = os.path.join(os.path.dirname(__file__), "ml", "models")
         try:
-            app.state.model_v1 = tf.keras.models.load_model(os.path.join(base_path, "modelo_acciones_v1.keras"))
-            app.state.model_v2 = tf.keras.models.load_model(os.path.join(base_path, "modelo_acciones_v2.keras"))
+            app.state.model_v1 = torch.load(os.path.join(base_path, "modelo_acciones_v1.pth"))
+            app.state.model_v2 = torch.load(os.path.join(base_path, "modelo_acciones_v2.pth"))
+            app.state.model_v3 = torch.load(os.path.join(base_path, "modelo_acciones_v3.pth"))
             app.state.scaler = joblib.load(os.path.join(base_path, "scaler.pkl"))
             print("✅ Modelos y escaladores cargados exitosamente.")
         except Exception as e:

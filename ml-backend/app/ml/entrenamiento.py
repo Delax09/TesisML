@@ -85,6 +85,12 @@ def entrenar_y_guardar_optimizado(id_modelo_especifico: int = None, batch_empres
 
     print(f"🎯 Dataset final: {len(x_train)} secuencias de entrenamiento, {len(x_val)} validación")
 
+    # Calcular peso de clase para clasificación binaria
+    positivos = float(np.sum(y_clf == 1.0))
+    negativos = float(np.sum(y_clf == 0.0))
+    class_weight = torch.tensor([max(1.0, negativos / max(positivos, 1.0))], dtype=torch.float32).to(device)
+    print(f"📌 Balance de clases: {int(negativos)} negativos, {int(positivos)} positivos -> pos_weight={class_weight.item():.3f}")
+
     # Crear DataLoaders optimizados
     train_loader, val_loader = crear_dataloaders_optimizados(x_train, y_reg, y_clf, x_val, y_reg_val, y_clf_val)
 
@@ -109,14 +115,26 @@ def entrenar_y_guardar_optimizado(id_modelo_especifico: int = None, batch_empres
 
         # Entrenar
         with Timer(f"Entrenamiento de {modelo_db.Nombre}"):
-            historial, mejores_pesos = ejecutar_entrenamiento_pytorch_optimizado(model, train_loader, val_loader, device)
+            historial, mejores_pesos = ejecutar_entrenamiento_pytorch_optimizado(model, train_loader, val_loader, device, class_weight=class_weight)
+        
+        # Mostrar historial de entrenamiento
+        print("\nHistorial de Entrenamiento:")
+        print(f"{'Época':<8} {'Loss':<12} {'MAE':<12} {'Val Loss':<12} {'Val MAE':<12} {'Val Acc':<10} {'Val AUC':<10}")
+        print("-" * 80)
+        for i in range(len(historial['loss'])):
+            print(
+                f"{i+1:<8} {historial['loss'][i]:<12.4f} {historial['mae'][i]:<12.4f} "
+                f"{historial['val_loss'][i]:<12.4f} {historial['val_mae'][i]:<12.4f} "
+                f"{historial['val_accuracy'][i]:<10.3f} {historial['val_auc'][i]:<10.3f}"
+            )
+        print()
 
         # Cargar mejores pesos y calcular métricas
         model.load_state_dict(mejores_pesos)
         model.eval()
 
         with Timer("Cálculo de métricas"):
-            metricas = calcular_metricas_clasificacion(model, val_loader, device)
+            metricas = calcular_metricas_clasificacion(model, val_loader, device, class_weight=class_weight)
 
         # Guardar métricas en BD
         db_local = SessionLocal()

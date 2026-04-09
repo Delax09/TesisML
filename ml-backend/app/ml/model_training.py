@@ -24,17 +24,21 @@ class EarlyStopping:
             self.mejores_pesos = copy.deepcopy(modelo.state_dict())
             self.contador = 0
 
-def ejecutar_entrenamiento_pytorch_optimizado(model, train_loader, val_loader, device, epochs=25):
+def ejecutar_entrenamiento_pytorch_optimizado(model, train_loader, val_loader, device, epochs=25, class_weight=None):
     criterion_reg = nn.HuberLoss(delta=1.0)
-    pesos_clases = torch.tensor([1.2]).to(device) #Penaliza la predicción optimista
-    criterion_clf = nn.BCEWithLogitsLoss(pos_weight=pesos_clases) #Seguro para Autocast
-    criterion_mae = nn.L1Loss() 
+    if class_weight is None:
+        class_weight = torch.tensor([1.0], device=device)
+    criterion_clf = nn.BCEWithLogitsLoss(pos_weight=class_weight)
+    criterion_mae = nn.L1Loss()
     
     optimizer = optim.Adam(model.parameters(), lr=0.0005)
-    early_stopping = EarlyStopping(paciencia=3, delta=0.0) #Paciencia más estricta
+    early_stopping = EarlyStopping(paciencia=5, delta=1e-4)
     
-    historial = {'loss': [], 'mae': [], 'val_loss': [], 'val_mae': []}
-    scaler_autocast = torch.amp.GradScaler(device.type) 
+    historial = {
+        'loss': [], 'mae': [], 'val_loss': [], 'val_mae': [],
+        'val_accuracy': [], 'val_precision': [], 'val_recall': [], 'val_f1': [], 'val_auc': []
+    }
+    scaler_autocast = torch.amp.GradScaler(device.type)
 
     for epoch in range(epochs):
         model.train()
@@ -68,6 +72,7 @@ def ejecutar_entrenamiento_pytorch_optimizado(model, train_loader, val_loader, d
         
         model.eval()
         val_loss, val_mae = 0.0, 0.0
+        y_val_real, y_val_pred = [], []
         with torch.no_grad():
             for x_val, y_reg_val, y_clf_val in val_loader:
                 x_val = x_val.to(device, non_blocking=True).contiguous()  # Asegurar contigüidad para cuDNN
@@ -76,40 +81,62 @@ def ejecutar_entrenamiento_pytorch_optimizado(model, train_loader, val_loader, d
                 
                 with torch.amp.autocast(device.type):
                     p_reg, l_clf = model(x_val)
+                    pred_clf = torch.sigmoid(l_clf)
                     v_loss = criterion_reg(p_reg, y_reg_val) + criterion_clf(l_clf, y_clf_val)
                     
                 val_loss += v_loss.item()
                 val_mae += criterion_mae(p_reg, y_reg_val).item()
+                y_val_real.extend(y_clf_val.cpu().numpy().reshape(-1))
+                y_val_pred.extend(pred_clf.cpu().numpy().reshape(-1))
                 
         val_loss /= len(val_loader)
         val_mae /= len(val_loader)
+
+        y_val_pred_binary = (np.array(y_val_pred) > 0.5).astype(int)
+        val_accuracy = accuracy_score(y_val_real, y_val_pred_binary)
+        val_precision = precision_score(y_val_real, y_val_pred_binary, zero_division=0)
+        val_recall = recall_score(y_val_real, y_val_pred_binary, zero_division=0)
+        val_f1 = f1_score(y_val_real, y_val_pred_binary, zero_division=0)
+        try:
+            val_auc = roc_auc_score(y_val_real, y_val_pred)
+        except ValueError:
+            val_auc = 0.0
         
         historial['loss'].append(train_loss)
         historial['mae'].append(train_mae)
         historial['val_loss'].append(val_loss)
         historial['val_mae'].append(val_mae)
+        historial['val_accuracy'].append(val_accuracy)
+        historial['val_precision'].append(val_precision)
+        historial['val_recall'].append(val_recall)
+        historial['val_f1'].append(val_f1)
+        historial['val_auc'].append(val_auc)
         
-        print(f"Epoch [{epoch+1}/{epochs}] - Loss: {train_loss:.4f} - val_loss: {val_loss:.4f}")
+        print(
+            f"Epoch [{epoch+1}/{epochs}] - Loss: {train_loss:.4f} - Val Loss: {val_loss:.4f} "
+            f"- Val Acc: {val_accuracy:.3f} - Val AUC: {val_auc:.3f}"
+        )
         
         early_stopping(val_loss, model)
-        if early_stopping.detener: break
+        if early_stopping.detener:
+            print(f"⏹️ Early stopping activado en epoch {epoch+1}")
+            break
         
-        # Limpiar caché de GPU después de cada epoch para evitar fragmentación de memoria
         if device.type == 'cuda':
             torch.cuda.empty_cache()
             
     return historial, early_stopping.mejores_pesos
 
-def calcular_metricas_clasificacion(model, val_loader, device):
+def calcular_metricas_clasificacion(model, val_loader, device, class_weight=None):
     y_val_real = []
     y_val_pred = []
     val_mae = 0.0
     val_loss = 0.0
-    lote_evaluacion = 128
     criterion_mae = nn.L1Loss()
     criterion_reg = nn.HuberLoss(delta=1.0)
-    pesos_clases = torch.tensor([1.2]).to(device)
-    criterion_clf = nn.BCEWithLogitsLoss(pos_weight=pesos_clases)
+    if class_weight is None:
+        class_weight = torch.tensor([1.0], device=device)
+    criterion_clf = nn.BCEWithLogitsLoss(pos_weight=class_weight)
 
     model.eval()
     with torch.no_grad():

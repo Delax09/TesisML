@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import pandas as pd
 import torch
@@ -63,9 +64,13 @@ def preparar_datos_masivos_optimizado(lista_dfs: List[pd.DataFrame], batch_size:
     scaler = RobustScaler() # 👈 Evita errores extremos en ValLoss
 
     muestras_scaler = []
-    for df in lista_dfs[:min(10, len(lista_dfs))]:
+    contador_muestras = 0
+    for df in lista_dfs:
         if len(df) > MLEngine.DIAS_MEMORIA_IA:
             muestras_scaler.append(df[MLEngine.FEATURES].values[:100])
+            contador_muestras += 1
+            if contador_muestras >= 30:
+                break
 
     if muestras_scaler:
         scaler.fit(np.vstack(muestras_scaler))
@@ -133,7 +138,22 @@ def crear_dataloaders_optimizados(
     train_dataset = TensorDataset(x_train_tensor, y_reg_train_tensor, y_clf_train_tensor)
     val_dataset = TensorDataset(x_val_tensor, y_reg_val_tensor, y_clf_val_tensor)
 
-    train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True, pin_memory=True, num_workers=0)  # Reducido de 128 a 32 para evitar OOM
-    val_loader = DataLoader(val_dataset, batch_size=64, shuffle=False, pin_memory=True)  # Validación puede ser más grande
+    worker_count = min(4, max(0, os.cpu_count() - 1))
+    train_loader = DataLoader(
+        train_dataset,
+        batch_size=32,
+        shuffle=True,
+        pin_memory=True,
+        num_workers=worker_count,
+        persistent_workers=(worker_count > 0)
+    )
+    val_loader = DataLoader(
+        val_dataset,
+        batch_size=64,
+        shuffle=False,
+        pin_memory=True,
+        num_workers=worker_count,
+        persistent_workers=(worker_count > 0)
+    )
 
     return train_loader, val_loader
