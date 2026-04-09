@@ -8,7 +8,6 @@ import {
     Typography, 
     CircularProgress,
     InputAdornment,
-    Divider,
     Link // Link de Material UI
 } from '@mui/material';
 import EmailIcon from '@mui/icons-material/Email';
@@ -143,29 +142,6 @@ function AuthForm({ modoInicialRegistro = false }) {
                 </Typography>
             )}
             {/* -------------------------------------------------- */}
-
-            <Divider sx={{ my: 1 }} />
-
-            <Box 
-                sx={{ 
-                    bgcolor: 'action.hover', 
-                    p: 1.5, 
-                    borderRadius: 2, 
-                    textAlign: 'center',
-                    border: '1px solid',
-                    borderColor: 'divider' 
-                }}
-            >
-                <Typography variant="caption" fontWeight="bold" color="text.secondary" display="block" gutterBottom>
-                    Usuarios de Prueba:
-                </Typography>
-                <Typography variant="caption" color="text.secondary" display="block">
-                    <strong>Admin:</strong> admin@admin.cl | A12345dsa%d_!
-                </Typography>
-                <Typography variant="caption" color="text.secondary" display="block">
-                    <strong>User:</strong> user@user.cl | A12345dsa%d_!
-                </Typography>
-            </Box>
         </Box>
     );
 }
