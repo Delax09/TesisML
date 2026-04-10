@@ -3,8 +3,9 @@ import React, { useState } from 'react';
 import { useEntrenamientoIA } from '../hooks/useEntrenamientoIA';
 import { 
     Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, 
-    Button, Box, FormControl, Select, MenuItem, InputLabel 
+    Button, Box, FormControl, Select, MenuItem, InputLabel, CircularProgress 
 } from '@mui/material';
+import PsychologyIcon from '@mui/icons-material/Psychology';
 
 export default function EntrenamientoSelector() {
     const { modelos, modeloSeleccionado, setModeloSeleccionado, entrenando, ejecutarEntrenamiento } = useEntrenamientoIA();
@@ -21,23 +22,25 @@ export default function EntrenamientoSelector() {
         <>
             <Box sx={{ 
                 display: 'flex', 
-                flexDirection: { xs: 'column', sm: 'row' }, // <-- FIX: En móvil se apilan, en PC se ponen uno al lado del otro
+                flexDirection: { xs: 'column', sm: 'row' }, 
                 alignItems: 'center', 
+                justifyContent: 'space-between',
                 gap: 2, 
                 bgcolor: 'background.default', 
                 p: 2, 
                 borderRadius: 3, 
                 border: '1px solid', 
                 borderColor: 'divider',
-                width: { xs: '100%', sm: 'auto' } // <-- FIX: Toma todo el ancho disponible en móvil
+                width: '100%',
+                maxWidth: '600px',
+                mx: 'auto'
             }}>
-                {/* FIX: minWidth cambia a width 100% en móvil */}
-                <FormControl size="small" sx={{ width: { xs: '100%', sm: 200 } }}>
-                    <InputLabel id="label-ia-selector">Seleccionar IA</InputLabel>
+                <FormControl size="small" sx={{ width: { xs: '100%', sm: 'auto' }, flexGrow: 1 }}>
+                    <InputLabel id="label-ia-entrenar-selector">Entrenar Modelo IA</InputLabel>
                     <Select
-                        labelId="label-ia-selector"
+                        labelId="label-ia-entrenar-selector"
                         value={modeloSeleccionado}
-                        label="Seleccionar IA"
+                        label="Entrenar Modelo IA"
                         onChange={(e) => setModeloSeleccionado(e.target.value)}
                         disabled={entrenando}
                     >
@@ -49,15 +52,15 @@ export default function EntrenamientoSelector() {
                     </Select>
                 </FormControl>
 
-                {/* FIX: El botón ocupa el 100% del ancho en móvil para ser fácil de tocar */}
                 <Button 
                     variant="contained" 
-                    color="secondary" 
+                    color="secondary" // Secundario para diferenciar que es una tarea de re-entrenamiento
+                    startIcon={entrenando ? <CircularProgress size={20} color="inherit" /> : <PsychologyIcon />}
                     onClick={() => setModalAbierto(true)}
-                    disabled={entrenando || modelos.length === 0}
-                    sx={{ width: { xs: '100%', sm: 'auto' } }} 
+                    disabled={entrenando || !modeloSeleccionado || modelos.length === 0}
+                    sx={{ width: { xs: '100%', sm: 'auto' }, minWidth: '220px' }} 
                 >
-                    {entrenando ? '⏳ Entrenando...' : '🧠 Entrenar Seleccionado'}
+                    {entrenando ? 'Entrenando...' : 'Entrenar Modelo'}
                 </Button>
             </Box>
 

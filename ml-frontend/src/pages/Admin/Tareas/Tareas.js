@@ -3,6 +3,7 @@ import React from 'react';
 import AdminPanelTareas from '../../../features/admin/components/AdminPanelTareas';
 import AnalisisIAButton from '../../../features/ia_analisis/components/AnalisisIAButton';
 import EntrenamientoSelector from '../../../features/ia_analisis/components/EntrenamientoSelector';
+import AnalisisPorModeloSelector from '../../../features/ia_analisis/components/AnalisisPorModeloSelector'; // <-- Importamos el nuevo componente
 import { useEmpresas } from '../../../features/empresas/hooks/useEmpresas';
 
 import { Box, Typography, Paper, Divider } from '@mui/material';
@@ -21,19 +22,23 @@ const AdminTareas = () => {
             icono={BuildIcon} 
         />
 
-        {/* FIX: Redujimos el padding en pantallas xs (móviles) */}
         <Paper sx={{ p: { xs: 2, sm: 3 }, width: '100%' }}>
             <Typography variant="h6" fontWeight="bold" gutterBottom color="primary.main">
                 Ejecutar Inteligencia Artificial Predictiva
             </Typography>
             <Divider sx={{ mb: 3 }} />
             
-            {/* FIX: Redujimos el padding vertical (py) en móviles */}
             <Box sx={{ textAlign: 'center', py: { xs: 2, sm: 4 } }}>
+                {/* Botón para analizar todo con todos los modelos */}
                 <AnalisisIAButton onComplete={cargarDatos} />
                 
-                {/* FIX: Redujimos el margen superior (mt) para que no haya un espacio gigante en móvil */}
-                <Box sx={{ mt: { xs: 3, sm: 6 }, display: 'flex', justifyContent: 'center' }}>
+                {/* NUEVO: Selector para ejecutar un modelo específico */}
+                <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                    <AnalisisPorModeloSelector />
+                </Box>
+                
+                {/* Selector para entrenar modelos */}
+                <Box sx={{ display: 'flex', justifyContent: 'center' }}>
                     <EntrenamientoSelector />
                 </Box>
             </Box>

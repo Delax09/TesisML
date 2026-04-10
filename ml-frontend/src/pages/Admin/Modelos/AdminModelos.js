@@ -1,12 +1,15 @@
 // src/pages/Admin/Modelos/AdminModelos.js
 import React, { useState, useEffect } from 'react';
-import { Box, Paper, Switch, Table, TableBody, TableCell, TableHead, TableRow, Chip } from '@mui/material';
+import { Box, Paper, Switch, Table, TableBody, TableCell, TableHead, TableRow, Chip, Button, CircularProgress } from '@mui/material';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import api from '../../../services/api';
+import iaService from '../../../services/iaService'; // Importamos el servicio actualizado
 import PageHeader from '../../../components/PageHeader';
 import SmartToyIcon from '@mui/icons-material/SmartToy';
 
 export default function AdminModelos() {
     const [modelos, setModelos] = useState([]);
+    const [ejecutando, setEjecutando] = useState(null); // Estado para controlar el loading del botón
 
     useEffect(() => {
         cargarModelos();
@@ -14,7 +17,6 @@ export default function AdminModelos() {
 
     const cargarModelos = async () => {
         try {
-            // ✅ CORRECTO: sin /api/v1
             const res = await api.get('/modelos-ia');
             setModelos(res.data);
         } catch (error) {
@@ -24,11 +26,25 @@ export default function AdminModelos() {
 
     const toggleActivo = async (idModelo, estadoActual) => {
         try {
-            // ✅ CORRECTO: sin /api/v1
             await api.patch(`/modelos-ia/${idModelo}`, { Activo: !estadoActual });
             cargarModelos(); 
         } catch (error) {
             console.error("Error al cambiar estado", error);
+        }
+    };
+
+    // Nueva función para ejecutar el modelo
+    const handleEjecutarModelo = async (idModelo) => {
+        try {
+            setEjecutando(idModelo);
+            const res = await iaService.analizarPorModelo(idModelo);
+            alert(res.mensaje || `Análisis iniciado para el modelo ${idModelo}`); 
+            // Nota: Puedes cambiar este alert() por tu sistema de notificaciones (ej. react-toastify o Snackbar)
+        } catch (error) {
+            console.error("Error al ejecutar modelo", error);
+            alert("Error al iniciar el análisis");
+        } finally {
+            setEjecutando(null);
         }
     };
 
@@ -50,6 +66,7 @@ export default function AdminModelos() {
                             <TableCell sx={{ fontWeight: 'bold' }}>Versión</TableCell>
                             <TableCell sx={{ fontWeight: 'bold' }}>Descripción</TableCell>
                             <TableCell align="center" sx={{ fontWeight: 'bold' }}>Estado (Visible)</TableCell>
+                            <TableCell align="center" sx={{ fontWeight: 'bold' }}>Acciones</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
@@ -67,6 +84,18 @@ export default function AdminModelos() {
                                         onChange={() => toggleActivo(modelo.IdModelo, modelo.Activo)} 
                                         color="success"
                                     />
+                                </TableCell>
+                                <TableCell align="center">
+                                    <Button
+                                        variant="contained"
+                                        color="primary"
+                                        size="small"
+                                        startIcon={ejecutando === modelo.IdModelo ? <CircularProgress size={20} color="inherit" /> : <PlayArrowIcon />}
+                                        onClick={() => handleEjecutarModelo(modelo.IdModelo)}
+                                        disabled={ejecutando === modelo.IdModelo}
+                                    >
+                                        Ejecutar
+                                    </Button>
                                 </TableCell>
                             </TableRow>
                         ))}
