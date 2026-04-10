@@ -23,7 +23,7 @@ def actualizar_precios_empresa(db: Session, empresa_id: int, ticker: str):
 
     if ultimo_precio:
         # Si ya hay datos, empezamos desde el día siguiente al último registro
-        start_date = (ultimo_precio + timedelta(days=1)).strftime('%Y-%m-%d')
+        start_date = (ultimo_precio - timedelta(days=35)).strftime('%Y-%m-%d')
     else:
         # Si es nueva, traigo todos desde el inicio de Yahoo Finance
         start_date = "1900-01-01"
