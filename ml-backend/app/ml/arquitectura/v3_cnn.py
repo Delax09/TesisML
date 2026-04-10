@@ -14,6 +14,7 @@ class ModeloCNN_v3(nn.Module):
         
         self.dropout = nn.Dropout(0.4)
         self.fc1 = nn.Linear(64, 16)
+        self.bn3 = nn.BatchNorm1d(16)
         self.relu3 = nn.ReLU()
         
         self.cabeza_regresion = nn.Linear(16, 1)
