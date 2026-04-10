@@ -12,7 +12,7 @@ from typing import List, Tuple, Optional
 from app.db.sessions import SessionLocal
 from app.models.empresa import Empresa
 from app.models.modelo_ia import ModeloIA
-from app.ml.data_processing import extraer_y_procesar_empresa, preparar_datos_masivos
+from app.ml.data_processing import extraer_y_procesar_empresa, preparar_datos_masivos_optimizado
 
 
 def cargar_empresas_y_modelos_cnn(id_modelo_especifico: int = None):
@@ -49,7 +49,7 @@ def construir_entorno_empresas(ids_empresas: List[int], max_workers: int = 10) -
 
 def preparar_datos_cnn(lista_dfs: List[pd.DataFrame]):
     """Prepara los datos de entrenamiento CNN reutilizando la pipeline estándar."""
-    return preparar_datos_masivos(lista_dfs)
+    return preparar_datos_masivos_optimizado(lista_dfs)
 
 
 def separar_train_validation(x_train: np.ndarray, y_reg: np.ndarray, y_clf: np.ndarray,
