@@ -18,15 +18,17 @@ def limpiar_numero(valor):
     except: 
         return 0.0
 
-def ejecutar_analisis_diario():
+def ejecutar_analisis_diario(modelo_id = None):
     print("🚀 Iniciando procesamiento secuencial de IA...")
     db = SessionLocal()
     try:
         logger.info("📦 Inicializando MLEngine...")
-        logger.info("✅ MLEngine inicializado (sin Beta)")
+
 
         # 1. Aplanamos modelos a diccionarios simples (evita DuplicatePreparedStatement)
-        modelos_db = db.query(ModeloIA).filter(ModeloIA.Activo == True).all()
+        modelos_db = db.query(ModeloIA).filter(ModeloIA.Activo == True)
+        if modelo_id:
+            modelo_db = modelos_db.filter(ModeloIA.IdModelo == modelo_id)
         modelos_activos = [{"id": m.IdModelo, "nombre": m.Nombre, "version": m.Version} for m in modelos_db]
         print(f"📊 Modelos activos encontrados: {len(modelos_activos)}")
         db.expunge_all()

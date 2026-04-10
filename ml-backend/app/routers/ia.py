@@ -233,3 +233,11 @@ async def obtener_predicciones_masivas(
             }
 
     return resultado_masivo
+
+@router.post("/analizar-por-modelo/{id_modelo}")
+def analizar_por_modelo(id_modelo: int , background_tasks: BackgroundTasks):
+    if not IA_AVAILABLE:
+        raise HTTPException(status_code= 501, detail="Modulo ML deshabilitado")
+    
+    background_tasks.add_task(ejecutar_analisis_diario, id_modelo)
+    return {"status": "ok", "mensaje": f"Predicciones iniciadas en segundo plano para el modelo {id_modelo}"}
