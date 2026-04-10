@@ -160,6 +160,9 @@ class PrecioHistoricoBase(BaseModel):
     Fecha: datetime = Field(..., description = "Fecha del precio historico")
     PrecioCierre: Decimal = Field(..., description= "Precio de cierre de la empresa")
     Volumen: int = Field(..., description= "Volumen de transaccion")
+    SMA_20: Optional[float] = Field(None, description="Media Móvil Simple de 20 días")
+    Banda_Superior: Optional[float] = Field(None, description="Banda Superior de Bollinger")
+    Banda_Inferior: Optional[float] = Field(None, description="Banda Inferior de Bollinger")
 
 class PrecioHistoricoCreate(PrecioHistoricoBase):
     pass
@@ -171,6 +174,9 @@ class PrecioHistoricoOut(BaseModel):
     PrecioCierre: Decimal = Field(..., description="Precio de cierre de mercado")
     Fecha: datetime = Field(..., description="Fecha del precio historico")
     FechaRegistro: datetime = Field(None, description="Fecha historica real")
+    SMA_20: Optional[float] = Field(None, description="Media Móvil Simple de 20 días")
+    Banda_Superior: Optional[float] = Field(None, description="Banda Superior de Bollinger")
+    Banda_Inferior: Optional[float] = Field(None, description="Banda Inferior de Bollinger")
 
 # # ========================= RESULTADO SCHEMAS =========================
 

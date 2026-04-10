@@ -14,5 +14,9 @@ class PrecioHistorico(Base):
     Volumen = Column(BigInteger, nullable=False)
     FechaRegistro = Column(DateTime, default=obtener_hora_formateada)
 
+    SMA_20 = Column(DECIMAL(18,4), nullable=True)
+    Banda_Superior = Column(DECIMAL(18,4), nullable = True)
+    Banda_Inferior = Column(DECIMAL(18,4), nullable = True)
+
     # Relación inversa con Empresa
     empresa = relationship("Empresa", back_populates="precios_historicos")

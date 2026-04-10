@@ -79,6 +79,14 @@ class PrecioHistoricoService:
             if data.empty:
                 print(f"ℹ️ No hay datos nuevos para {ticker}.")
                 return {"message": f"No hay datos nuevos para {ticker}.", "registros_actualizados": 0}
+            
+            if isinstance(data.columns, pd.MultiIndex):
+                data.columns = data.columns.droplevel(1)
+            
+            data['SMA20'] = data['Close'].rolling(window=20).mean()
+            data['StdDev'] = data['Close'].rolling(window=20).std()
+            data['Banda_Superior'] = data['SMA_20'] + (data['StdDev'] * 2)
+            data['Banda_Inferior'] = data['SMA_20'] - (data['StdDev'] * 2)
 
             # 3. Preparar los registros para inserción masiva
             nuevos_registros = []
@@ -91,7 +99,11 @@ class PrecioHistoricoService:
                     IdEmpresa=empresa_id,
                     Fecha=index.date(),
                     PrecioCierre=precio_cierre,
-                    Volumen=int(row['Volume']) if not pd.isna(row['Volume']) else 0
+                    Volumen=int(row['Volume']) if not pd.isna(row['Volume']) else 0,
+                    #Bandas de bollinger 
+                    SMA_20=float(row['SMA_20']) if not pd.isna(row['SMA_20']) else None,
+                    Banda_Superior=float(row['Banda_Superior']) if not pd.isna(row['Banda_Superior']) else None,
+                    Banda_Inferior=float(row['Banda_Inferior']) if not pd.isna(row['Banda_Inferior']) else None
                 )
                 nuevos_registros.append(nuevo_precio)
 
