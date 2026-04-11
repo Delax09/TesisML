@@ -3,7 +3,8 @@ import numpy as np
 import pandas as pd
 import torch
 from torch.utils.data import TensorDataset, DataLoader
-from sklearn.preprocessing import RobustScaler # 👈 RobustScaler
+from sklearn.preprocessing import RobustScaler 
+from numpy.lib.stride_tricks import sliding_window_view
 import gc
 from typing import Tuple, List, Optional, Any
 import concurrent.futures
@@ -22,35 +23,39 @@ def procesar_empresas_en_lotes(ids_empresas: List[int], batch_size: int = 50) ->
     for i in tqdm(range(0, len(ids_empresas), batch_size), desc="Procesando lotes"):
         batch_ids = ids_empresas[i:i+batch_size]
         
-        # Procesar en paralelo dentro del lote
-        with concurrent.futures.ThreadPoolExecutor(max_workers=min(4, len(batch_ids))) as executor:
+        #Cambiado a ProcessPoolExecutor para cálculos CPU-intensivos
+        with concurrent.futures.ProcessPoolExecutor(max_workers=min(4, len(batch_ids))) as executor:
             futuros = [executor.submit(extraer_y_procesar_empresa, id_empresa) for id_empresa in batch_ids]
             for futuro in concurrent.futures.as_completed(futuros):
                 df = futuro.result()
                 if df is not None:
                     datos_procesados.append(df)
         
-        gc.collect()  # Liberar memoria después de cada lote
+        gc.collect()
     
     return datos_procesados
 
 def extraer_y_procesar_empresa(id_empresa: int) -> Optional[pd.DataFrame]:
     db_thread = SessionLocal()
     try:
-        precios = db_thread.query(PrecioHistorico).filter(
-            PrecioHistorico.IdEmpresa == id_empresa
-        ).order_by(PrecioHistorico.Fecha.asc()).all()
+        # En lugar de mapear diccionarios, leemos directo a Pandas en C
+        consulta = db_thread.query(
+            PrecioHistorico.Fecha, 
+            PrecioHistorico.PrecioCierre.label('Close'), 
+            PrecioHistorico.Volumen.label('Volume')
+        ).filter(PrecioHistorico.IdEmpresa == id_empresa).order_by(PrecioHistorico.Fecha.asc())
+        
+        df = pd.read_sql(consulta.statement, db_thread.bind)
 
-        if len(precios) < MLEngine.DIAS_MEMORIA_IA + 50: return None
-
-        datos_formateados = [{
-            'Fecha': p.Fecha, 'Close': float(p.PrecioCierre), 'Volume': int(p.Volumen or 0),
-            'High': float(p.PrecioCierre), 'Low': float(p.PrecioCierre)
-        } for p in precios]
-            
-        df = pd.DataFrame(datos_formateados)
+        if len(df) < MLEngine.DIAS_MEMORIA_IA + 50: return None
+        
+        # Ajustamos los campos extra que necesitabas
+        df['High'] = df['Close']
+        df['Low'] = df['Close']
+        
         df.set_index('Fecha', inplace=True)
         return MLEngine.calcular_indicadores(df)
+        
     except Exception as e:
         print(f"Error procesando empresa ID {id_empresa}: {e}")
         return None
@@ -61,7 +66,7 @@ def preparar_datos_masivos_optimizado(lista_dfs: List[pd.DataFrame], batch_size:
     if not lista_dfs: return None, None, None, None, None, None, None
 
     print(f"Procesando {len(lista_dfs)} empresas con {sum(len(df) for df in lista_dfs)} registros totales...")
-    scaler = RobustScaler() # 👈 Evita errores extremos en ValLoss
+    scaler = RobustScaler() 
 
     muestras_scaler = []
     contador_muestras = 0
@@ -69,11 +74,8 @@ def preparar_datos_masivos_optimizado(lista_dfs: List[pd.DataFrame], batch_size:
         if len(df) > MLEngine.DIAS_MEMORIA_IA:
             muestras_scaler.append(df[MLEngine.FEATURES].values[:100])
             contador_muestras += 1
-            if contador_muestras >= 30:
-                break
-
-    if muestras_scaler:
-        scaler.fit(np.vstack(muestras_scaler))
+            if contador_muestras >= 30: break
+    if muestras_scaler: scaler.fit(np.vstack(muestras_scaler))
 
     x_train_global, y_train_reg, y_train_clf = [], [], []
     x_val_global, y_val_reg, y_val_clf = [], [], []
@@ -85,34 +87,43 @@ def preparar_datos_masivos_optimizado(lista_dfs: List[pd.DataFrame], batch_size:
         for df in batch_dfs:
             if len(df) <= MLEngine.DIAS_MEMORIA_IA + dias_futuro: continue
             
-            # 👇 EXTRAEMOS LOS PRECIOS CRUDOS REALES PARA CALCULAR EL PORCENTAJE EXACTO
             close_raw = df['Close'].values 
             scaled_data = scaler.transform(df[MLEngine.FEATURES].values)
 
-            for j in range(MLEngine.DIAS_MEMORIA_IA, len(scaled_data) - dias_futuro + 1):
-                x_train_global.append(scaled_data[j-MLEngine.DIAS_MEMORIA_IA:j, :])
-                
-                # Precios Reales (sin escalar)
-                precio_hoy = close_raw[j-1] 
-                precio_futuro = close_raw[j + dias_futuro - 1] 
-                
-                # 👇 1. ARREGLO DE REGRESIÓN: Calculamos el Retorno Logarítmico real
-                log_return = np.log(precio_futuro / precio_hoy)
-                y_train_reg.append(log_return)
-                
-                # 👇 2. FILTRO INSTITUCIONAL DE RUIDO (Umbral)
-                # Solo consideramos 'Alcista' si la acción sube más de un 0.8% (0.008)
-                # Esto obliga a la IA a buscar patrones de tendencias fuertes, ignorando días planos.
-                y_train_clf.append(1.0 if log_return > 0.008 else 0.0) 
+            # Vectorización de Ventanas Deslizantes (Sin bucles for internos)
+            n_validos = len(scaled_data) - MLEngine.DIAS_MEMORIA_IA - dias_futuro + 1
+            
+            # Crea todas las ventanas temporales en un solo bloque en milisegundos
+            ventanas = sliding_window_view(scaled_data, window_shape=MLEngine.DIAS_MEMORIA_IA, axis=0)
+            ventanas = np.swapaxes(ventanas, 1, 2) # Formato PyTorch: (batch, secuencia, features)
+            
+            x_batch = ventanas[:n_validos]
+
+            # Vectorización de los índices de precio futuro y actual
+            idx_hoy = np.arange(MLEngine.DIAS_MEMORIA_IA - 1, len(close_raw) - dias_futuro)
+            idx_futuro = idx_hoy + dias_futuro
+
+            precio_hoy = close_raw[idx_hoy]
+            precio_futuro = close_raw[idx_futuro]
+
+            # Operaciones vectoriales directas
+            log_return = np.log(precio_futuro / precio_hoy)
+            clf_target = (log_return > 0.008).astype(np.float32)
+
+            # Agregamos los bloques completos (append de numpy arrays es muchísimo más rápido)
+            x_train_global.append(x_batch)
+            y_train_reg.append(log_return)
+            y_train_clf.append(clf_target)
 
         del batch_dfs
         gc.collect()
 
+    #Concatenar todo al final 
     return (
-        np.array(x_train_global, dtype=np.float32),
-        np.array(y_train_reg, dtype=np.float32),
-        np.array(y_train_clf, dtype=np.float32),
-        np.array(x_val_global, dtype=np.float32),
+        np.concatenate(x_train_global, axis=0) if x_train_global else np.array([]),
+        np.concatenate(y_train_reg, axis=0) if y_train_reg else np.array([]),
+        np.concatenate(y_train_clf, axis=0) if y_train_clf else np.array([]),
+        np.array(x_val_global, dtype=np.float32), 
         np.array(y_val_reg, dtype=np.float32),
         np.array(y_val_clf, dtype=np.float32),
         scaler
