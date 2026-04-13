@@ -1,5 +1,6 @@
 import yfinance as yf
 import pandas as pd
+import numpy as np
 import warnings
 import math
 from datetime import datetime, timedelta
@@ -54,6 +55,7 @@ class PrecioHistoricoService:
     # --- NUEVO SERVICIO INTEGRADO ---
     @staticmethod
     def actualizar_precios_empresa(db: Session, empresa_id: int, ticker: str):
+
         """
         Descarga y actualiza los precios históricos de una empresa específica
         usando inserción masiva (bulk insert) para optimizar la base de datos.
@@ -121,3 +123,33 @@ class PrecioHistoricoService:
             print(f"❌ Error al actualizar {ticker}: {e}")
             # Levantamos un error personalizado para que FastAPI lo atrape y lo mande al Frontend
             raise InvalidDataError(f"Error al descargar o guardar precios de Yahoo Finance para {ticker}")
+
+    @staticmethod
+    def obtener_precios_con_indicadores(db: Session, empresa_id: int):
+        # 1. Obtener datos crudos de la BD
+        precios_bd = db.query(PrecioHistorico).filter(
+            PrecioHistorico.IdEmpresa == empresa_id
+        ).order_by(PrecioHistorico.Fecha.asc()).all()
+
+        if not precios_bd: return []
+
+        # 2. Convertir a DataFrame para cálculos vectorizados
+        df = pd.DataFrame([{
+            "Fecha": p.Fecha,
+            "PrecioCierre": float(p.PrecioCierre),
+            "SMA_20": float(p.SMA_20) if p.SMA_20 else None,
+            "Banda_Superior": float(p.Banda_Superior) if p.Banda_Superior else None,
+            "Banda_Inferior": float(p.Banda_Inferior) if p.Banda_Inferior else None
+        } for p in precios_bd])
+
+        # 3. Cálculo de Seguridad (Si la BD tiene nulos, calculamos con Pandas)
+        if df['SMA_20'].isnull().any():
+            ventana = 20
+            df['SMA_20'] = df['PrecioCierre'].rolling(window=ventana, min_periods=1).mean()
+            std = df['PrecioCierre'].rolling(window=ventana, min_periods=1).std()
+            df['Banda_Superior'] = df['SMA_20'] + (std * 2)
+            df['Banda_Inferior'] = df['SMA_20'] - (std * 2)
+
+        # Reemplazar NaNs por None para JSON valid
+        df = df.replace({np.nan: None})
+        return df.to_dict(orient="records")

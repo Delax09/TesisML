@@ -8,39 +8,59 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 from app.ml.engine import MLEngine
 
 class EarlyStopping:
-    def __init__(self, paciencia=5, delta=0):
-        self.paciencia = paciencia; self.delta = delta; self.contador = 0
-        self.mejor_loss = None; self.detener = False; self.mejores_pesos = None
+    def __init__(self, paciencia=8, delta=0.001):
+        self.paciencia = paciencia; 
+        self.delta = delta; 
+        self.contador = 0
+        self.mejor_loss = np.inf; 
+        self.detener = False; 
+        self.mejores_pesos = None
 
     def __call__(self, val_loss, modelo):
-        if self.mejor_loss is None:
+        #Proteccion contra COLAPSO matematico
+        if np.isnan(val_loss) or np.ifinf(val_loss):
+            print("⚠️ [EarlyStopping] val_loss es NaN/Inf. Deteniendo para salvar los últimos pesos estables.")
+            self.detener = True
+            return
+        
+        #Mejora real que supera el delta 
+        if val_loss < self.mejor_loss - self.delta:
             self.mejor_loss = val_loss
             self.mejores_pesos = copy.deepcopy(modelo.state_dict())
-        elif val_loss > self.mejor_loss - self.delta:
-            self.contador += 1
-            if self.contador >= self.paciencia: self.detener = True
-        else:
-            self.mejor_loss = val_loss
-            self.mejores_pesos = copy.deepcopy(modelo.state_dict())
-            self.contador = 0
+            self.contador = 0 
+        
+        #No hay mejora 
+        else: 
+            self.contador += 1 
+            print(f'[EarlyStopping] Paciencia: {self.contador}/{self.paciencia} (Mejor histórica: {self.mejor_loss:.4f})')
+            if self.contador >= self.paciencia:
+                print(f"[EarlyStopping] Entrenamiento detenido. No hubo mejora en {self.paciencia} épocas")
+                self.detener = True
 
 def ejecutar_entrenamiento_pytorch_optimizado(model, train_loader, val_loader, device, epochs=25):
-    criterion_reg = nn.HuberLoss(delta=0.05)
+    criterion_reg = nn.HuberLoss(delta=0.01)
     
-    # 👇 CAMBIO 1: Eliminamos el pos_weight para evitar el Mode Collapse
+    
     criterion_clf = nn.BCEWithLogitsLoss()
     criterion_mae = nn.L1Loss()
     
-    # 👇 CAMBIO 2: Reducimos LR e introducimos weight_decay para estabilizar las 31 variables
-    optimizer = optim.Adam(model.parameters(), lr=0.0001, weight_decay=1e-5)
+    #Cambiar aqui para calcular el peso de clase dinamicamente 
+    optimizer = optim.Adam(model.parameters(), lr=0.0003, weight_decay=1e-5)
     
-    early_stopping = EarlyStopping(paciencia=5, delta=1e-4)
+    early_stopping = EarlyStopping(paciencia=8, delta=1e-4)
     
     historial = {
-        'loss': [], 'mae': [], 'val_loss': [], 'val_mae': [],
-        'val_accuracy': [], 'val_precision': [], 'val_recall': [], 'val_f1': [], 'val_auc': []
+        'loss': [], 
+        'mae': [], 
+        'val_loss': [], 
+        'val_mae': [],
+        'val_accuracy': [], 
+        'val_precision': [], 
+        'val_recall': [], 
+        'val_f1': [], 
+        'val_auc': []
     }
-    scaler_autocast = torch.amp.GradScaler(device.type)
+    scaler_autocast = torch.amp.GradScaler(enabled=(device.type == 'cuda'))
 
     for epoch in range(epochs):
         model.train()
@@ -131,6 +151,10 @@ def ejecutar_entrenamiento_pytorch_optimizado(model, train_loader, val_loader, d
         
         if device.type == 'cuda':
             torch.cuda.empty_cache()
+        
+        if early_stopping.mejores_pesos is not None:
+            model.load_state_dict(early_stopping.mejores_pesos)
+            print(f"mejores pesos restaurados")
             
     return historial, early_stopping.mejores_pesos
 
@@ -140,7 +164,7 @@ def calcular_metricas_clasificacion(model, val_loader, device):
     val_mae = 0.0
     val_loss = 0.0
     criterion_mae = nn.L1Loss()
-    criterion_reg = nn.HuberLoss(delta=0.05)
+    criterion_reg = nn.HuberLoss(delta=0.01)
     
     # También eliminamos el sesgo al calcular la métrica de validación final
     criterion_clf = nn.BCEWithLogitsLoss()

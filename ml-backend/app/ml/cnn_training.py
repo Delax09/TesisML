@@ -29,12 +29,12 @@ def entrenar_cnn_supervisado(modelo: nn.Module,
                             early_stopping_patience: int = 5) -> Tuple[Any, Dict[str, float]]:
     """Entrena la CNN con aprendizaje supervisado usando mixed precision y early stopping."""
 
-    optimizer = optim.Adam(modelo.parameters(), lr=0.001)
+    optimizer = optim.Adam(modelo.parameters(), lr=0.002)
     scheduler = StepLR(optimizer, step_size=max(1, epochs // 4), gamma=0.5)
     scaler = GradScaler()
 
     # Pérdidas: Huber para regresión, BCEWithLogits para clasificación (seguro con autocast)
-    criterio_reg = nn.HuberLoss(delta=0.05)
+    criterio_reg = nn.HuberLoss(delta=0.01)
     criterio_clf = nn.BCEWithLogitsLoss()
 
     mejor_loss_val = float('inf')

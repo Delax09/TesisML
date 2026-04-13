@@ -6,6 +6,11 @@ para modelos v3 y el guardado de métricas en la base de datos.
 """
 
 import os
+
+# --- APAGAR WARNINGS DE TENSORFLOW ---
+os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'  # 0=INFO, 1=WARNING, 2=ERROR, 3=FATAL
+# -------------------------------------
 import gc
 import joblib
 import torch

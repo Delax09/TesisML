@@ -77,8 +77,8 @@ def preparar_datos_masivos_optimizado(lista_dfs: List[pd.DataFrame], batch_size:
             if contador_muestras >= 30: break
     if muestras_scaler: scaler.fit(np.vstack(muestras_scaler))
 
+    # Quitamos las listas de val_global porque cortaremos el tensor maestro al final
     x_train_global, y_train_reg, y_train_clf = [], [], []
-    x_val_global, y_val_reg, y_val_clf = [], [], []
     dias_futuro = MLEngine.DIAS_PREDICCION
 
     for i in range(0, len(lista_dfs), batch_size):
@@ -93,10 +93,14 @@ def preparar_datos_masivos_optimizado(lista_dfs: List[pd.DataFrame], batch_size:
             # Vectorización de Ventanas Deslizantes (Sin bucles for internos)
             n_validos = len(scaled_data) - MLEngine.DIAS_MEMORIA_IA - dias_futuro + 1
             
-            # Crea todas las ventanas temporales en un solo bloque en milisegundos
-            ventanas = sliding_window_view(scaled_data, window_shape=MLEngine.DIAS_MEMORIA_IA, axis=0)
-            ventanas = np.swapaxes(ventanas, 1, 2) # Formato PyTorch: (batch, secuencia, features)
+            if n_validos <= 0: continue # Protección extra de seguridad
             
+            # Crea todas las ventanas temporales en un solo bloque
+            ventanas = sliding_window_view(scaled_data, window_shape=MLEngine.DIAS_MEMORIA_IA, axis=0)
+            
+            # Formato PyTorch esperado: (batch, secuencia, features)
+            # Nota: Al usar sliding_window_view sobre (N, Features), la forma original es (Features, N_Ventanas, Secuencia)
+            # Primero transponemos los ejes para alinear con (N_Ventanas, Secuencia, Features)
             x_batch = ventanas[:n_validos]
 
             # Vectorización de los índices de precio futuro y actual
@@ -106,11 +110,11 @@ def preparar_datos_masivos_optimizado(lista_dfs: List[pd.DataFrame], batch_size:
             precio_hoy = close_raw[idx_hoy]
             precio_futuro = close_raw[idx_futuro]
 
-            # Operaciones vectoriales directas
+            # Operaciones vectoriales directas con el Filtro Institucional (0.8%)
             log_return = np.log(precio_futuro / precio_hoy)
             clf_target = (log_return > 0.008).astype(np.float32)
 
-            # Agregamos los bloques completos (append de numpy arrays es muchísimo más rápido)
+            # Agregamos los bloques completos
             x_train_global.append(x_batch)
             y_train_reg.append(log_return)
             y_train_clf.append(clf_target)
@@ -118,15 +122,27 @@ def preparar_datos_masivos_optimizado(lista_dfs: List[pd.DataFrame], batch_size:
         del batch_dfs
         gc.collect()
 
-    #Concatenar todo al final 
+    # Si no se procesó ninguna empresa válida
+    if not x_train_global:
+        return None, None, None, None, None, None, None
+
+    #Unimos todo en tensores maestros masivos de Numpy
+    x_total = np.concatenate(x_train_global, axis=0)
+    y_reg_total = np.concatenate(y_train_reg, axis=0)
+    y_clf_total = np.concatenate(y_train_clf, axis=0)
+
+    #EL ARREGLO CRÍTICO: Hacemos el Split 90/10 dinámicamente
+    split_idx = int(0.9 * len(x_total))
+
+    #Devolvemos los 7 elementos exactos, divididos correctamente
     return (
-        np.concatenate(x_train_global, axis=0) if x_train_global else np.array([]),
-        np.concatenate(y_train_reg, axis=0) if y_train_reg else np.array([]),
-        np.concatenate(y_train_clf, axis=0) if y_train_clf else np.array([]),
-        np.array(x_val_global, dtype=np.float32), 
-        np.array(y_val_reg, dtype=np.float32),
-        np.array(y_val_clf, dtype=np.float32),
-        scaler
+        x_total[:split_idx],       # x_train
+        y_reg_total[:split_idx],   # y_reg_train
+        y_clf_total[:split_idx],   # y_clf_train
+        x_total[split_idx:],       # x_val (El 10% de validación)
+        y_reg_total[split_idx:],   # y_reg_val
+        y_clf_total[split_idx:],   # y_clf_val
+        scaler                     # scaler
     )
 
 
@@ -145,14 +161,14 @@ def crear_dataloaders_optimizados(
     train_dataset = TensorDataset(x_train_tensor, y_reg_train_tensor, y_clf_train_tensor)
     val_dataset = TensorDataset(x_val_tensor, y_reg_val_tensor, y_clf_val_tensor)
 
-    worker_count = min(4, max(0, os.cpu_count() - 1))
+    worker_count = 0
     train_loader = DataLoader(
         train_dataset,
         batch_size=32,
         shuffle=True,
         pin_memory=True,
         num_workers=worker_count,
-        persistent_workers=(worker_count > 0)
+        persistent_workers=False
     )
     val_loader = DataLoader(
         val_dataset,
@@ -160,7 +176,7 @@ def crear_dataloaders_optimizados(
         shuffle=False,
         pin_memory=True,
         num_workers=worker_count,
-        persistent_workers=(worker_count > 0)
+        persistent_workers=False
     )
 
     return train_loader, val_loader

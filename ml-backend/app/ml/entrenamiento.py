@@ -6,6 +6,11 @@ import numpy as np
 import torch
 import joblib
 import os
+
+# --- APAGAR WARNINGS DE TENSORFLOW ---
+os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'  # 0=INFO, 1=WARNING, 2=ERROR, 3=FATAL
+# -------------------------------------
 import gc
 
 from app.services.metrica_service import MetricaService
@@ -115,7 +120,7 @@ def entrenar_y_guardar_optimizado(id_modelo_especifico: int = None, batch_empres
 
         # Entrenar
         with Timer(f"Entrenamiento de {modelo_db.Nombre}"):
-            historial, mejores_pesos = ejecutar_entrenamiento_pytorch_optimizado(model, train_loader, val_loader, device, class_weight=class_weight)
+            historial, mejores_pesos = ejecutar_entrenamiento_pytorch_optimizado(model, train_loader, val_loader, device)
         
         # Mostrar historial de entrenamiento
         print("\nHistorial de Entrenamiento:")
@@ -134,7 +139,7 @@ def entrenar_y_guardar_optimizado(id_modelo_especifico: int = None, batch_empres
         model.eval()
 
         with Timer("Cálculo de métricas"):
-            metricas = calcular_metricas_clasificacion(model, val_loader, device, class_weight=class_weight)
+            metricas = calcular_metricas_clasificacion(model, val_loader, device)
 
         # Guardar métricas en BD
         db_local = SessionLocal()

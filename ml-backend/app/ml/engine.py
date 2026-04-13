@@ -1,4 +1,9 @@
 import os
+
+# --- APAGAR WARNINGS DE TENSORFLOW ---
+os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'  # 0=INFO, 1=WARNING, 2=ERROR, 3=FATAL
+# -------------------------------------
 import numpy as np
 import pandas as pd
 import joblib
@@ -78,6 +83,7 @@ class MLEngine:
         return torch.tensor(x_test, dtype=torch.float32).to(self.device).contiguous()
 
     def _desescalar_prediccion(self, prediccion_cruda, precio_actual):
+        prediccion_cruda = np.clip(prediccion_cruda, -0.15, -0.15)
         return float(precio_actual * np.exp(prediccion_cruda))
 
     @staticmethod
@@ -206,9 +212,9 @@ class MLEngine:
         # LIMPIEZA FINAL - Más conservadora para evitar pérdida de datos
         # ---------------------------------------------------------
         # Solo eliminamos filas donde TODOS los valores sean NaN, no solo alguna columna
-        df_clean = df.dropna(how='all')  # Más conservador que dropna() sin parámetros
+        df_clean = df.dropna(subset=['Close'])  # Más conservador que dropna() sin parámetros
         # Rellenamos NaN restantes con valores forward/backward fill o 0
-        df_clean = df_clean.ffill().bfill().fillna(0)  # Pandas moderno: ffill() y bfill() en lugar de method='ffill'/'bfill'
+        df_clean = df_clean.ffill().bfill() 
         return df_clean
 
     def predecir(self, df_ind):
