@@ -9,7 +9,7 @@ export const usePrecioHistorico = (empresaId) => {
     // Mantenemos la consulta a la API intacta
     const { data: datosOriginales, isLoading: cargando } = useQuery({
         queryKey: ['precios_historicos', empresaId],
-        queryFn: () => precioService.getByEmpresa(empresaId),
+        queryFn: () => precioService.obtener_precio_historico_por_empresa(empresaId),
         enabled: !!empresaId, 
         staleTime: 1000 * 60 * 10, 
     });

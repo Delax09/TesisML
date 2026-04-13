@@ -5,7 +5,7 @@ const API_URL = '/precio_historico';
 
 export const precioService = {
     // Obtener historial por ID de empresa
-    getByEmpresa: async (empresaId) => {
+    obtener_precio_historico_por_empresa: async (empresaId) => {
         try {
             const response = await api.get(`${API_URL}/empresa/${empresaId}`);
             return response.data;
