@@ -184,6 +184,9 @@ class PrecioHistoricoOut(BaseModel):
 class PrecioGraficoOut(BaseModel):
     Fecha: date
     PrecioCierre: float
+    PrecioApertura: Optional[float] = None
+    PrecioMaximo: Optional[float] = None
+    PrecioMinimo: Optional[float] = None
     SMA_20: Optional[float] = None
     Banda_Superior: Optional[float] = None
     Banda_Inferior: Optional[float] = None
