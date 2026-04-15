@@ -10,7 +10,7 @@ from tqdm import tqdm
 
 from app.db.sessions import SessionLocal
 from app.models.precio_historico import PrecioHistorico
-from app.ml.core.engine import MLEngine # Importación modular
+from app.ml.core.engine import MLEngine 
 
 def extraer_y_procesar_empresa(id_empresa: int) -> Optional[pd.DataFrame]:
     """Extrae datos de la BD y aplica indicadores técnicos"""
@@ -30,10 +30,11 @@ def extraer_y_procesar_empresa(id_empresa: int) -> Optional[pd.DataFrame]:
             'Close': r.PrecioCierre, 
             'Volume': r.Volumen
         } for r in registros]).set_index('Date')
-        df = df.astype(float) #Para no romper el calculo de indicadores con tipos mixtos 
         
-        engine = MLEngine()
-        df_procesado = engine.calcular_indicadores(df)
+        df = df.astype(float) 
+        df.replace([np.inf, -np.inf], np.nan, inplace=True) # Prevenir veneno
+        
+        df_procesado = MLEngine.calcular_indicadores(df)
         df_procesado.ffill(inplace=True)
         df_procesado.bfill(inplace=True)
         return df_procesado if not df_procesado.empty else None
@@ -44,7 +45,6 @@ def extraer_y_procesar_empresa(id_empresa: int) -> Optional[pd.DataFrame]:
         db.close()
 
 def preparar_datos_lstm(lista_dfs: List[pd.DataFrame], batch_size: int = 1000):
-    """Prepara ventanas temporales y targets logarítmicos con gestión de memoria eficiente"""
     if not lista_dfs: return None, None, None, None, None, None, None
 
     scaler = RobustScaler()
@@ -66,18 +66,18 @@ def preparar_datos_lstm(lista_dfs: List[pd.DataFrame], batch_size: int = 1000):
         idx_hoy = np.arange(MLEngine.DIAS_MEMORIA_IA - 1, len(close_raw) - MLEngine.DIAS_PREDICCION)
         idx_fut = idx_hoy + MLEngine.DIAS_PREDICCION
         
-        log_ret = np.log(close_raw[idx_fut] / close_raw[idx_hoy])
+        log_ret = np.log(close_raw[idx_fut] / (close_raw[idx_hoy] + 1e-8)) # Evita división por cero
+        log_ret = np.nan_to_num(log_ret, nan=0.0, posinf=0.0, neginf=0.0)  # Convierte errores a 0
+        
         clf_target = (log_ret > 0.008).astype(np.float32)
 
         x_chunks.append(x_batch)
         y_reg_chunks.append(log_ret)
         y_clf_chunks.append(clf_target)
 
-    # Cálculo de división 90/10 in-place para ahorrar RAM
     total_filas = sum(len(x) for x in x_chunks)
     split_idx = int(0.9 * total_filas)
     
-    # Pre-asignación controlada para evitar ArrayMemoryError
     x_total = np.empty((total_filas, MLEngine.DIAS_MEMORIA_IA, len(MLEngine.FEATURES)), dtype=np.float32)
     y_reg_total = np.empty(total_filas, dtype=np.float32)
     y_clf_total = np.empty(total_filas, dtype=np.float32)
@@ -97,5 +97,7 @@ def preparar_datos_lstm(lista_dfs: List[pd.DataFrame], batch_size: int = 1000):
 def crear_dataloaders_lstm(x_t, yr_t, yc_t, x_v, yr_v, yc_v):
     train_ds = TensorDataset(torch.tensor(x_t), torch.tensor(yr_t).view(-1,1), torch.tensor(yc_t).view(-1,1))
     val_ds = TensorDataset(torch.tensor(x_v), torch.tensor(yr_v).view(-1,1), torch.tensor(yc_v).view(-1,1))
-    return (DataLoader(train_ds, batch_size=32, shuffle=True, num_workers=0), 
+    
+    # 👇 SOLUCIÓN: drop_last=True evita que BatchNorm1d explote con el último lote solitario
+    return (DataLoader(train_ds, batch_size=32, shuffle=True, num_workers=0, drop_last=True), 
             DataLoader(val_ds, batch_size=64, shuffle=False, num_workers=0))

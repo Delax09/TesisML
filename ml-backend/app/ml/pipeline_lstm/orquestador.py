@@ -10,6 +10,7 @@ from app.models.modelo_ia import ModeloIA
 from app.services.metrica_service import MetricaService
 from app.ml.arquitectura.v1_lstm import obtener_modelo_v1
 from app.ml.arquitectura.v2_bidireccional import obtener_modelo_v2
+from app.ml.core.engine import MLEngine
 
 from app.ml.pipeline_lstm.data_processor import extraer_y_procesar_empresa, preparar_datos_lstm, crear_dataloaders_lstm
 from app.ml.pipeline_lstm.trainer import ejecutar_entrenamiento_lstm, evaluar_modelo_lstm
@@ -28,39 +29,56 @@ def entrenar_pipeline_lstm(id_modelo: int = None):
         
         # 2. Extracción masiva paralela
         datos_procesados = []
+        print(f"📥 Iniciando extracción para {len(ids_empresas)} empresas. Esto puede tomar unos segundos...", flush=True)
         with Timer("Extracción y Procesamiento"):
             with ProcessPoolExecutor(max_workers=4) as executor:
                 futuros = [executor.submit(extraer_y_procesar_empresa, id_e) for id_e in ids_empresas]
+                completados = 0
                 for f in as_completed(futuros):
                     res = f.result()
                     if res is not None: datos_procesados.append(res)
+                    completados += 1
+                    
+                    if completados % 10 == 0 or completados == len(ids_empresas):
+                        print(f"   -> Extraídas {completados}/{len(ids_empresas)} empresas...", flush=True)
 
         # 3. Preparación de Tensores
         with Timer("Preparación de Tensores"):
             xt, yrt, yct, xv, yrv, ycv, scaler = preparar_datos_lstm(datos_procesados)
             train_loader, val_loader = crear_dataloaders_lstm(xt, yrt, yct, xv, yrv, ycv)
-            del datos_procesados, xt, xv # Liberar memoria RAM
+            del datos_procesados, xt, xv 
             gc.collect()
 
         # 4. Bucle de Entrenamiento por Arquitectura
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         ruta_modelos = os.path.join(os.getcwd(), "app", "ml", "models")
+        os.makedirs(ruta_modelos, exist_ok=True)
 
         for mod_db in modelos.all():
-            print(f"--- Entrenando {mod_db.Nombre} ---")
-            modelo_pt = obtener_modelo_v2(31) if mod_db.Version == 'v2' else obtener_modelo_v1(31)
+            print(f"\n--- Entrenando {mod_db.Nombre} ---", flush=True)
+            
+            # 👇 SOLUCIÓN: Pasamos los días (30) y las features (31) obligatorias
+            if mod_db.Version == 'v2':
+                modelo_pt = obtener_modelo_v2(MLEngine.DIAS_MEMORIA_IA, len(MLEngine.FEATURES))
+            else: 
+                modelo_pt = obtener_modelo_v1(MLEngine.DIAS_MEMORIA_IA, len(MLEngine.FEATURES))
+            
             modelo_pt.to(device)
 
             mejores_pesos = ejecutar_entrenamiento_lstm(modelo_pt, train_loader, val_loader, device)
             
             # Evaluación y Guardado
             metricas = evaluar_modelo_lstm(modelo_pt, val_loader, device)
+            metricas['DiasFuturo'] = MLEngine.DIAS_PREDICCION
             MetricaService.guardar_metricas(db, mod_db.IdModelo, metricas)
             
             torch.save(mejores_pesos, os.path.join(ruta_modelos, f'modelo_acciones_{mod_db.Version}.pth'))
-            print(f"✅ Finalizado: Acc {metricas['accuracy']:.3f}")
+            print(f"✅ Finalizado: Acc {metricas['accuracy']:.3f} | AUC {metricas['auc']:.3f}", flush=True)
 
         joblib.dump(scaler, os.path.join(ruta_modelos, "scaler.pkl"))
+        print("💾 Pipeline LSTM Finalizado y Guardado.", flush=True)
         
+    except Exception as e:
+        print(f"❌ ERROR CRÍTICO EN ORQUESTADOR: {str(e)}", flush=True)
     finally:
         db.close()

@@ -1,27 +1,29 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from tqdm import tqdm
 import numpy as np
+import copy
+import sys 
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, confusion_matrix, mean_absolute_error
 
-from app.ml.core.early_stopping import EarlyStopping # Importación modular
+from app.ml.core.early_stopping import EarlyStopping 
 
 def ejecutar_entrenamiento_lstm(model, train_loader, val_loader, device, epochs=30):
-    """Ejecuta el entrenamiento con pérdida Huber optimizada para log-returns"""
-    criterion_reg = nn.HuberLoss(delta=0.01) # Sensibilidad a retornos porcentuales
+    criterion_reg = nn.HuberLoss(delta=0.01) 
     criterion_clf = nn.BCEWithLogitsLoss()
     optimizer = optim.Adam(model.parameters(), lr=0.0005, weight_decay=1e-5)
     
     early_stopping = EarlyStopping(paciencia=8, delta=0.002)
     scaler_autocast = torch.amp.GradScaler(enabled=(device.type == 'cuda'))
 
+    print(f"🚀 Iniciando entrenamiento LSTM en {device.type.upper()} ({len(train_loader)} batches)...", flush=True)
+
     for epoch in range(epochs):
         model.train()
         train_loss = 0
-        loop = tqdm(train_loader, desc=f"Epoch {epoch+1}/{epochs}", leave=False)
+        total_batches = len(train_loader)
         
-        for x_b, yr_b, yc_b in loop:
+        for i, (x_b, yr_b, yc_b) in enumerate(train_loader):
             x_b, yr_b, yc_b = x_b.to(device), yr_b.to(device), yc_b.to(device)
             optimizer.zero_grad()
             
@@ -36,7 +38,10 @@ def ejecutar_entrenamiento_lstm(model, train_loader, val_loader, device, epochs=
             scaler_autocast.update()
             train_loss += loss.item()
 
-        # Validación para Early Stopping
+            if i % 20 == 0 or i == total_batches - 1:
+                print(f"   ⏳ [Epoch {epoch+1}/{epochs}] Batch {i}/{total_batches} procesado (Pérdida actual: {loss.item():.4f})", flush=True)
+
+        # Validación
         model.eval()
         val_loss = 0
         with torch.no_grad():
@@ -45,19 +50,25 @@ def ejecutar_entrenamiento_lstm(model, train_loader, val_loader, device, epochs=
                 pr, lc = model(xv)
                 val_loss += (criterion_reg(pr, yrv) + criterion_clf(lc, ycv)).item()
         
-        val_loss /= len(val_loader)
-        print(f"Epoch {epoch+1} - Val Loss: {val_loss:.4f}")
-        
-        early_stopping(val_loss, model)
-        if early_stopping.detener: break
+        if len(val_loader) > 0:
+            val_loss /= len(val_loader)
+            print(f"📈 Epoch {epoch+1} Finalizado - Val Loss: {val_loss:.4f}\n", flush=True)
+            early_stopping(val_loss, model)
+            
+            if early_stopping.detener: 
+                break
 
-    if early_stopping.mejores_pesos:
+    if early_stopping.mejores_pesos is not None:
         model.load_state_dict(early_stopping.mejores_pesos)
-        print("✅ Mejores pesos restaurados.")
-    return early_stopping.mejores_pesos
+        pesos_finales = early_stopping.mejores_pesos
+        print("✅ Mejores pesos restaurados.", flush=True)
+    else:
+        pesos_finales = copy.deepcopy(model.state_dict())
+        print("⚠️ Se guardó el estado actual (No hubo mejora inicial).", flush=True)
+        
+    return pesos_finales
 
 def evaluar_modelo_lstm(model, val_loader, device):
-    """Calcula métricas detalladas de clasificación y regresión"""
     model.eval()
     y_real_clf, y_prob_clf, y_real_reg, y_pred_reg = [], [], [], []
     
