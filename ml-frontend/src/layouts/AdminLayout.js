@@ -60,6 +60,14 @@ export default function AdminLayout() {
           </ListItemButton>
         </ListItem>
 
+
+        <ListItem disablePadding sx={{ mb: 1 }}>
+          <ListItemButton component={RouterLink} to="/admin/metricas" selected={isActivo('/admin/metricas')} onClick={() => setMobileOpen(false)}>
+            <ListItemIcon sx={{ color: 'inherit', minWidth: 40 }}><DataSaverOnIcon /></ListItemIcon>
+            <ListItemText primary="Métricas de IA" primaryTypographyProps={{ fontWeight: 500 }} />
+          </ListItemButton>
+        </ListItem>
+
         <ListItem disablePadding sx={{ mb: 1 }}>
           <ListItemButton component={RouterLink} to="/admin/comparador-ia" selected={isActivo('/admin/comparador-ia')} onClick={() => setMobileOpen(false)}>
             <ListItemIcon sx={{ color: 'inherit', minWidth: 40 }}><AnalyticsIcon /></ListItemIcon>
@@ -81,12 +89,7 @@ export default function AdminLayout() {
           </ListItemButton>
         </ListItem>
 
-        <ListItem disablePadding sx={{ mb: 1 }}>
-          <ListItemButton component={RouterLink} to="/admin/metricas" selected={isActivo('/admin/metricas')} onClick={() => setMobileOpen(false)}>
-            <ListItemIcon sx={{ color: 'inherit', minWidth: 40 }}><DataSaverOnIcon /></ListItemIcon>
-            <ListItemText primary="Métricas de IA" primaryTypographyProps={{ fontWeight: 500 }} />
-          </ListItemButton>
-        </ListItem>
+        
 
 
       </List>
