@@ -166,3 +166,50 @@ class DataValidator:
         except ImportError:
             logger.warning("imbalanced-learn no instalado, saltando balanceo")
             return X, y_clf
+
+    @staticmethod
+    def validar_y_limpiar(df: pd.DataFrame,
+                            min_filas: int = 50,
+                            required_columns: list = None) -> Optional[pd.DataFrame]:
+        """
+        Valida y limpia un dataframe de una sola vez
+
+        Args:
+            df: DataFrame a validar y limpiar
+            min_filas: Número mínimo de filas requeridas
+            required_columns: Columnas requeridas (opcional)
+
+        Returns:
+            DataFrame limpio si es válido, None si no lo es
+        """
+        if df is None or df.empty:
+            logger.warning("DataFrame vacío o None")
+            return None
+
+        # Validar tamaño mínimo
+        if len(df) < min_filas:
+            logger.warning(f"Dataset muy pequeño: {len(df)} < {min_filas} filas")
+            return None
+
+        # Validar columnas requeridas
+        if required_columns:
+            missing_cols = [col for col in required_columns if col not in df.columns]
+            if missing_cols:
+                logger.warning(f"Columnas faltantes: {missing_cols}")
+                return None
+
+        try:
+            # Sanitizar datos
+            df_limpio = DataValidator.sanitizar_datos(df, fillna_strategy='ffill')
+
+            # Verificar que no quedó vacío
+            if df_limpio.empty:
+                logger.warning("Dataset quedó vacío después de limpieza")
+                return None
+
+            logger.debug(f"Dataset validado y limpio: {len(df_limpio)} filas, {len(df_limpio.columns)} columnas")
+            return df_limpio
+
+        except Exception as e:
+            logger.error(f"Error al validar y limpiar dataset: {str(e)}")
+            return None
