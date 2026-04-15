@@ -19,7 +19,11 @@ export const useAccesosIA = () => {
           adminService.getUsuarios(),
           adminService.getTodosModelos()
         ]);
-        setUsuarios(usersRes);
+        
+        // NUEVO: Filtrar para excluir a los administradores (IdRol === 2)
+        const usuariosFiltrados = usersRes.filter(usuario => usuario.IdRol !== 2);
+        
+        setUsuarios(usuariosFiltrados);
         setModelosDisponibles(modelosRes);
       } catch (error) {
         // CORRECCIÓN: Uso del método .error
