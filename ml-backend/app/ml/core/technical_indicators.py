@@ -63,7 +63,7 @@ class TechnicalIndicators:
             # Sanitizar
             bb_pct = ((close - lower) / (upper - lower).replace(0, 1)).clip(0, 1)
 
-            return upper.fillna(method='ffill'), lower.fillna(method='bfill'), bb_pct.fillna(0.5)
+            return upper.ffill(), lower.bfill(), bb_pct.fillna(0.5)
         except Exception as e:
             logger.error(f"Error en Bollinger Bands: {str(e)}")
             return close, close, pd.Series(0.5, index=close.index)
@@ -74,4 +74,4 @@ class TechnicalIndicators:
         df = df.replace([np.inf, -np.inf], np.nan)
 
         # Relleno progresivo: forward fill, luego backward fill
-        return df.fillna(method='ffill').fillna(method='bfill').fillna(0)
+        return df.ffill().bfill().fillna(0)
