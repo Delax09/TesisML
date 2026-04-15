@@ -6,7 +6,7 @@ from app.db.sessions import SessionLocal
 from app.models.empresa import Empresa
 from app.models.precio_historico import PrecioHistorico
 from app.models.modelo_ia import ModeloIA
-from app.ml.engine import MLEngine
+from app.ml.core.engine import MLEngine
 from app.services.resultado_service import ResultadoService
 
 logger = logging.getLogger(__name__)

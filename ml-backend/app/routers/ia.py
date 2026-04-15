@@ -9,7 +9,12 @@ import os
 import math
 import logging
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List
+from app.models.modelo_ia import ModeloIA
+from app.models.precio_historico import PrecioHistorico
+from app.models.resultado import Resultado
+from app.ml.core.engine import MLEngine
+
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +22,7 @@ IA_AVAILABLE = True
 import_errors = []
 
 try:
-    from app.ml.engine import MLEngine
+    from app.ml.core.engine import MLEngine
 except ImportError as e:
     logger.error(f"❌ Error importando MLEngine: {e}")
     import_errors.append(f"MLEngine: {str(e)}")
@@ -31,14 +36,15 @@ except ImportError as e:
     IA_AVAILABLE = False
 
 try:
-    from app.ml.entrenamiento import entrenar_y_guardar
+    from app.ml.pipeline_lstm.orquestador import entrenar_pipeline_lstm
+    from app.ml.pipeline_cnn.orquestador import entrenar_pipeline_cnn
 except ImportError as e:
-    logger.error(f"❌ Error importando ml.entrenamiento: {e}")
-    import_errors.append(f"ml.entrenamiento: {str(e)}")
+    logger.error(f"❌ Error importando los orquestadores ML: {e}")
+    import_errors.append(f"orquestadores ML: {str(e)}")
     IA_AVAILABLE = False
 except Exception as e:
-    logger.error(f"❌ Error inesperado importando ml.entrenamiento: {e}")
-    import_errors.append(f"ml.entrenamiento (error): {str(e)}")
+    logger.error(f"❌ Error inesperado importando orquestadores ML: {e}")
+    import_errors.append(f"orquestadores ML (error): {str(e)}")
     IA_AVAILABLE = False
 
 from app.models.precio_historico import PrecioHistorico
@@ -82,7 +88,7 @@ def obtener_metricas_modelo():
 def obtener_rendimiento_sistema():
     """Endpoint para monitorear el rendimiento del sistema en tiempo real"""
     try:
-        from app.ml.entrenamiento import monitorear_recursos
+        from app.ml.core.utils import monitorear_recursos
         import torch
 
         recursos = monitorear_recursos()
@@ -106,13 +112,27 @@ def obtener_rendimiento_sistema():
         return {"error": f"No se pudo obtener rendimiento del sistema: {str(e)}"}
     
 @router.post("/entrenar-modelo/{id_modelo}", status_code=status.HTTP_202_ACCEPTED)
-def entrenar_modelo_individual(id_modelo: int, background_tasks: BackgroundTasks):
+def entrenar_modelo_individual(id_modelo: int, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     if not IA_AVAILABLE:
         error_msg = "Entrenamiento no disponible. Errores: " + "; ".join(import_errors) if import_errors else "Módulo ML deshabilitado"
         raise HTTPException(status_code=501, detail=error_msg)
         
-    background_tasks.add_task(entrenar_y_guardar, id_modelo_especifico=id_modelo)
-    return {"message": f"Entrenamiento del modelo ID {id_modelo} iniciado en segundo plano."}
+    # Consultamos a qué familia pertenece este modelo
+    modelo_db = db.query(ModeloIA).filter(ModeloIA.IdModelo == id_modelo).first()
+    if not modelo_db:
+        raise HTTPException(status_code=404, detail=f"Modelo con ID {id_modelo} no encontrado.")
+
+    # Derivamos el tráfico al pipeline correcto según la versión de la arquitectura
+    if modelo_db.Version in ['v1', 'v2']:
+        background_tasks.add_task(entrenar_pipeline_lstm, id_modelo=id_modelo)
+        tipo = "LSTM/BiLSTM"
+    elif modelo_db.Version == 'v3':
+        background_tasks.add_task(entrenar_pipeline_cnn, id_modelo_especifico=id_modelo)
+        tipo = "CNN"
+    else:
+        raise HTTPException(status_code=400, detail=f"Versión de modelo no soportada: {modelo_db.Version}")
+
+    return {"message": f"Entrenamiento del modelo {tipo} (ID {id_modelo}) iniciado en segundo plano."}
 
 @router.get("/prediccion/{empresa_id}")
 async def obtener_prediccion_empresa(
