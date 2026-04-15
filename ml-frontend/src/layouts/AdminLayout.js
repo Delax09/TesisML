@@ -20,7 +20,7 @@ import LightModeIcon from '@mui/icons-material/LightMode';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
 import SmartToyIcon from '@mui/icons-material/SmartToy';
 import DataSaverOnIcon from '@mui/icons-material/DataSaverOn';
-
+import SettingsSuggestIcon from '@mui/icons-material/SettingsSuggest';
 
 const drawerWidth = 250;
 
@@ -76,12 +76,13 @@ export default function AdminLayout() {
         </ListItem>
 
         <ListItem disablePadding sx={{ mb: 1 }}>
-          <ListItemButton component={RouterLink} to="/admin/empresas" selected={isActivo('/admin/empresas')} onClick={() => setMobileOpen(false)}>
-            <ListItemIcon sx={{ color: 'inherit', minWidth: 40 }}><BusinessIcon /></ListItemIcon>
-            <ListItemText primary="Gestión Empresas" primaryTypographyProps={{ fontWeight: 500 }} />
+          <ListItemButton component={RouterLink} to="/admin/accesos" selected={isActivo('/admin/accesos')} onClick={() => setMobileOpen(false)}>
+            <ListItemIcon sx={{ color: 'inherit', minWidth: 40 }}><SettingsSuggestIcon /></ListItemIcon>
+            <ListItemText primary="Gestión Accesos IA" primaryTypographyProps={{ fontWeight: 500 }} />
           </ListItemButton>
         </ListItem>
 
+        
         <ListItem disablePadding sx={{ mb: 1 }}>
           <ListItemButton component={RouterLink} to="/admin/modelos-ia" selected={isActivo('/admin/modelos-ia')} onClick={() => setMobileOpen(false)}>
             <ListItemIcon sx={{ color: 'inherit', minWidth: 40 }}><SmartToyIcon /></ListItemIcon>
@@ -89,10 +90,11 @@ export default function AdminLayout() {
           </ListItemButton>
         </ListItem>
 
+        
         <ListItem disablePadding sx={{ mb: 1 }}>
-          <ListItemButton component={RouterLink} to="/admin/accesos" selected={isActivo('/admin/accesos')} onClick={() => setMobileOpen(false)}>
-            <ListItemIcon sx={{ color: 'inherit', minWidth: 40 }}><SmartToyIcon /></ListItemIcon>
-            <ListItemText primary="Gestión Accesos" primaryTypographyProps={{ fontWeight: 500 }} />
+          <ListItemButton component={RouterLink} to="/admin/empresas" selected={isActivo('/admin/empresas')} onClick={() => setMobileOpen(false)}>
+            <ListItemIcon sx={{ color: 'inherit', minWidth: 40 }}><BusinessIcon /></ListItemIcon>
+            <ListItemText primary="Gestión Empresas" primaryTypographyProps={{ fontWeight: 500 }} />
           </ListItemButton>
         </ListItem>
 
