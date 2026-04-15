@@ -89,6 +89,13 @@ export default function AdminLayout() {
           </ListItemButton>
         </ListItem>
 
+        <ListItem disablePadding sx={{ mb: 1 }}>
+          <ListItemButton component={RouterLink} to="/admin/accesos" selected={isActivo('/admin/accesos')} onClick={() => setMobileOpen(false)}>
+            <ListItemIcon sx={{ color: 'inherit', minWidth: 40 }}><SmartToyIcon /></ListItemIcon>
+            <ListItemText primary="Gestión Accesos" primaryTypographyProps={{ fontWeight: 500 }} />
+          </ListItemButton>
+        </ListItem>
+
         
 
 
