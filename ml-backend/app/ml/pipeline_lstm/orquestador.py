@@ -1,4 +1,6 @@
 import os
+from tqdm import tqdm
+import sys
 import torch
 import joblib
 import gc
@@ -27,35 +29,38 @@ def entrenar_pipeline_lstm(id_modelo: int = None):
         empresas = db.query(Empresa).filter(Empresa.Activo == True).all()
         ids_empresas = [e.IdEmpresa for e in empresas]
         
-        # 2. Extracción masiva paralela
         datos_procesados = []
-        lote_size = 15 # Procesamos de 15 en 15 para no asfixiar la RAM ni la Base de Datos
+        lote_size = 20
         
-        print(f"📥 Iniciando extracción para {len(ids_empresas)} empresas en lotes de {lote_size}...", flush=True)
+        print(f"📥 Iniciando extracción para {len(ids_empresas)} empresas...", flush=True)
         
         with Timer("Extracción y Procesamiento"):
-            for i in range(0, len(ids_empresas), lote_size):
-                lote_actual = ids_empresas[i : i + lote_size]
-                print(f"   ⚙️ Procesando lote {i//lote_size + 1} (Empresas {i+1} a {min(i+lote_size, len(ids_empresas))})...", flush=True)
-                
-                # Creamos el pool SOLO para este lote y lo cerramos al terminar
-                with ProcessPoolExecutor(max_workers=4) as executor:
-                    futuros = [executor.submit(extraer_y_procesar_empresa, id_e) for id_e in lote_actual]
+            #CREAMOS UNA SOLA BARRA DE PROGRESO GLOBAL
+            with tqdm(total=len(ids_empresas), desc="Procesando Empresas", file=sys.stdout) as pbar:
+                for i in range(0, len(ids_empresas), lote_size):
+                    lote_actual = ids_empresas[i : i + lote_size]
                     
+                    with ProcessPoolExecutor(max_workers=2) as executor:
+                        futuros = [executor.submit(extraer_y_procesar_empresa, id_e) for id_e in lote_actual]
+                        
+                        for f in as_completed(futuros):
+                            try:
+                                res = f.result(timeout=180) 
+                                if res is not None: 
+                                    datos_procesados.append(res)
+                            except Exception as e:
+                                import traceback
+                                # Rompemos la línea limpia para mostrar el error
+                                print(f"\n❌ Error en worker: {str(e)}", flush=True)
+                                traceback.print_exc()
+                                
+                            finally:
+                                # 👇 AVANZAMOS LA BARRA UN PASO CADA VEZ QUE TERMINA UNA EMPRESA
+                                pbar.update(1)
                     
-                    for f in as_completed(futuros):
-                        try:
-                            # El timeout evita que se quede pegado infinito si un worker muere
-                            res = f.result(timeout=180) 
-                            if res is not None: 
-                                datos_procesados.append(res)
-                        except Exception as e:
-                            print(f"   ❌ Error o Timeout en un worker: {str(e)}", flush=True)
-                
-                # Limpiamos la RAM antes de pasar al siguiente lote de 15
-                gc.collect()
+                    gc.collect()
 
-        print(f"Extracción completa. {len(datos_procesados)} empresas válidas listas para entrenar.", flush=True)
+        print(f"✅ Extracción completa. {len(datos_procesados)} empresas válidas listas para entrenar.", flush=True)
 
         # 3. Preparación de Tensores
         with Timer("Preparación de Tensores"):
@@ -94,6 +99,8 @@ def entrenar_pipeline_lstm(id_modelo: int = None):
         print("💾 Pipeline LSTM Finalizado y Guardado.", flush=True)
         
     except Exception as e:
+        import traceback
         print(f"❌ ERROR CRÍTICO EN ORQUESTADOR: {str(e)}", flush=True)
+        traceback.print_exc()
     finally:
         db.close()

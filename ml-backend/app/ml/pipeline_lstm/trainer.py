@@ -4,6 +4,8 @@ import torch.optim as optim
 import numpy as np
 import copy
 import sys 
+from tqdm import tqdm # 👈 IMPORTACIÓN DE TQDM
+from app.ml.core.engine import MLEngine 
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, confusion_matrix, mean_absolute_error
 
 from app.ml.core.early_stopping import EarlyStopping 
@@ -11,20 +13,28 @@ from app.ml.core.early_stopping import EarlyStopping
 def ejecutar_entrenamiento_lstm(model, train_loader, val_loader, device, epochs=30):
     criterion_reg = nn.HuberLoss(delta=0.01) 
     criterion_clf = nn.BCEWithLogitsLoss()
-    optimizer = optim.Adam(model.parameters(), lr=0.0005, weight_decay=1e-5)
+    optimizer = optim.Adam(model.parameters(), lr=0.002, weight_decay=1e-5)
     
     early_stopping = EarlyStopping(paciencia=8, delta=0.002)
     scaler_autocast = torch.amp.GradScaler(enabled=(device.type == 'cuda'))
 
     print(f"🚀 Iniciando entrenamiento LSTM en {device.type.upper()} ({len(train_loader)} batches)...", flush=True)
 
+    if torch.cuda.is_available():
+        print(f"🎮 GPU disponible: {torch.cuda.get_device_name()}")
+        print(f"💾 VRAM total: {torch.cuda.get_device_properties(0).total_memory // 1024**3}GB")
+    else:
+        print("💻 Usando CPU - rendimiento limitado")
+
     for epoch in range(epochs):
         model.train()
         train_loss = 0
-        total_batches = len(train_loader)
         
-        for i, (x_b, yr_b, yc_b) in enumerate(train_loader):
-            x_b, yr_b, yc_b = x_b.to(device), yr_b.to(device), yc_b.to(device)
+        #BARRA DE PROGRESO CLÁSICA PARA LOS BATCHES
+        loop = tqdm(train_loader, desc=f"Epoch [{epoch+1}/{epochs}]", leave=False, file=sys.stdout)
+        
+        for x_b, yr_b, yc_b in loop:
+            x_b, yr_b, yc_b = x_b.to(device, non_blocking = True), yr_b.to(device, non_blocking = True), yc_b.to(device, non_blocking = True)
             optimizer.zero_grad()
             
             with torch.amp.autocast(device.type):
@@ -36,10 +46,10 @@ def ejecutar_entrenamiento_lstm(model, train_loader, val_loader, device, epochs=
             torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
             scaler_autocast.step(optimizer)
             scaler_autocast.update()
+            
             train_loss += loss.item()
-
-            if i % 20 == 0 or i == total_batches - 1:
-                print(f"   ⏳ [Epoch {epoch+1}/{epochs}] Batch {i}/{total_batches} procesado (Pérdida actual: {loss.item():.4f})", flush=True)
+            
+            loop.set_postfix(loss=loss.item())
 
         # Validación
         model.eval()
@@ -52,7 +62,7 @@ def ejecutar_entrenamiento_lstm(model, train_loader, val_loader, device, epochs=
         
         if len(val_loader) > 0:
             val_loss /= len(val_loader)
-            print(f"📈 Epoch {epoch+1} Finalizado - Val Loss: {val_loss:.4f}\n", flush=True)
+            print(f"📈 Epoch {epoch+1} Finalizado - Val Loss: {val_loss:.4f}", flush=True)
             early_stopping(val_loss, model)
             
             if early_stopping.detener: 
@@ -98,5 +108,6 @@ def evaluar_modelo_lstm(model, val_loader, device):
         'tp': tp, 
         'tn': tn, 
         'fp': fp, 
-        'fn': fn
+        'fn': fn,
+        'DiasFutro': MLEngine.DIAS_PREDICCION
     }

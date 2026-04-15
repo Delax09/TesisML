@@ -44,7 +44,7 @@ def extraer_y_procesar_empresa(id_empresa: int) -> Optional[pd.DataFrame]:
     finally:
         db.close()
 
-def preparar_datos_lstm(lista_dfs: List[pd.DataFrame], batch_size: int = 1000):
+def preparar_datos_lstm(lista_dfs: List[pd.DataFrame], batch_size: int = 50):
     if not lista_dfs: return None, None, None, None, None, None, None
 
     scaler = RobustScaler()
@@ -99,5 +99,5 @@ def crear_dataloaders_lstm(x_t, yr_t, yc_t, x_v, yr_v, yc_v):
     val_ds = TensorDataset(torch.tensor(x_v), torch.tensor(yr_v).view(-1,1), torch.tensor(yc_v).view(-1,1))
     
     # 👇 SOLUCIÓN: drop_last=True evita que BatchNorm1d explote con el último lote solitario
-    return (DataLoader(train_ds, batch_size=32, shuffle=True, num_workers=0, drop_last=True), 
-            DataLoader(val_ds, batch_size=64, shuffle=False, num_workers=0))
+    return (DataLoader(train_ds, batch_size=64, shuffle=True, num_workers=0, drop_last=True), 
+            DataLoader(val_ds, batch_size=128, shuffle=False, num_workers=0))
