@@ -6,7 +6,7 @@ class ModeloLSTM_v1(nn.Module):
         super(ModeloLSTM_v1, self).__init__()
         
         #Motor Temporal
-        self.gru = nn.GRU(input_size=num_features, hidden_size=32, batch_first=True)
+        self.lstm = nn.LSTM(input_size=num_features, hidden_size=32, batch_first=True)
         
         #ESTABILIZADOR 1: Domina la salida de la GRU (32 neuronas)
         self.bn1 = nn.BatchNorm1d(32) 
@@ -24,10 +24,10 @@ class ModeloLSTM_v1(nn.Module):
         self.cabeza_clasificacion = nn.Linear(16, 1) 
 
     def forward(self, x):
-        gru_out, _ = self.gru(x)
+        lstm_out, _ = self.lstm(x)
         
         # Extraemos solo el último día de la secuencia
-        x = gru_out[:, -1, :] 
+        x = lstm_out[:, -1, :] 
         
         # Aplicamos la estabilización matemática
         x = self.bn1(x)

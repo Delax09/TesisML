@@ -11,7 +11,8 @@ engine = create_engine(
     },
     connect_args={
         "prepare_threshold": None
-    }
+    },
+    pool_pre_ping=True
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

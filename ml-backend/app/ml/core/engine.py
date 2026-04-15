@@ -83,7 +83,7 @@ class MLEngine:
         return torch.tensor(x_test, dtype=torch.float32).to(self.device).contiguous()
 
     def _desescalar_prediccion(self, prediccion_cruda, precio_actual):
-        prediccion_cruda = np.clip(prediccion_cruda, -0.15, -0.15)
+        prediccion_cruda = np.clip(prediccion_cruda, -0.15, 0.15)
         return float(precio_actual * np.exp(prediccion_cruda))
 
     @staticmethod

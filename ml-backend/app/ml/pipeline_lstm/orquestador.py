@@ -55,7 +55,6 @@ def entrenar_pipeline_lstm(id_modelo: int = None):
                                 traceback.print_exc()
                                 
                             finally:
-                                # 👇 AVANZAMOS LA BARRA UN PASO CADA VEZ QUE TERMINA UNA EMPRESA
                                 pbar.update(1)
                     
                     gc.collect()
@@ -76,8 +75,6 @@ def entrenar_pipeline_lstm(id_modelo: int = None):
 
         for mod_db in modelos.all():
             print(f"\n--- Entrenando {mod_db.Nombre} ---", flush=True)
-            
-            # 👇 SOLUCIÓN: Pasamos los días (30) y las features (31) obligatorias
             if mod_db.Version == 'v2':
                 modelo_pt = obtener_modelo_v2(MLEngine.DIAS_MEMORIA_IA, len(MLEngine.FEATURES))
             else: 
@@ -90,7 +87,12 @@ def entrenar_pipeline_lstm(id_modelo: int = None):
             # Evaluación y Guardado
             metricas = evaluar_modelo_lstm(modelo_pt, val_loader, device)
             metricas['DiasFuturo'] = MLEngine.DIAS_PREDICCION
-            MetricaService.guardar_metricas(db, mod_db.IdModelo, metricas)
+            db_guardado = SessionLocal()
+            try:
+
+                MetricaService.guardar_metricas(db_guardado, mod_db.IdModelo, metricas)
+            finally:
+                db_guardado.close()
             
             torch.save(mejores_pesos, os.path.join(ruta_modelos, f'modelo_acciones_{mod_db.Version}.pth'))
             print(f"✅ Finalizado: Acc {metricas['accuracy']:.3f} | AUC {metricas['auc']:.3f}", flush=True)

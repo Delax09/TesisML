@@ -6,7 +6,7 @@ class ModeloBidireccional_v2(nn.Module):
         super(ModeloBidireccional_v2, self).__init__()
         
         #Motor Temporal Bidireccional
-        self.gru = nn.GRU(input_size=num_features, hidden_size=32, batch_first=True, bidirectional=True)
+        self.lstm = nn.LSTM(input_size=num_features, hidden_size=32, batch_first=True, bidirectional=True)
         
         #ESTABILIZADOR 1: Es 64 porque (32 neuronas de ida + 32 de vuelta = 64)
         self.bn1 = nn.BatchNorm1d(64)
@@ -24,9 +24,9 @@ class ModeloBidireccional_v2(nn.Module):
         self.cabeza_clasificacion = nn.Linear(16, 1)
 
     def forward(self, x):
-        gru_out, _ = self.gru(x)
+        lstm_out, _ = self.lstm(x)
         
-        x = gru_out[:, -1, :]
+        x = lstm_out[:, -1, :]
         
         # Aplicamos la estabilización
         x = self.bn1(x)
