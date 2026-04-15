@@ -9,11 +9,7 @@ import os
 import math
 import logging
 from pydantic import BaseModel
-from typing import List
-from app.models.modelo_ia import ModeloIA
-from app.models.precio_historico import PrecioHistorico
-from app.models.resultado import Resultado
-
+from typing import List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +22,6 @@ except ImportError as e:
     logger.error(f"❌ Error importando MLEngine: {e}")
     import_errors.append(f"MLEngine: {str(e)}")
     IA_AVAILABLE = False
-    MLEngine = None
 
 try:
     from app.auto.generar_predicciones import ejecutar_analisis_diario
@@ -49,6 +44,7 @@ except Exception as e:
 
 from app.models.precio_historico import PrecioHistorico
 from app.models.resultado import Resultado
+from app.models.modelo_ia import ModeloIA # Importante para derivar la arquitectura
 
 router = APIRouter(prefix="/api/v1/ia", tags=["IA Engine"])
 
@@ -60,8 +56,8 @@ def diagnostico_ia():
         "import_errors": import_errors if import_errors else "Ninguno",
         "status": "OK ✅" if IA_AVAILABLE else "PROBLEMAS ❌",
         "beta_status": "❌ REMOVIDO (por performance)",
-        "features_count": len(MLEngine.FEATURES) if MLEngine and hasattr(MLEngine, 'FEATURES') else 0, # ✅ Modificado
-        "features": MLEngine.FEATURES if MLEngine and hasattr(MLEngine, 'FEATURES') else [] # ✅ Modificado
+        "features_count": len(MLEngine.FEATURES) if hasattr(MLEngine, 'FEATURES') else 0,
+        "features": MLEngine.FEATURES if hasattr(MLEngine, 'FEATURES') else []
     }
 
 @router.post("/analizar-todo")
@@ -88,6 +84,7 @@ def obtener_metricas_modelo():
 def obtener_rendimiento_sistema():
     """Endpoint para monitorear el rendimiento del sistema en tiempo real"""
     try:
+        
         from app.ml.core.utils import monitorear_recursos
         import torch
 
@@ -117,12 +114,10 @@ def entrenar_modelo_individual(id_modelo: int, background_tasks: BackgroundTasks
         error_msg = "Entrenamiento no disponible. Errores: " + "; ".join(import_errors) if import_errors else "Módulo ML deshabilitado"
         raise HTTPException(status_code=501, detail=error_msg)
         
-    # Consultamos a qué familia pertenece este modelo
     modelo_db = db.query(ModeloIA).filter(ModeloIA.IdModelo == id_modelo).first()
     if not modelo_db:
         raise HTTPException(status_code=404, detail=f"Modelo con ID {id_modelo} no encontrado.")
 
-    # Derivamos el tráfico al pipeline correcto según la versión de la arquitectura
     if modelo_db.Version in ['v1', 'v2']:
         background_tasks.add_task(entrenar_pipeline_lstm, id_modelo=id_modelo)
         tipo = "LSTM/BiLSTM"
@@ -242,12 +237,10 @@ async def obtener_predicciones_masivas(
     
     for emp_id in req.empresas_ids:
         try:
-            # Reutilizamos tu función existente mágicamente ✨
             data = await obtener_prediccion_empresa(empresa_id=emp_id, modelo_id=req.modelo_id, db=db)
             resultado_masivo[emp_id] = data
         except Exception as e:
             print(f"Error procesando empresa masiva {emp_id}: {str(e)}")
-            # Si una empresa falla, no rompemos el resto
             resultado_masivo[emp_id] = {
                 "historial": [], "prediccion": [], "tendencia": "ESTABLE", "confianza": 0
             }
