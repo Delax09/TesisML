@@ -18,7 +18,6 @@ const ResetPassword = lazy(() => import('../pages/Landing/ResetPassword'));
 
 // IMPORTACIONES PEREZOSAS ADMIN (Aquí separamos en 3 vistas)
 const AdminTareas = lazy(() => import('pages/Admin/Tareas/Tareas'));
-const ComparadorIA = lazy(() => import('pages/Admin/ComparadorIA/ComparadorIA'));
 const AdminEmpresas = lazy(() => import('pages/Admin/Empresas/Empresas'));
 const AdminModelos = lazy(() => import('pages/Admin/Modelos/AdminModelos'));
 const AdminMetricas = lazy(() => import('pages/Admin/Metricas/AdminMetricas'));
@@ -56,7 +55,6 @@ const router = createBrowserRouter([
       // Redirigir la raíz del admin a tareas por defecto
       { path: "panel", element: <Navigate to="/admin/tareas" replace /> }, 
       { path: "admin/tareas", element: conSuspense(AdminTareas) },
-      { path: "admin/comparador-ia", element: conSuspense(ComparadorIA) },
       { path: "admin/empresas", element: conSuspense(AdminEmpresas) },
       { path: "admin/modelos-ia", element: conSuspense(AdminModelos) },
       { path: "admin/metricas", element: conSuspense(AdminMetricas) },

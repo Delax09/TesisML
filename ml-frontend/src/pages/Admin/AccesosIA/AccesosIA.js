@@ -22,14 +22,14 @@ const AccesosIA = () => {
   } = useAccesosIA();
 
   return (
-    <Box sx={{ p: { xs: 2, md: 3 } }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 2, sm: 4 }, width: '100%', maxWidth: '1400px', margin: '0 auto', pb: 4 }}>
       <PageHeader
         titulo="Gestión de Accesos IA"
         subtitulo="Habilita o deshabilita modelos de IA para los usuarios"
         icono={SettingsSuggestIcon}
       />
 
-      <Grid container spacing={3} sx={{ mt: 1 }}>
+      <Grid container spacing={3}>
         <Grid size={{ xs: 12, md: 4 }}>
           <UsuarioList
             usuarios={usuarios}

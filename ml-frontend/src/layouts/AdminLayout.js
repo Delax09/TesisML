@@ -12,7 +12,6 @@ import { APP_NAME } from '../config';
 
 // Íconos
 import BuildIcon from '@mui/icons-material/Build'; 
-import AnalyticsIcon from '@mui/icons-material/Analytics'; 
 import BusinessIcon from '@mui/icons-material/Business'; 
 import LogoutIcon from '@mui/icons-material/Logout';
 import MenuIcon from '@mui/icons-material/Menu';
@@ -65,13 +64,6 @@ export default function AdminLayout() {
           <ListItemButton component={RouterLink} to="/admin/metricas" selected={isActivo('/admin/metricas')} onClick={() => setMobileOpen(false)}>
             <ListItemIcon sx={{ color: 'inherit', minWidth: 40 }}><DataSaverOnIcon /></ListItemIcon>
             <ListItemText primary="Métricas de IA" primaryTypographyProps={{ fontWeight: 500 }} />
-          </ListItemButton>
-        </ListItem>
-
-        <ListItem disablePadding sx={{ mb: 1 }}>
-          <ListItemButton component={RouterLink} to="/admin/comparador-ia" selected={isActivo('/admin/comparador-ia')} onClick={() => setMobileOpen(false)}>
-            <ListItemIcon sx={{ color: 'inherit', minWidth: 40 }}><AnalyticsIcon /></ListItemIcon>
-            <ListItemText primary="Comparador IA" primaryTypographyProps={{ fontWeight: 500 }} />
           </ListItemButton>
         </ListItem>
 

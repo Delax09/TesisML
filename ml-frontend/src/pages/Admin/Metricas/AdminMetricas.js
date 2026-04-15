@@ -36,7 +36,7 @@ const AdminMetricas = () => {
                 </Typography>
             )}
             
-            <Paper sx={{ mt: { xs: 2, sm: 4 }, p: { xs: 2, sm: 3 }, py: { xs: 2, sm: 4 }, width: '100%', overflow: 'hidden', border: '1px solid', borderColor: 'divider' }}>
+            <Paper sx={{ p: { xs: 2, md: 3 }, width: '100%' }}>
 
 
                 {/* Panel de Filtros */}
