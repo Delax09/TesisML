@@ -37,8 +37,7 @@ def extraer_y_procesar_empresa(id_empresa: int) -> Optional[pd.DataFrame]:
         df.replace([np.inf, -np.inf], np.nan, inplace=True) # Prevenir veneno
 
         # Validar datos antes de procesar
-        validator = DataValidator()
-        df_valido = validator.validar_y_limpiar(df)
+        df_valido = DataValidator.validar_y_limpiar(df)
 
         if df_valido is None or df_valido.empty:
             print(f"Datos inválidos para empresa {id_empresa}")
@@ -49,7 +48,7 @@ def extraer_y_procesar_empresa(id_empresa: int) -> Optional[pd.DataFrame]:
         df_procesado.bfill(inplace=True)
 
         # Validar datos procesados
-        df_procesado_valido = validator.validar_y_limpiar(df_procesado)
+        df_procesado_valido = DataValidator.validar_y_limpiar(df_procesado)
         return df_procesado_valido if df_procesado_valido is not None and not df_procesado_valido.empty else None
 
     except Exception as e:
@@ -61,11 +60,10 @@ def extraer_y_procesar_empresa(id_empresa: int) -> Optional[pd.DataFrame]:
 def preparar_datos_lstm(lista_dfs: List[pd.DataFrame], batch_size: int = 50):
     """Usa la implementación genérica para consistencia con validación de datos"""
     # Validar todos los dataframes antes de procesar
-    validator = DataValidator()
     dfs_validos = []
 
     for df in lista_dfs:
-        df_valido = validator.validar_y_limpiar(df)
+        df_valido = DataValidator.validar_y_limpiar(df)
         if df_valido is not None and not df_valido.empty:
             dfs_validos.append(df_valido)
 

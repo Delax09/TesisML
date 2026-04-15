@@ -29,7 +29,7 @@ class DataValidator:
 
         # 3. Rellenar según estrategia
         if fillna_strategy == 'ffill':
-            df = df.fillna(method='ffill').fillna(method='bfill')
+            df = df.ffill().bfill()
         elif fillna_strategy == 'mean':
             df = df.fillna(df.mean())
         elif fillna_strategy == 'zero':
