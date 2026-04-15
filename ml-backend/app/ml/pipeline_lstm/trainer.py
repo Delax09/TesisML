@@ -28,11 +28,11 @@ def ejecutar_entrenamiento_lstm(model, train_loader, val_loader, device, epochs=
     early_stopping = EarlyStopping(paciencia=8, delta=0.002)
 
     logger.info("Iniciando entrenamiento LSTM",
-               extra={"device": device.type.upper(), "batches": len(train_loader), "epochs": epochs})
+                extra={"device": device.type.upper(), "batches": len(train_loader), "epochs": epochs})
 
     if torch.cuda.is_available():
         logger.info("GPU disponible",
-                   extra={"gpu_name": torch.cuda.get_device_name(),
+                    extra={"gpu_name": torch.cuda.get_device_name(),
                           "vram_gb": torch.cuda.get_device_properties(0).total_memory // 1024**3})
 
     mejor_modelo = None
