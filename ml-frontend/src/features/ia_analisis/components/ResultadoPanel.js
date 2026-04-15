@@ -53,7 +53,7 @@ const MedidorRSI = ({ rsi }) => {
 export default function ResultadoPanel({ empresaId }) {
     const [modelosActivos, setModelosActivos] = useState([]);
     const [modeloSeleccionado, setModeloSeleccionado] = useState('');
-    const [cargandoModelos, setCargandoModelos] = useState(true); // <-- ESTADO CLAVE
+    const [cargandoModelos, setCargandoModelos] = useState(true);
     
     const { resultado, cargando: cargandoPrediccion, recomendacionTexto, esCompra } = useResultadoIA(empresaId, modeloSeleccionado);
 
@@ -76,7 +76,7 @@ export default function ResultadoPanel({ empresaId }) {
         };
         fetchModelos();
         return () => { montado = false; };
-    }, []); // <-- Array vacío, solo se carga 1 vez
+    }, []);
 
     if (!empresaId) {
         return (
@@ -86,7 +86,10 @@ export default function ResultadoPanel({ empresaId }) {
         );
     }
 
-    const tendenciaAlcista = resultado && (resultado.PrecioActual > resultado.EMA20); 
+    // NUEVO: Usamos directamente la base de datos o el texto procesado por el hook
+    const recomendacionIA = resultado?.Recomendacion ? resultado.Recomendacion.toUpperCase() : (recomendacionTexto || 'N/A').toUpperCase();
+    const esTendenciaAlcista = recomendacionIA.includes('ALCISTA') || recomendacionIA.includes('COMPRA') || esCompra;
+    
     const porcentajeATR = resultado ? (resultado.ATR / resultado.PrecioActual) * 100 : 0;
     const volatilidadAlta = porcentajeATR > 1.5;
 
@@ -97,7 +100,6 @@ export default function ResultadoPanel({ empresaId }) {
                     Análisis Explicativo
                 </Typography>
                 
-                {/* Selector de Modelos, solo se muestra si ya cargaron */}
                 {!cargandoModelos && modelosActivos.length > 0 && (
                     <FormControl size="small" sx={{ minWidth: 140 }}>
                         <Select
@@ -115,7 +117,6 @@ export default function ResultadoPanel({ empresaId }) {
                 )}
             </Box>
             
-            {/* CONDICIÓN UNIFICADA DE CARGA */}
             {cargandoModelos || cargandoPrediccion ? (
                 <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
                     <CircularProgress size={24} color="primary" />
@@ -132,14 +133,15 @@ export default function ResultadoPanel({ empresaId }) {
                         </Typography>
                     </Box>
 
+                    {/* CAJA PRINCIPAL DE RECOMENDACIÓN CENTRALIZADA */}
                     <Box sx={{ 
                         p: 1, borderRadius: '8px', textAlign: 'center', fontWeight: '800', fontSize: '1rem', letterSpacing: '1px', 
-                        bgcolor: esCompra ? 'market.positive.bg' : 'market.negative.bg', 
-                        color: esCompra ? 'market.positive.text' : 'market.negative.text', 
+                        bgcolor: esTendenciaAlcista ? 'market.positive.bg' : 'market.negative.bg', 
+                        color: esTendenciaAlcista ? 'market.positive.text' : 'market.negative.text', 
                         border: '1px solid',
-                        borderColor: esCompra ? 'market.positive.border' : 'market.negative.border' 
+                        borderColor: esTendenciaAlcista ? 'market.positive.border' : 'market.negative.border' 
                     }}>
-                        {recomendacionTexto.toUpperCase()}
+                        {recomendacionIA}
                     </Box>
 
                     <Divider sx={{ my: 1 }} />
@@ -158,12 +160,14 @@ export default function ResultadoPanel({ empresaId }) {
                     </Typography>
                     
                     <Stack direction="row" flexWrap="wrap" gap={1}>
+                        {/* CHIP DE TENDENCIA ARREGLADO */}
                         <Chip 
-                            label={`Tendencia: ${tendenciaAlcista ? 'ALCISTA' : 'BAJISTA'}`}
+                            label={`Tendencia: ${recomendacionIA}`}
                             sx={{ 
-                                bgcolor: tendenciaAlcista ? 'market.positive.bg' : 'market.negative.bg', 
-                                color: tendenciaAlcista ? 'market.positive.text' : 'market.negative.text',
-                                border: '1px solid', borderColor: tendenciaAlcista ? 'market.positive.border' : 'market.negative.border',
+                                bgcolor: esTendenciaAlcista ? 'market.positive.bg' : 'market.negative.bg', 
+                                color: esTendenciaAlcista ? 'market.positive.text' : 'market.negative.text',
+                                border: '1px solid', 
+                                borderColor: esTendenciaAlcista ? 'market.positive.border' : 'market.negative.border',
                                 fontWeight: '600', fontSize: '0.75rem' 
                             }} 
                         />

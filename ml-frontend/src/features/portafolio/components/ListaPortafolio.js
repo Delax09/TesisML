@@ -13,6 +13,7 @@ import PlaylistRemoveIcon from '@mui/icons-material/PlaylistRemove';
 import SearchIcon from '@mui/icons-material/Search';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import TrendingDownIcon from '@mui/icons-material/TrendingDown';
+import TrendingFlatIcon from '@mui/icons-material/TrendingFlat'; // <-- NUEVO ÍCONO
 import RemoveIcon from '@mui/icons-material/Remove';
 
 import { usePrediccionesIA } from '../hooks/usePrediccionesIA';
@@ -64,24 +65,30 @@ export default function ListaPortafolio({
   const IconoMultiple = esRemover ? PlaylistRemoveIcon : PlaylistAddIcon;
   const textoBoton = esRemover ? 'Remover' : 'Agregar';
 
-  // ¡MAGIA PURA! Ahora esta función solo devuelve RUTAS DE TU THEME.JS
-  const getEstilosTarjeta = (variacion) => {
-    if (variacion === null || variacion === undefined) {
+  // Lógica de Estilos con regla específica para "MANTENER"
+  const getEstilosTarjeta = (recomendacionTexto, variacionPct) => {
+    if (!recomendacionTexto || recomendacionTexto === 'SIN IA') {
         return { 
             bg: 'market.nullState.bg', text: 'market.nullState.text', border: 'market.nullState.border', 
             iconColor: 'market.nullState.icon', badgeBg: 'market.nullState.badgeBg', badgeText: 'market.nullState.badgeText' 
         };
     }
     
-    const val = Number(variacion);
+    const rec = recomendacionTexto.toUpperCase();
+    const val = Number(variacionPct);
     let estado = 'neutral';
     
-    if (val >= 1.5) estado = 'strongPositive';
-    else if (val > 0) estado = 'positive';
-    else if (val < 0 && val > -1.5) estado = 'negative';
-    else if (val <= -1.5) estado = 'strongNegative';
+    if (rec.includes('ALCISTA') || rec.includes('COMPRA')) {
+        estado = val >= 1.5 ? 'strongPositive' : 'positive';
+    } else if (rec.includes('BAJISTA') || rec.includes('VEN')) {
+        estado = val <= -1.5 ? 'strongNegative' : 'negative';
+    } else if (rec.includes('MANTENER') || rec.includes('MANT')) {
+        // <-- NUEVO: Forzamos estado neutro si la recomendación es Mantener
+        estado = 'neutral'; 
+    } else {
+        estado = val > 0 ? 'positive' : val < 0 ? 'negative' : 'neutral';
+    }
 
-    // Si estamos en la vista de remover, pintamos todo el fondo
     if (esRemover) {
         return { 
             bg: `market.${estado}.bg`, text: `market.${estado}.text`, border: `market.${estado}.border`, 
@@ -89,11 +96,10 @@ export default function ListaPortafolio({
         };
     }
     
-    // Si estamos en la vista de agregar, fondo blanco pero íconos de color
     return { 
         bg: 'market.cardDefault.bg', text: 'market.cardDefault.text', border: 'market.cardDefault.border', 
-        iconColor: val > 0 ? 'market.positive.icon' : val < 0 ? 'market.negative.icon' : 'market.neutral.icon',
-        badgeBg: 'market.nullState.badgeBg', badgeText: 'market.nullState.badgeText' 
+        iconColor: estado.includes('positive') ? 'market.positive.icon' : estado.includes('negative') ? 'market.negative.icon' : 'market.neutral.icon',
+        badgeBg: `market.${estado}.badgeBg`, badgeText: `market.${estado}.badgeText` 
     };
   };
 
@@ -149,8 +155,9 @@ export default function ListaPortafolio({
                 const resultadoIA = predicciones[emp.IdEmpresa];
                 const variacionPct = resultadoIA ? parseFloat(resultadoIA.VariacionPCT) : null;
                 const recomendacion = resultadoIA ? resultadoIA.Recomendacion : 'SIN IA';
+                const esMantener = recomendacion.toUpperCase().includes('MANTENER');
                 
-                const estilos = getEstilosTarjeta(variacionPct);
+                const estilos = getEstilosTarjeta(recomendacion, variacionPct);
 
                 return (
                   <Grid size={{ xs: 12, sm: 6, md: 12, lg: 6 }} key={idActual}>
@@ -206,7 +213,16 @@ export default function ListaPortafolio({
                               <Box sx={{ minWidth: 0 }}>
                                   {variacionPct !== null ? (
                                       <Typography variant="subtitle1" fontWeight="800" noWrap sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: estilos.text }}>
-                                          {variacionPct > 0 ? <TrendingUpIcon fontSize="small" sx={{ color: estilos.iconColor }}/> : variacionPct < 0 ? <TrendingDownIcon fontSize="small" sx={{ color: estilos.iconColor }}/> : <RemoveIcon fontSize="small" sx={{ color: estilos.iconColor }}/>}
+                                          {/* <-- NUEVO: Forzamos la flecha plana si es Mantener */}
+                                          {esMantener ? (
+                                              <TrendingFlatIcon fontSize="small" sx={{ color: estilos.iconColor }}/>
+                                          ) : variacionPct > 0 ? (
+                                              <TrendingUpIcon fontSize="small" sx={{ color: estilos.iconColor }}/>
+                                          ) : variacionPct < 0 ? (
+                                              <TrendingDownIcon fontSize="small" sx={{ color: estilos.iconColor }}/>
+                                          ) : (
+                                              <RemoveIcon fontSize="small" sx={{ color: estilos.iconColor }}/>
+                                          )}
                                           {variacionPct.toFixed(2)}%
                                       </Typography>
                                   ) : (
