@@ -13,7 +13,6 @@ from typing import List
 from app.models.modelo_ia import ModeloIA
 from app.models.precio_historico import PrecioHistorico
 from app.models.resultado import Resultado
-from app.ml.core.engine import MLEngine
 
 
 logger = logging.getLogger(__name__)
@@ -27,6 +26,7 @@ except ImportError as e:
     logger.error(f"❌ Error importando MLEngine: {e}")
     import_errors.append(f"MLEngine: {str(e)}")
     IA_AVAILABLE = False
+    MLEngine = None
 
 try:
     from app.auto.generar_predicciones import ejecutar_analisis_diario
@@ -60,8 +60,8 @@ def diagnostico_ia():
         "import_errors": import_errors if import_errors else "Ninguno",
         "status": "OK ✅" if IA_AVAILABLE else "PROBLEMAS ❌",
         "beta_status": "❌ REMOVIDO (por performance)",
-        "features_count": len(MLEngine.FEATURES) if hasattr(MLEngine, 'FEATURES') else 0,
-        "features": MLEngine.FEATURES if hasattr(MLEngine, 'FEATURES') else []
+        "features_count": len(MLEngine.FEATURES) if MLEngine and hasattr(MLEngine, 'FEATURES') else 0, # ✅ Modificado
+        "features": MLEngine.FEATURES if MLEngine and hasattr(MLEngine, 'FEATURES') else [] # ✅ Modificado
     }
 
 @router.post("/analizar-todo")
