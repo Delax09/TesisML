@@ -28,7 +28,7 @@ def extraer_y_procesar_empresa_cnn(id_empresa: int) -> Optional[pd.DataFrame]:
         } for r in registros]).set_index('Date')
         
         engine = MLEngine()
-        df_procesado = engine.procesar_datos_completos(df)
+        df_procesado = engine.calcular_indicadores(df)
         df_procesado.ffill(inplace=True); df_procesado.bfill(inplace=True)
         return df_procesado if not df_procesado.empty else None
     except Exception as e:

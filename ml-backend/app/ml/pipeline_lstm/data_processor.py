@@ -23,12 +23,16 @@ def extraer_y_procesar_empresa(id_empresa: int) -> Optional[pd.DataFrame]:
         if len(registros) < 60: return None
             
         df = pd.DataFrame([{
-            'Date': r.Fecha, 'Open': r.PrecioApertura, 'High': r.PrecioMaximo,
-            'Low': r.PrecioMinimo, 'Close': r.PrecioCierre, 'Volume': r.Volumen
+            'Date': r.Fecha, 
+            'Open': r.PrecioApertura, 
+            'High': r.PrecioMaximo,
+            'Low': r.PrecioMinimo, 
+            'Close': r.PrecioCierre, 
+            'Volume': r.Volumen
         } for r in registros]).set_index('Date')
         
         engine = MLEngine()
-        df_procesado = engine.procesar_datos_completos(df)
+        df_procesado = engine.calcular_indicadores(df)
         df_procesado.ffill(inplace=True)
         df_procesado.bfill(inplace=True)
         return df_procesado if not df_procesado.empty else None
