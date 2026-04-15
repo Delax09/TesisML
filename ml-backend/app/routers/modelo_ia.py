@@ -8,6 +8,7 @@ from app.models.modelo_ia import ModeloIA
 from app.schemas.schemas import ModeloIAOut, ModeloIAUpdate
 from app.utils.deps import obtener_usuario_actual
 from app.models.usuario import Usuario
+from app.models.models import UsuarioModelo
 
 router = APIRouter(prefix="/api/v1/modelos-ia", tags=["Registro de Modelos IA"])
 
@@ -65,3 +66,24 @@ def actualizar_estado_modelo(
     db.refresh(modelo)
     
     return modelo
+
+@router.get("/usuario/{usuario_id}")
+def obtener_modelos_usuario(
+    usuario_id: int,
+    db: Session = Depends(get_db)
+):
+    """ 
+    Retorna solo los modelos IA que el usuario tiene habilitados 
+    (Versión rápida pasando el usuario_id por URL)
+    """
+    
+    # Hacemos un JOIN entre ModeloIA y UsuarioModelo
+    modelos_habilitados = db.query(ModeloIA).join(
+        UsuarioModelo, ModeloIA.IdModelo == UsuarioModelo.IdModelo
+    ).filter(
+        UsuarioModelo.IdUsuario == usuario_id,
+        UsuarioModelo.Activo == True, # El usuario tiene acceso
+        ModeloIA.Activo == True       # El modelo no está dado de baja globalmente
+    ).all()
+    
+    return modelos_habilitados

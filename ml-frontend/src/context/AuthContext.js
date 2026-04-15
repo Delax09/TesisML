@@ -1,5 +1,5 @@
 // ml-frontend/src/context/AuthContext.js
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, useRef } from 'react'; // <-- Importa useRef
 import { authService, api } from 'services';
 import { storage } from '../utils/storage'; 
 
@@ -10,22 +10,24 @@ const ROLES = { USUARIO_NORMAL: 1, ADMIN: 2 };
 export function AuthProvider({ children }) {
   const [usuario, setUsuario] = useState(null);
   const [cargando, setCargando] = useState(true);
+  
+  // Referencias para controlar la actividad sin causar re-renders innecesarios
+  const actividadReciente = useRef(false);
 
+  // 1. Efecto existente de inicialización (Mantenlo igual)
   useEffect(() => {
     const inicializarSesion = async () => {
       try {
         const sessionHint = await storage.obtenerItem('usuario');
-        
         if (!sessionHint) {
           setCargando(false);
           return;
         }
-
         const userData = await authService.verificarSesion();
         setUsuario(userData);
       } catch (error) {
         console.log("La sesión expiró.");
-        await storage.eliminarItem('usuario'); // Asegurar await aquí también
+        await storage.eliminarItem('usuario');
         setUsuario(null);
       } finally {
         setCargando(false);
@@ -39,12 +41,54 @@ export function AuthProvider({ children }) {
       await storage.eliminarItem('usuario');
     };
 
-    // ⚠️ NOTA DE MIGRACIÓN: 'window' no existe en React Native. 
-    // Para la web esto funciona, pero en móvil cambiarás esto por un EventEmitter (ej. DeviceEventEmitter)
     window.addEventListener('sesion-expirada', handleSesionExpirada);
     return () => window.removeEventListener('sesion-expirada', handleSesionExpirada);
-
   }, []);
+
+  // 2. NUEVO EFECTO: Detección de actividad y Keep-Alive
+  useEffect(() => {
+    // Solo activar si el usuario está logueado
+    if (!usuario) return;
+
+    // Función para registrar que el usuario hizo algo
+    const registrarActividad = () => {
+      actividadReciente.current = true;
+    };
+
+    // Escuchar eventos comunes de interacción
+    window.addEventListener('mousemove', registrarActividad);
+    window.addEventListener('keydown', registrarActividad);
+    window.addEventListener('click', registrarActividad);
+    window.addEventListener('scroll', registrarActividad);
+
+    // Configurar un intervalo (Ej: cada 5 minutos) para hacer ping al servidor
+    const TIEMPO_RENOVACION_MS = 5 * 60 * 1000; // 5 minutos
+    
+    const keepAliveInterval = setInterval(async () => {
+      // Solo hacer la petición si el usuario realmente interactuó con la pantalla
+      if (actividadReciente.current) {
+        try {
+          // Reutilizamos el endpoint existente que devuelve los datos del usuario.
+          // Al hacer esta petición, el backend debería renovar la cookie/token.
+          await authService.verificarSesion();
+          
+          // Reseteamos el estado de actividad para el siguiente ciclo
+          actividadReciente.current = false; 
+        } catch (error) {
+          console.error("Fallo al renovar la sesión en segundo plano:", error);
+        }
+      }
+    }, TIEMPO_RENOVACION_MS);
+
+    // Limpieza al desmontar o cerrar sesión
+    return () => {
+      window.removeEventListener('mousemove', registrarActividad);
+      window.removeEventListener('keydown', registrarActividad);
+      window.removeEventListener('click', registrarActividad);
+      window.removeEventListener('scroll', registrarActividad);
+      clearInterval(keepAliveInterval);
+    };
+  }, [usuario]); // Se re-ejecuta si el estado de usuario cambia
 
   const actualizarDatos = async (nuevosDatos) => {
     const usuarioActualizado = { ...usuario, ...nuevosDatos };

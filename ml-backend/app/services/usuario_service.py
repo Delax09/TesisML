@@ -2,6 +2,8 @@ from datetime import datetime
 from sqlalchemy.orm import Session
 from app.models.usuario import Usuario
 from app.models.rol import Rol
+from app.models.modelo_ia import ModeloIA
+from app.models.usuario_modelo import UsuarioModelo
 from app.schemas.schemas import UsuarioCreate, UsuarioUpdate
 from app.exceptions import ResourceNotFoundError, DuplicateResourceError, InvalidDataError
 from app.utils.security import hash_password, verify_password
@@ -73,6 +75,18 @@ class UsuarioService:
         db.commit()
         db.refresh(db_usuario)
 
+        modelos_disponibles = db.query(ModeloIA).filter(ModeloIA.Activo == True).all()
+        
+        for modelo in modelos_disponibles:
+            nueva_asignacion = UsuarioModelo(
+                IdUsuario=db_usuario.IdUsuario,
+                IdModelo=modelo.IdModelo,
+                Activo=True # Habilitado por defecto al registrarse
+            )
+            db.add(nueva_asignacion)
+            
+        db.commit() # Guardamos todas las asignaciones en la base de datos
+
         #Logica de verificacion
         token_verificacion = create_access_token(
             data={"sub": str(db_usuario.IdUsuario), "type": "email_verification"},
@@ -87,7 +101,7 @@ class UsuarioService:
         from app.utils.email import enviar_correo
         enviar_correo(
             destino = db_usuario.Email,
-            asunto = "Bienvenido a TesisML - Verifica tu cuenta",
+            asunto = "Bienvenido a ProyectoML - Verifica tu cuenta",
             mensaje= html_mensaje,
             es_html=True)
 

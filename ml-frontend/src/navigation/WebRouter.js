@@ -21,6 +21,8 @@ const AdminTareas = lazy(() => import('pages/Admin/Tareas/Tareas'));
 const ComparadorIA = lazy(() => import('pages/Admin/ComparadorIA/ComparadorIA'));
 const AdminEmpresas = lazy(() => import('pages/Admin/Empresas/Empresas'));
 const AdminModelos = lazy(() => import('pages/Admin/Modelos/AdminModelos'));
+const AdminMetricas = lazy(() => import('pages/Admin/Metricas/AdminMetricas'));
+const AccesosIA = lazy(() => import('pages/Admin/AccesosIA/AccesosIA'));
 
 const conSuspense = (Componente) => (
   <Suspense fallback={
@@ -57,6 +59,8 @@ const router = createBrowserRouter([
       { path: "admin/comparador-ia", element: conSuspense(ComparadorIA) },
       { path: "admin/empresas", element: conSuspense(AdminEmpresas) },
       { path: "admin/modelos-ia", element: conSuspense(AdminModelos) },
+      { path: "admin/metricas", element: conSuspense(AdminMetricas) },
+      { path: "admin/accesos", element: conSuspense(AccesosIA) }
     ],
   },
   { path: "*", element: <Navigate to="/" replace /> }

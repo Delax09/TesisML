@@ -12,6 +12,7 @@ from app.models.usuario import Usuario
 from app.models.portafolio import Portafolio
 from app.models.precio_historico import PrecioHistorico
 from app.models.modelo_ia import ModeloIA
+from app.models.usuario_modelo import UsuarioModelo
 
 # Nota: este módulo seguirá existiendo temporalmente para evitar romper
 # imports anteriores. Gradualmente migrar los `from app.models.models ...`

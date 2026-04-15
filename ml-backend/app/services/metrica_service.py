@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 from app.models.metrica_modelo import MetricaModelo
+from app.models.modelo_ia import ModeloIA
 from datetime import datetime
 from app.utils.horaformateada import obtener_hora_formateada
 
@@ -38,3 +39,25 @@ class MetricaService:
             MetricaModelo.IdModelo == id_modelo
             ).order_by(MetricaModelo.FechaEntrenamiento.desc()).limit(limite).all()
     
+
+    @staticmethod
+    def obtener_todas_las_metricas(db: Session, limite: int = 50):
+        # Usamos JOIN para traer también el Nombre del Modelo
+        resultados = db.query(
+            MetricaModelo, 
+            ModeloIA.Nombre.label("NombreModelo")
+        ).join(
+            ModeloIA, MetricaModelo.IdModelo == ModeloIA.IdModelo
+        ).order_by(
+            MetricaModelo.FechaEntrenamiento.desc()
+        ).limit(limite).all()
+        
+        # Formateamos la respuesta para que el frontend reciba un JSON plano
+        metricas_formateadas = []
+        for metrica, nombre_modelo in resultados:
+            metrica_dict = metrica.__dict__.copy()
+            metrica_dict.pop('_sa_instance_state', None) # Limpiar metadata interna de SQLAlchemy
+            metrica_dict['NombreModelo'] = nombre_modelo # Añadir el nombre del modelo
+            metricas_formateadas.append(metrica_dict)
+            
+        return metricas_formateadas

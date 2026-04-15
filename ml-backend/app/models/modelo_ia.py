@@ -13,3 +13,4 @@ class ModeloIA(Base):
     Activo = Column(Boolean, default=True)
 
     resultados = relationship("Resultado", back_populates="modelo_ia")
+    usuarios_asignados = relationship("UsuarioModelo", back_populates="modelo", cascade="all, delete-orphan")

@@ -40,38 +40,53 @@ def login(response: Response, form_data: OAuth2PasswordRequestForm = Depends(), 
             detail="Usuario desactivado. Por favor, verifica tu correo electrónico o contacta al administrador."
         )
         
-    # 1. ¡ESTA LÍNEA FALTABA! Generamos el token de acceso
     access_token = create_access_token(data={"sub": str(usuario.IdUsuario), "rol": usuario.IdRol})
 
-    # 2. Crear la cookie HttpOnly con el token generado
+    # CORRECCIÓN: Calcular los segundos dinámicamente según la configuración
+    max_age_seconds = settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
+
     response.set_cookie(
         key="access_token",
         value=f"Bearer {access_token}",
-        httponly=True,  # Evita que JS acceda a la cookie (seguridad XSS)
+        httponly=True,
         samesite="lax",
-        max_age=3600    # 1 hora, ajusta según tu expiración
+        max_age=max_age_seconds
     )
     
-    # IMPORTANTE: Si tu frontend antes usaba la respuesta del login para guardar
-    # datos del usuario en el contexto (ej. nombre, rol), asegúrate de enviarlos aquí.
     return {
         "message": "Login exitoso", 
         "token_type": "bearer",
-        "access_token": access_token # Puedes mandarlo también si algún componente aún lo busca en el JSON
+        "access_token": access_token
     }
 
-
-# =================================================================
-# NUEVOS ENDPOINTS PARA SEGURIDAD Y CIERRE DE SESIÓN
-# =================================================================
-
 @router.get("/me")
-def obtener_perfil_actual(usuario_actual: Usuario = Depends(obtener_usuario_actual)):
+# CORRECCIÓN: Importante inyectar `response: Response` aquí
+def obtener_perfil_actual(response: Response, usuario_actual: Usuario = Depends(obtener_usuario_actual)):
     """
     Retorna la información del usuario autenticado basándose estrictamente 
-    en la validación de la cookie del backend.
+    en la validación de la cookie del backend. 
+    Además, renueva la sesión (Sliding Expiration).
     """
-    # Estandarizamos el rol para el frontend (ej: 'admin' o 'usuario')
+    
+    # --- NUEVA LÓGICA DE RENOVACIÓN DE SESIÓN ---
+    # 1. Generamos un nuevo token con una fecha de expiración fresca (ej: +60 mins)
+    nuevo_token = create_access_token(
+        data={"sub": str(usuario_actual.IdUsuario), "rol": usuario_actual.IdRol}
+    )
+    
+    # 2. Calculamos los segundos de vida de la cookie
+    max_age_seconds = settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
+    
+    # 3. Sobrescribimos la cookie actual del navegador con este nuevo token
+    response.set_cookie(
+        key="access_token",
+        value=f"Bearer {nuevo_token}",
+        httponly=True,
+        samesite="lax",
+        max_age=max_age_seconds
+    )
+    # --------------------------------------------
+
     nombre_rol_db = usuario_actual.rol.NombreRol.lower() if usuario_actual.rol else 'usuario'
     rol_estandarizado = 'admin' if 'admin' in nombre_rol_db else 'usuario'
 
