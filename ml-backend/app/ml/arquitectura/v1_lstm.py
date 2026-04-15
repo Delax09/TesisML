@@ -45,10 +45,14 @@ class ModeloLSTM_v1(nn.Module):
         """Inicialización xavier para convergencia más estable"""
         for name, param in self.named_parameters():
             if 'weight' in name:
-                if 'lstm' in name:
-                    nn.init.orthogonal_(param)
-                else:
-                    nn.init.xavier_uniform_(param)
+                if param.dim() >= 2:  # Solo para tensores con 2+ dimensiones
+                    if 'lstm' in name:
+                        nn.init.orthogonal_(param)
+                    else:
+                        nn.init.xavier_uniform_(param)
+                # Para tensores 1D (bias-like), usar normal con std pequeña
+                elif param.dim() == 1:
+                    nn.init.normal_(param, 0, 0.01)
             elif 'bias' in name:
                 nn.init.constant_(param, 0.0)
     
