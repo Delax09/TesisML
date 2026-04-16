@@ -174,8 +174,12 @@ function PrecioChart({ empresaId, nombreEmpresa }) {
                                     borderRadius: '8px', 
                                     border: 'none', 
                                     boxShadow: theme.shadows[3],
-                                    backgroundColor: theme.palette.background.paper
+                                    backgroundColor: theme.palette.background.paper,
                                 }} 
+                                // AGREGAR ESTAS DOS LÍNEAS PARA EL COLOR DEL TEXTO:
+                                itemStyle={{ color: theme.palette.text.primary, fontSize: '0.875rem' }}
+                                labelStyle={{ color: theme.palette.text.secondary, marginBottom: '4px', fontWeight: 'bold' }}
+                                
                                 formatter={(value, name, props) => {
                                     if (name === "Cuerpo de Vela") {
                                         const { open, close, high, low } = props.payload;
@@ -184,7 +188,8 @@ function PrecioChart({ empresaId, nombreEmpresa }) {
                                             "OHLC"
                                         ];
                                     }
-                                    if (name === "Mecha") return ["", ""];
+                                    // Si es Mecha, no devolvemos nada para evitar el ":" vacío
+                                    if (name === "Mecha") return null; 
                                     return [Number(value).toFixed(2), name];
                                 }}
                             />
@@ -195,7 +200,7 @@ function PrecioChart({ empresaId, nombreEmpresa }) {
                             {modoTecnico ? (
                                 <>
                                     {/* Velas Japonesas */}
-                                    <Bar xAxisId={1} dataKey="velaMecha" name="Mecha" barSize={1} isAnimationActive={false}>
+                                    <Bar xAxisId={1} dataKey="velaMecha" name="Mecha" barSize={1} isAnimationActive={false} tooltipType="none">
                                         {datosProcesadosVelas.map((entry, index) => (
                                             <Cell key={`mecha-${index}`} fill={theme.palette.mode === 'dark' ? '#99a1b3' : '#474d57'} />
                                         ))}

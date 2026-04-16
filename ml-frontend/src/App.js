@@ -1,9 +1,9 @@
 // src/App.js
 import React from 'react';
-import { Toaster } from 'react-hot-toast';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider, CustomThemeProvider } from './context';
-import { WebRouter } from './navigation/WebRouter'; // <-- IMPORTA EL ROUTER WEB
+import { WebRouter } from './navigation/WebRouter'; 
+import ThemedToaster from './utils/ThemedToaster';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -16,8 +16,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <CustomThemeProvider>
         <AuthProvider>
-          <Toaster position="top-center" reverseOrder={false} />
-          {/* Aislamos la navegación específica de la web */}
+          <ThemedToaster />
           <WebRouter /> 
         </AuthProvider>
       </CustomThemeProvider>
