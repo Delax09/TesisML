@@ -67,25 +67,24 @@ def ejecutar_entrenamiento_lstm(model, train_loader, val_loader, device, epochs=
         val_score = MetricasNormalizadas.calcular_score_global(val_metrics)
 
         logger.info("Epoch completada",
-                   extra={"epoch": epoch+1, "train_loss": train_loss/total_batches,
-                          "val_accuracy": val_metrics['accuracy'], "val_auc": val_metrics['auc'],
-                          "val_score_global": val_score})
+                    extra={"epoch": epoch+1, "train_loss": train_loss/total_batches,
+                    "val_accuracy": val_metrics['accuracy'], "val_auc": val_metrics['auc'],
+                    "val_score_global": val_score})
 
         # Early stopping
-        early_stopping(val_score)
-        if early_stopping.mejor_score == val_score:
-            mejor_modelo = copy.deepcopy(model.state_dict())
+        early_stopping(-val_score, model) #Negamos para maximizar el score
 
-        if early_stopping.debe_parar():
+        if early_stopping.detener:
             logger.info("Early stopping activado", extra={"epoch": epoch+1, "mejor_score": early_stopping.mejor_score})
             break
 
-    # Retornar mejores pesos encontrados
-    if mejor_modelo is None:
-        mejor_modelo = model.state_dict()
+        mejor_modelo = early_stopping.mejores_pesos
+        # Retornar mejores pesos encontrados
+        if mejor_modelo is None:
+            mejor_modelo = model.state_dict()
 
-    logger.info("Entrenamiento LSTM completado", extra={"epochs_completadas": epoch+1})
-    return mejor_modelo
+        logger.info("Entrenamiento LSTM completado", extra={"epochs_completadas": epoch+1})
+        return mejor_modelo
 
 def evaluar_modelo_lstm(model, val_loader, device):
     model.eval()
@@ -110,6 +109,20 @@ def evaluar_modelo_lstm(model, val_loader, device):
 
     cm = confusion_matrix(y_real_clf, y_pred_clf)
     tn, fp, fn, tp = cm.ravel() if cm.shape == (2, 2) else (0,0,0,0)
+    return {
+        'accuracy': float(accuracy_score(y_real_clf, y_pred_clf)),
+        'precision': float(precision_score(y_real_clf, y_pred_clf, zero_division=0)),
+        'recall': float(recall_score(y_real_clf, y_pred_clf, zero_division=0)),
+        'f1_score': float(f1_score(y_real_clf, y_pred_clf, zero_division=0)),
+        # Protegemos el AUC por si un batch solo tiene una clase
+        'auc': float(roc_auc_score(y_real_clf, y_prob_clf)) if len(np.unique(y_real_clf)) > 1 else 0.5,
+        'mae': float(mean_absolute_error(y_real_reg, y_pred_reg)),
+        'val_loss': 0.0, # O el cálculo de loss si lo implementaste
+        'tp': int(tp),
+        'tn': int(tn),
+        'fp': int(fp),
+        'fn': int(fn)
+    }
 
 def ejecutar_validacion_cruzada_lstm(model_class, data_processor, device, k=5, epochs=30):
     """

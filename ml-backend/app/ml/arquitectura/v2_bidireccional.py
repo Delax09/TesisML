@@ -23,6 +23,27 @@ class ModeloBidireccional_v2(nn.Module):
         self.cabeza_regresion = nn.Linear(16, 1)
         self.cabeza_clasificacion = nn.Linear(16, 1)
 
+        self._init_weights()
+
+    def _init_weights(self):
+        """Inicialización robusta para convergencia más estable"""
+        for name, param in self.named_parameters():
+            if 'weight' in name:
+                if param.dim() >= 2:  # Para tensores 2D+ (Linear, LSTM)
+                    if 'lstm' in name:
+                        nn.init.orthogonal_(param)
+                    else:
+                        nn.init.xavier_uniform_(param)
+                elif 'bn' in name: 
+                    # CRÍTICO: El multiplicador Gamma del BatchNorm DEBE iniciar en 1
+                    nn.init.ones_(param)
+                else:
+                    # Otros pesos 1D genéricos
+                    nn.init.normal_(param, 0, 0.01)
+            elif 'bias' in name:
+                # Los sesgos inician en 0
+                nn.init.constant_(param, 0.0)
+
     def forward(self, x):
         lstm_out, _ = self.lstm(x)
         

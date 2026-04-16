@@ -18,21 +18,27 @@ def extraer_y_procesar_empresa(id_empresa: int) -> Optional[pd.DataFrame]:
     """Extrae datos de la BD y aplica indicadores técnicos con validación"""
     db = SessionLocal()
     try:
-        registros = db.query(PrecioHistorico).filter(
+        # 1. OPTIMIZACIÓN: Solo consultamos las columnas exactas con el alias esperado
+        query = db.query(
+            PrecioHistorico.Fecha.label('Date'),
+            PrecioHistorico.PrecioApertura.label('Open'),
+            PrecioHistorico.PrecioMaximo.label('High'),
+            PrecioHistorico.PrecioMinimo.label('Low'),
+            PrecioHistorico.PrecioCierre.label('Close'),
+            PrecioHistorico.Volumen.label('Volume')
+        ).filter(
             PrecioHistorico.IdEmpresa == id_empresa
-        ).order_by(PrecioHistorico.Fecha.asc()).all()
+        ).order_by(PrecioHistorico.Fecha.asc())
 
-        if len(registros) < 60: return None
+        # 2. OPTIMIZACIÓN: Pandas lee directo de la consulta SQL sin crear objetos ORM
+        df = pd.read_sql(query.statement, db.get_bind())
 
-        df = pd.DataFrame([{
-            'Date': r.Fecha,
-            'Open': r.PrecioApertura,
-            'High': r.PrecioMaximo,
-            'Low': r.PrecioMinimo,
-            'Close': r.PrecioCierre,
-            'Volume': r.Volumen
-        } for r in registros]).set_index('Date')
+        if len(df) < 60: 
+            return None
 
+        # 3. Establecemos el índice directamente
+        df.set_index('Date', inplace=True)
+        
         df = df.astype(float)
         df.replace([np.inf, -np.inf], np.nan, inplace=True) # Prevenir veneno
 

@@ -1,0 +1,16 @@
+{"timestamp": "2026-04-16T03:47:37.825395", "level": "INFO", "logger": "ML.Trainer.LSTM", "message": "Iniciando entrenamiento LSTM", "module": "trainer", "function": "ejecutar_entrenamiento_lstm", "line": 30}
+{"timestamp": "2026-04-16T03:47:37.826344", "level": "INFO", "logger": "ML.Trainer.LSTM", "message": "GPU disponible", "module": "trainer", "function": "ejecutar_entrenamiento_lstm", "line": 34}
+{"timestamp": "2026-04-16T03:55:12.908211", "level": "INFO", "logger": "ML.Trainer.LSTM", "message": "Iniciando entrenamiento LSTM", "module": "trainer", "function": "ejecutar_entrenamiento_lstm", "line": 30}
+{"timestamp": "2026-04-16T03:55:12.909105", "level": "INFO", "logger": "ML.Trainer.LSTM", "message": "GPU disponible", "module": "trainer", "function": "ejecutar_entrenamiento_lstm", "line": 34}
+{"timestamp": "2026-04-16T03:56:07.159647", "level": "INFO", "logger": "ML.Trainer.LSTM", "message": "Epoch completada", "module": "trainer", "function": "ejecutar_entrenamiento_lstm", "line": 69}
+{"timestamp": "2026-04-16T04:03:39.073873", "level": "INFO", "logger": "ML.Trainer.LSTM", "message": "Iniciando entrenamiento LSTM", "module": "trainer", "function": "ejecutar_entrenamiento_lstm", "line": 30}
+{"timestamp": "2026-04-16T04:03:39.075031", "level": "INFO", "logger": "ML.Trainer.LSTM", "message": "GPU disponible", "module": "trainer", "function": "ejecutar_entrenamiento_lstm", "line": 34}
+{"timestamp": "2026-04-16T04:04:40.099805", "level": "INFO", "logger": "ML.Trainer.LSTM", "message": "Epoch completada", "module": "trainer", "function": "ejecutar_entrenamiento_lstm", "line": 69}
+{"timestamp": "2026-04-16T04:08:44.128877", "level": "INFO", "logger": "ML.Trainer.LSTM", "message": "Iniciando entrenamiento LSTM", "module": "trainer", "function": "ejecutar_entrenamiento_lstm", "line": 30}
+{"timestamp": "2026-04-16T04:08:44.129837", "level": "INFO", "logger": "ML.Trainer.LSTM", "message": "GPU disponible", "module": "trainer", "function": "ejecutar_entrenamiento_lstm", "line": 34}
+{"timestamp": "2026-04-16T04:09:23.557577", "level": "INFO", "logger": "ML.Trainer.LSTM", "message": "Epoch completada", "module": "trainer", "function": "ejecutar_entrenamiento_lstm", "line": 69}
+{"timestamp": "2026-04-16T04:09:23.574779", "level": "INFO", "logger": "ML.Trainer.LSTM", "message": "Entrenamiento LSTM completado", "module": "trainer", "function": "ejecutar_entrenamiento_lstm", "line": 86}
+{"timestamp": "2026-04-16T04:13:00.628797", "level": "INFO", "logger": "ML.Trainer.LSTM", "message": "Iniciando entrenamiento LSTM", "module": "trainer", "function": "ejecutar_entrenamiento_lstm", "line": 30}
+{"timestamp": "2026-04-16T04:13:00.629998", "level": "INFO", "logger": "ML.Trainer.LSTM", "message": "GPU disponible", "module": "trainer", "function": "ejecutar_entrenamiento_lstm", "line": 34}
+{"timestamp": "2026-04-16T04:13:52.104214", "level": "INFO", "logger": "ML.Trainer.LSTM", "message": "Epoch completada", "module": "trainer", "function": "ejecutar_entrenamiento_lstm", "line": 69}
+{"timestamp": "2026-04-16T04:13:52.114830", "level": "INFO", "logger": "ML.Trainer.LSTM", "message": "Entrenamiento LSTM completado", "module": "trainer", "function": "ejecutar_entrenamiento_lstm", "line": 86}
