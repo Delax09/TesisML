@@ -22,7 +22,8 @@ from app.routers import (auth_router,
                         admin_router,
                         modelo_ia_router,
                         noticias,
-                        metricas_router)
+                        metricas_router,
+                        contacto_router)
 from app.db.sessions import engine, Base
 from slowapi.errors import RateLimitExceeded
 from slowapi import _rate_limit_exceeded_handler
@@ -123,6 +124,7 @@ app.include_router(admin_router)
 app.include_router(modelo_ia_router)
 app.include_router(metricas_router)
 app.include_router(noticias.router)
+app.include_router(contacto_router)
 
 @app.get("/")
 def health_check():

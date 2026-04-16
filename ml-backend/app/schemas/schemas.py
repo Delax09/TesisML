@@ -4,9 +4,10 @@ Define las estructuras de entrada y salida para los endpoints.
 """
 
 from decimal import Decimal
-from pydantic import Field, computed_field, ConfigDict, BaseModel
+from pydantic import Field, computed_field, ConfigDict, BaseModel, EmailStr
 from datetime import datetime, date
 from typing import Optional, List, Dict, Any
+
 
 # ========================= SECTOR SCHEMAS =========================
 
@@ -350,3 +351,14 @@ class NoticiaOut(BaseModel):
     fuente: str = Field(..., description="Quién publicó la noticia (ej. Yahoo, Bloomberg)")
     fecha_publicacion: datetime = Field(..., description="Fecha de publicación")
     ticker_relacionado: str = Field(..., description="Símbolo de la empresa (ej. AAPL)")
+
+
+# ========================= ANALISIS PORTAFOLIO SCHEMAS =========================
+
+
+class ContactoCreate(BaseModel):
+    nombre: str
+    email: EmailStr
+    asunto: str 
+    mensaje: str
+
