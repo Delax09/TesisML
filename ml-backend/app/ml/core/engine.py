@@ -239,20 +239,24 @@ class MLEngine:
             prediccion_cruda = pred_reg_tensor.cpu().numpy()[0][0]
             probabilidad_alcista = torch.sigmoid(pred_clf_tensor).cpu().numpy()[0][0]
             
-            # Usar umbrales configurables
-            if probabilidad_alcista > self.umbral_alcista: 
-                recomendacion = "ALCISTA"
-                score = 1
-            elif probabilidad_alcista < self.umbral_bajista: 
-                recomendacion = "BAJISTA"
-                score = -1
-            else: 
-                recomendacion = "MANTENER"
-                score = 0
         
         pred_real = self._desescalar_prediccion(prediccion_cruda, precio_actual)
         var_pct = ((pred_real - precio_actual) / precio_actual) * 100
         
+        # Asignamos la recomendación basada en umbrales de rendimiento (%) 
+        UMBRAL_VAR_ALCISTA = 0.5 
+        UMBRAL_VAR_BAJISTA = -0.5 
+
+        if var_pct > UMBRAL_VAR_ALCISTA: 
+            recomendacion = "ALCISTA"
+            score = 1
+        elif var_pct < UMBRAL_VAR_BAJISTA: 
+            recomendacion = "BAJISTA"
+            score = -1
+        else: 
+            recomendacion = "MANTENER"
+            score = 0
+
         return {
             "prediccion": float(pred_real),
             "variacion": float(var_pct),
