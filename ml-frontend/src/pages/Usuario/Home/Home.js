@@ -98,7 +98,7 @@ export default function Home() {
                         Ir al Análisis de Mercado
                     </Button>
 
-                    <Button component={RouterLink} to="/gestionar-portafolio" variant="outlined" color="primary" size="large" startIcon={<AccountBalanceWalletIcon />} sx={{ py: 2, justifyContent: 'flex-start', borderRadius: 2, fontWeight: 'bold' }}>
+                    <Button component={RouterLink} to="/portafolio" variant="outlined" color="primary" size="large" startIcon={<AccountBalanceWalletIcon />} sx={{ py: 2, justifyContent: 'flex-start', borderRadius: 2, fontWeight: 'bold' }}>
                         Configurar mi Portafolio
                     </Button>
                 </Box>
