@@ -10,6 +10,7 @@ import math
 import logging
 from pydantic import BaseModel
 from typing import List, Optional
+from app.db.sessions import SessionLocal
 
 logger = logging.getLogger(__name__)
 
@@ -109,23 +110,27 @@ def obtener_rendimiento_sistema():
         return {"error": f"No se pudo obtener rendimiento del sistema: {str(e)}"}
     
 @router.post("/entrenar-modelo/{id_modelo}", status_code=status.HTTP_202_ACCEPTED)
-def entrenar_modelo_individual(id_modelo: int, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+def entrenar_modelo_individual(id_modelo: int, background_tasks: BackgroundTasks):
     if not IA_AVAILABLE:
         error_msg = "Entrenamiento no disponible. Errores: " + "; ".join(import_errors) if import_errors else "Módulo ML deshabilitado"
         raise HTTPException(status_code=501, detail=error_msg)
-        
-    modelo_db = db.query(ModeloIA).filter(ModeloIA.IdModelo == id_modelo).first()
-    if not modelo_db:
-        raise HTTPException(status_code=404, detail=f"Modelo con ID {id_modelo} no encontrado.")
 
-    if modelo_db.Version in ['v1', 'v2']:
+    db = SessionLocal()
+    try:
+        modelo_db = db.query(ModeloIA).filter(ModeloIA.IdModelo == id_modelo).first()
+        if not modelo_db:
+            raise HTTPException(status_code=404, detail=f"Modelo con ID {id_modelo} no encontrado.")
+        version_modelo = modelo_db.Version 
+    finally:
+        db.close()
+    if version_modelo in ['v1', 'v2']:
         background_tasks.add_task(entrenar_pipeline_lstm, id_modelo=id_modelo)
         tipo = "LSTM/BiLSTM"
-    elif modelo_db.Version == 'v3':
+    elif version_modelo == 'v3':
         background_tasks.add_task(entrenar_pipeline_cnn, id_modelo_especifico=id_modelo)
         tipo = "CNN"
     else:
-        raise HTTPException(status_code=400, detail=f"Versión de modelo no soportada: {modelo_db.Version}")
+        raise HTTPException(status_code=400, detail=f"Versión de modelo no soportada: {version_modelo}")
 
     return {"message": f"Entrenamiento del modelo {tipo} (ID {id_modelo}) iniciado en segundo plano."}
 

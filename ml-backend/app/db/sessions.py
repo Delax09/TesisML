@@ -3,11 +3,10 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from app.core.config import settings
 
-# Forzamos la desactivación de prepared statements en SQLAlchemy y Psycopg3
 engine = create_engine(
     settings.DATABASE_URL,
     execution_options={
-        "prepared_statement_cache_size": 0 # Apaga el caché de SQLAlchemy
+        "prepared_statement_cache_size": 0
     },
     connect_args={
         "prepare_threshold": None
@@ -24,4 +23,7 @@ def get_db():
     try:
         yield db
     finally:
-        db.close()
+        try:
+            db.close()
+        except Exception as e:
+            print(f"Conexión DB cerrada por el servidor (ignorado): {e}")
