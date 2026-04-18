@@ -11,35 +11,45 @@ from tqdm import tqdm
 from app.db.sessions import SessionLocal
 from app.models.precio_historico import PrecioHistorico
 from app.ml.core.engine import MLEngine 
+from app.ml.core.data_validation import DataValidator
 
 def extraer_y_procesar_empresa_cnn(id_empresa: int) -> Optional[pd.DataFrame]:
     db = SessionLocal()
     try:
-        registros = db.query(PrecioHistorico).filter(
+        # 1. OPTIMIZACIÓN PANDAS: Consultamos solo las columnas requeridas
+        query = db.query(
+            PrecioHistorico.Fecha.label('Date'),
+            PrecioHistorico.PrecioApertura.label('Open'),
+            PrecioHistorico.PrecioMaximo.label('High'),
+            PrecioHistorico.PrecioMinimo.label('Low'),
+            PrecioHistorico.PrecioCierre.label('Close'),
+            PrecioHistorico.Volumen.label('Volume')
+        ).filter(
             PrecioHistorico.IdEmpresa == id_empresa
-        ).order_by(PrecioHistorico.Fecha.asc()).all()
+        ).order_by(PrecioHistorico.Fecha.asc())
+
+        # 2. Leemos la consulta directamente a memoria con Pandas (Evita el cuelgue)
+        df = pd.read_sql(query.statement, db.get_bind())
         
-        if len(registros) < 60: return None
+        if len(df) < 60: return None
             
-        df = pd.DataFrame([{
-            'Date': r.Fecha, 
-            'Open': r.PrecioApertura, 
-            'High': r.PrecioMaximo,
-            'Low': r.PrecioMinimo, 
-            'Close': r.PrecioCierre, 
-            'Volume': r.Volumen
-        } for r in registros]).set_index('Date')
+        df.set_index('Date', inplace=True)
         
         # 🛡️ PROTECCIÓN: Casteo a float y limpieza de infinitos
         df = df.astype(float)
         df.replace([np.inf, -np.inf], np.nan, inplace=True)
         
+        # Aplicamos los indicadores técnicos
         df_procesado = MLEngine.calcular_indicadores(df)
         df_procesado.ffill(inplace=True)
         df_procesado.bfill(inplace=True)
-        return df_procesado if not df_procesado.empty else None
+
+        # Validar datos procesados
+        df_procesado_valido = DataValidator.validar_y_limpiar(df_procesado)
+        return df_procesado_valido if df_procesado_valido is not None and not df_procesado_valido.empty else None
+
     except Exception as e:
-        print(f"Error procesando empresa {id_empresa} para CNN: {str(e)}")
+        print(f"Error procesando empresa {id_empresa}: {str(e)}")
         return None
     finally:
         db.close()

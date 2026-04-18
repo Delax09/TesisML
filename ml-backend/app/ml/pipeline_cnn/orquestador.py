@@ -85,7 +85,11 @@ def entrenar_pipeline_cnn(id_modelo_especifico: int = None, epochs: int = 50):
             metricas = evaluar_modelo_cnn(modelo_pt, val_loader, device)
             metricas['DiasFuturo'] = MLEngine.DIAS_PREDICCION
             
-            MetricaService.guardar_metricas(db, modelo_db.IdModelo, metricas)
+            db_guardado = SessionLocal()
+            try:
+                MetricaService.guardar_metricas(db_guardado, modelo_db.IdModelo, metricas)
+            finally:
+                db_guardado.close()
 
             torch.save(mejores_pesos, os.path.join(ruta_modelos, f'modelo_acciones_{modelo_db.Version}.pth'))
             print(f"✅ CNN {modelo_db.Nombre} guardada - Acc: {metricas['accuracy']:.3f} | AUC: {metricas['auc']:.3f}", flush=True)
