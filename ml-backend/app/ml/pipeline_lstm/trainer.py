@@ -166,7 +166,7 @@ def ejecutar_validacion_cruzada_lstm(model_class, data_processor, device, k=5, e
     )
 
     logger.info("Validación cruzada LSTM completada",
-               extra={"score_promedio": resultados['score_promedio'],
-                      "desviacion_estandar": resultados['desviacion_estandar']})
+                extra={"score_promedio": resultados['score_promedio'],
+                "desviacion_estandar": resultados['desviacion_estandar']})
 
     return resultados

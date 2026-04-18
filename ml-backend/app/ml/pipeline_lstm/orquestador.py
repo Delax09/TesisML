@@ -113,8 +113,8 @@ def entrenar_pipeline_lstm(id_modelo: int = None):
             )
 
             logger.info("Modelo guardado exitosamente",
-                       extra={"version": mod_db.Version, "accuracy": metricas.get('accuracy', 0),
-                              "auc": metricas.get('auc', 0), "ruta": ruta_version})
+                        extra={"version": mod_db.Version, "accuracy": metricas.get('accuracy', 0),
+                                "auc": metricas.get('auc', 0), "ruta": ruta_version})
 
         # Guardar scaler global (para compatibilidad)
         joblib.dump(scaler, os.path.join(ruta_modelos, "scaler.pkl"))
