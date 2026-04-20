@@ -119,7 +119,10 @@ export function AuthProvider({ children }) {
 
       return { success: true, usuario: userInfo };
     } catch (error) {
-      return { success: false, message: parseBackendError(error.response?.data?.detail) || "Error de credenciales" };
+      return { 
+        success: false, 
+        message: parseBackendError(error) || "Error de credenciales" 
+      };
     }
   };
 
@@ -137,7 +140,7 @@ export function AuthProvider({ children }) {
       return await login(email, password);
       
     } catch (error) {
-      const mensajeError = parseBackendError(error.response?.data?.detail) || "Error al crear la cuenta. Verifica los datos.";
+      const mensajeError = parseBackendError(error) || "Error al crear la cuenta. Verifica los datos.";
       return { success: false, message: mensajeError };
     }
   };
