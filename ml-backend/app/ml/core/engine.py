@@ -61,7 +61,7 @@ class MLEngine:
             elif self.version == "v2":
                 self.model = ModeloBidireccional_v2(num_features =len(self.FEATURES)).to(self.device)
             elif self.version == "v3":
-                self.model = ModeloCNN_v3(dias_pasados = self.DIAS_MEMORIA_IA, num_features =len(self.FEATURES)).to(self.device)
+                self.model = ModeloCNN_v3(num_features =len(self.FEATURES)).to(self.device)
                 
             self.model.load_state_dict(torch.load(model_path, map_location=self.device, weights_only=True))
             self.model.eval() 
@@ -71,7 +71,7 @@ class MLEngine:
 
     def _preparar_tensor(self, df_ind):
         scaled_data = self.scaler.transform(df_ind[self.FEATURES].values)
-        if self.version == "v3":
+        if self.version == "v3" or self.version == "vv3":
             tensor = torch.tensor(scaled_data[-self.DIAS_MEMORIA_IA:], dtype=torch.float32).unsqueeze(0).transpose(1, 2).to(self.device)
         else:
             tensor = torch.tensor(scaled_data[-self.DIAS_MEMORIA_IA:], dtype=torch.float32).unsqueeze(0).to(self.device)
@@ -98,12 +98,28 @@ class MLEngine:
         else: 
             recomendacion = "MANTENER"; score = 0
 
+        ultima_fila = df_ind.iloc[-1]
+        features_dict = {
+            "Close": float(ultima_fila.get("Close", 0)),
+            "Volume": float(ultima_fila.get("Volume", 0)),
+            "ATR": float(ultima_fila.get("ATR",0)),
+            "EMA20": float(ultima_fila.get("EMA20", 0)),
+            "EMA50": float(ultima_fila.get("EMA50", 0)),
+            "RSI": float(ultima_fila.get("RSI", 0)),
+            "MACD": float(ultima_fila.get("MACD", 0)),
+            "BB_Upper": float(ultima_fila.get("BB_Upper", 0)),
+            "BB_Lower": float(ultima_fila.get("BB_Lower", 0)),
+            "Volatilidad": float(ultima_fila.get("Volatilidad_10d", 0)),
+            "ProbAlcista": float(probabilidad_alcista * 100)
+        }
+
         return {
             "prediccion": float(pred_real),
             "variacion": float(var_pct),
             "confianza": float(probabilidad_alcista * 100 if score == 1 else (1 - probabilidad_alcista) * 100),
             "recomendacion": recomendacion,
-            "score": score
+            "score": score,
+            "features": features_dict
         }
 
     @staticmethod

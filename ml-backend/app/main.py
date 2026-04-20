@@ -66,8 +66,8 @@ async def lifespan(app: FastAPI):
         print("🚀 Cargando modelos de IA en memoria (Modo Local)...")
         base_path = os.path.join(os.path.dirname(__file__), "ml", "models")
         try:
-            app.state.model_v1 = torch.load(os.path.join(base_path, "LSTM_v1_latest.pth"))
-            app.state.model_v2 = torch.load(os.path.join(base_path, "LSTM_v2_latest.pth"))
+            app.state.model_v1 = torch.load(os.path.join(base_path, "modelo_acciones_v1.pth"))
+            app.state.model_v2 = torch.load(os.path.join(base_path, "modelo_acciones_v2.pth"))
             app.state.model_v3 = torch.load(os.path.join(base_path, "modelo_acciones_v3.pth"))
             app.state.scaler = joblib.load(os.path.join(base_path, "scaler.pkl"))
             app.state.scaler_cnn = joblib.load(os.path.join(base_path, "scaler_cnn.pkl"))
