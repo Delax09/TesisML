@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from 'context';
+import { useAuth } from 'context'; // Asegúrate de que esta ruta sea la correcta en tu proyecto
 import toast from 'react-hot-toast';
 import { 
     Box, 
@@ -8,19 +8,19 @@ import {
     Typography, 
     CircularProgress,
     InputAdornment,
-    Link // Link de Material UI
+    Link 
 } from '@mui/material';
 import EmailIcon from '@mui/icons-material/Email';
 import LockIcon from '@mui/icons-material/Lock';
 import PersonIcon from '@mui/icons-material/Person';
-import { Link as RouterLink } from 'react-router-dom'; // Renombrado para evitar conflicto
+import { Link as RouterLink } from 'react-router-dom';
 
-function AuthForm({ modoInicialRegistro = false }) {
+// AÑADIDO: Recibimos la prop 'isOpen'
+function AuthForm({ modoInicialRegistro = false, isOpen = true }) {
     const { login, registro } = useAuth(); 
     
     const [esRegistro, setEsRegistro] = useState(modoInicialRegistro);
     
-    // Estados de los campos
     const [nombre, setNombre] = useState('');
     const [apellido, setApellido] = useState('');
     const [email, setEmail] = useState('');
@@ -35,10 +35,14 @@ function AuthForm({ modoInicialRegistro = false }) {
         setPassword('');
     };
 
+    // AÑADIDO: Ahora reacciona también a 'isOpen'
     useEffect(() => {
-        setEsRegistro(modoInicialRegistro);
-        limpiarFormulario();
-    }, [modoInicialRegistro]);
+        // Solo limpiamos y reseteamos el modo si el modal se está abriendo
+        if (isOpen) {
+            setEsRegistro(modoInicialRegistro);
+            limpiarFormulario();
+        }
+    }, [modoInicialRegistro, isOpen]);
 
     const alternarModo = () => {
         setEsRegistro(!esRegistro);
@@ -125,8 +129,6 @@ function AuthForm({ modoInicialRegistro = false }) {
                 </Link>
             </Typography>
 
-
-            {/* --- NUEVO ENLACE DE RECUPERACIÓN DE CONTRASEÑA --- */}
             {!esRegistro && (
                 <Typography variant="body2" align="center" sx={{ mt: 0.5 }}>
                     <Link 
@@ -141,7 +143,6 @@ function AuthForm({ modoInicialRegistro = false }) {
                     </Link>
                 </Typography>
             )}
-            {/* -------------------------------------------------- */}
         </Box>
     );
 }

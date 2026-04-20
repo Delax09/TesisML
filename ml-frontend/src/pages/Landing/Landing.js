@@ -146,7 +146,10 @@ export default function Landing() {
                     <IconButton onClick={cerrarModalAuth} sx={{ position: 'absolute', right: 8, top: 8, color: 'text.secondary' }}>
                         <CloseIcon />
                     </IconButton>
-                    <AuthForm modoInicialRegistro={modalAuth.esRegistro} />
+                    <AuthForm 
+                        modoInicialRegistro={modalAuth.esRegistro}
+                        isOpen={modalAuth.open} 
+                    />
                 </DialogContent>
             </Dialog>
         </Box>
