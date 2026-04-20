@@ -19,8 +19,9 @@ from app.ml.core.early_stopping import EarlyStopping
 logger = configurar_logger("ML.Trainer.LSTM", archivo_log="logs/lstm_training.log")
 
 def ejecutar_entrenamiento_lstm(model, train_loader, val_loader, device, epochs=30):
+    peso_postivo = torch.tensor([1.5]).to(device)
     criterion_reg = nn.HuberLoss(delta=0.01)
-    criterion_clf = nn.BCEWithLogitsLoss()
+    criterion_clf = nn.BCEWithLogitsLoss(pos_weight=peso_postivo)
 
     # 1. OPTIMIZACIÓN DE ESTABILIDAD: Learning rate balanceado (ni muy lento, ni explosivo)
     optimizer = optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-5)
@@ -105,7 +106,8 @@ def evaluar_modelo_lstm(model, val_loader, device):
     y_prob_clf = np.nan_to_num(np.array(y_prob_clf), nan=0.0)
     y_pred_reg = np.nan_to_num(np.array(y_pred_reg), nan=0.0)
 
-    y_pred_clf = (y_prob_clf > 0.5).astype(int)
+    umbral_decision = 0.40
+    y_pred_clf = (y_prob_clf > umbral_decision).astype(int)
 
     cm = confusion_matrix(y_real_clf, y_pred_clf)
     tn, fp, fn, tp = cm.ravel() if cm.shape == (2, 2) else (0,0,0,0)

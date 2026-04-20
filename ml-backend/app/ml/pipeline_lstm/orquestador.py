@@ -83,9 +83,9 @@ def entrenar_pipeline_lstm(id_modelo: int = None):
             logger.info("Iniciando entrenamiento de modelo", extra={"modelo": mod_db.Nombre, "version": mod_db.Version})
 
             if mod_db.Version == 'v2':
-                modelo_pt = obtener_modelo_v2(MLEngine.DIAS_MEMORIA_IA, len(MLEngine.FEATURES))
+                modelo_pt = obtener_modelo_v2(dias_pasados = MLEngine.DIAS_MEMORIA_IA, num_features = len(MLEngine.FEATURES))
             else:
-                modelo_pt = obtener_modelo_v1(MLEngine.DIAS_MEMORIA_IA, len(MLEngine.FEATURES))
+                modelo_pt = obtener_modelo_v1(dias_pasados = MLEngine.DIAS_MEMORIA_IA, num_features = len(MLEngine.FEATURES))
 
             modelo_pt.to(device)
 

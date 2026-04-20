@@ -43,7 +43,7 @@ def preparar_datos_generico(
         log_ret = np.log(close_raw[idx_fut] / (close_raw[idx_hoy] + 1e-8))
         log_ret = np.nan_to_num(log_ret, nan=0.0, posinf=0.0, neginf=0.0)
 
-        clf_target = (log_ret > 0.008).astype(np.float32)
+        clf_target = (log_ret > 0.005).astype(np.float32)
 
         x_chunks.append(x_batch)
         y_reg_chunks.append(log_ret)

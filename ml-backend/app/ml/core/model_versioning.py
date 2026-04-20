@@ -68,7 +68,7 @@ class ModelVersionManager:
             json.dump(metadata, f, indent=2, ensure_ascii=False)
 
         # Crear enlace simbólico al último modelo
-        latest_link = self.base_path / f"{nombre_modelo}_latest.pth"
+        latest_link = self.base_path / f"modelo_acciones_{version}.pth"
         if latest_link.exists():
             latest_link.unlink()
         try:
