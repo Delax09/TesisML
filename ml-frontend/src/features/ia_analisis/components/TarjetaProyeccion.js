@@ -1,5 +1,5 @@
 // src/features/ia_analisis/components/TarjetaProyeccion.js
-import React from 'react';
+import React, { useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import TrendingUpTwoToneIcon from '@mui/icons-material/TrendingUpTwoTone';
 import TrendingDownTwoToneIcon from '@mui/icons-material/TrendingDownTwoTone';
@@ -10,11 +10,33 @@ const TarjetaProyeccion = ({ datos, seleccionado, onToggle }) => {
     const theme = useTheme();
     const isDarkMode = theme.palette.mode === 'dark';
 
+    // NUEVA LÓGICA: Unificar historial y predicción por fecha
+    const chartData = useMemo(() => {
+    if (!datos || (!datos.historial && !datos.prediccion)) return [];
+    
+    const map = {};
+
+    // 1. Procesar historial
+    (datos.historial || []).forEach(p => {
+        const fecha = p.fecha || p.date;
+        map[fecha] = { fecha, precio: p.precio };
+    });
+
+    // 2. Procesar predicciones (IA)
+    (datos.prediccion || []).forEach(p => {
+        const fecha = p.fecha || p.date;
+        if (!map[fecha]) map[fecha] = { fecha };
+        map[fecha].precioEsperado = p.precioEsperado;
+    });
+
+    return Object.values(map).sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+
+}, [datos]);
+
     if (!datos || !datos.historial || !datos.prediccion) {
         return <Box sx={{ p: 3, textAlign: 'center' }}>Cargando datos del gráfico...</Box>;
     }
 
-    const chartData = [...datos.historial, ...datos.prediccion];
     const recomendacionTexto = String(datos.recomendacion || datos.tendencia || '').toUpperCase();
     
     // Determinación del estado
@@ -109,6 +131,11 @@ const TarjetaProyeccion = ({ datos, seleccionado, onToggle }) => {
                                 border: `1px solid ${theme.palette.divider}`,
                                 boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)'
                             }}
+                            // Formateamos para que se vea más profesional al pasar el mouse
+                            formatter={(value, name) => [
+                                `$${Number(value).toFixed(2)}`, 
+                                name === 'precio' ? 'Precio Real' : 'Predicción IA'
+                            ]}
                         />
                         <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '15px' }} />
                         
@@ -144,7 +171,6 @@ const TarjetaProyeccion = ({ datos, seleccionado, onToggle }) => {
                 display: 'flex', 
                 alignItems: 'flex-start', 
                 gap: 2,
-                // Mejora visual: Fondo suave con borde para evitar saturación en modo claro
                 bgcolor: alpha(colorBase, isDarkMode ? 0.15 : 0.08), 
                 color: isDarkMode ? theme.palette[colorKey].light : theme.palette[colorKey].dark,
                 border: '1px solid',
