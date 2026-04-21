@@ -1,3 +1,5 @@
+import pandas as pd
+from typing import List, Optional
 from app.ml.core.pipeline_base import extraer_y_procesar_empresa, preparar_datos, crear_dataloaders
 
 def preparar_datos_lstm(lista_dfs: List[pd.DataFrame], batch_size: int = 50):

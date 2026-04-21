@@ -1,3 +1,5 @@
+import pandas as pd
+from typing import List, Optional
 from app.ml.core.pipeline_base import extraer_y_procesar_empresa, preparar_datos, crear_dataloaders
 
 def extraer_y_procesar_empresa_cnn(id_empresa: int) -> Optional[pd.DataFrame]:
