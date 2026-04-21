@@ -19,7 +19,8 @@ def fusionar_datos_con_spark(df_precios_pandas: pd.DataFrame) -> pd.DataFrame:
     df_acciones = spark.createDataFrame(df_precios_pandas)
     
     # Obtener fecha mínima para optimizar la descarga
-    data_inicio = df_precios_pandas['Fecha'].min().strftime('%Y-%m-%d')
+    fecha_minima = pd.to_datetime(df_precios_pandas['Fecha'].min())
+    data_inicio = (fecha_minima - pd.Timedelta(days=60)).strftime('%Y-%m-%d')
     
     # 2. Descargar macroeconomía a Spark
     df_fedfunds = FredSparkClient.obtener_serie_spark("FEDFUNDS", start_date=data_inicio)

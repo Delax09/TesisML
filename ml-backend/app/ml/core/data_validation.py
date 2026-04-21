@@ -211,6 +211,12 @@ class DataValidator:
                 logger.warning("Dataset quedó vacío después de limpieza")
                 return None
 
+            # --- NUEVA LÍNEA DE SEGURIDAD (FALLBACK) ---
+            if 'FEDFUNDS' not in df_limpio.columns:
+                logger.warning("Columna FEDFUNDS no encontrada. Inyectando valor por defecto (0.0).")
+                df_limpio['FEDFUNDS'] = 0.0
+            # -------------------------------------------
+
             logger.debug(f"Dataset validado y limpio: {len(df_limpio)} filas, {len(df_limpio.columns)} columnas")
             return df_limpio
 
