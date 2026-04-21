@@ -127,7 +127,7 @@ def entrenar_modelo_individual(id_modelo: int, background_tasks: BackgroundTasks
         background_tasks.add_task(entrenar_pipeline_lstm, id_modelo=id_modelo)
         tipo = "LSTM/BiLSTM"
     elif version_modelo == 'v3':
-        background_tasks.add_task(entrenar_pipeline_cnn, id_modelo_especifico=id_modelo)
+        background_tasks.add_task(entrenar_pipeline_cnn, id_modelo=id_modelo)
         tipo = "CNN"
     else:
         raise HTTPException(status_code=400, detail=f"Versión de modelo no soportada: {version_modelo}")
