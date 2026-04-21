@@ -38,6 +38,7 @@ jobs:
             ACCESS_TOKEN_EXPIRE_MINUTES="60"
             ENVIRONMENT="${{ vars.ENVIRONMENT }}"
             FINNHUB_API_KEY="${{ secrets.FINNHUB_API_KEY }}"
+            CORS_ORIGINS='${{ vars.CORS_ORIGINS }}'
             EOF
             
             echo "Archivo .env generado exitosamente con ENVIRONMENT=${{ vars.ENVIRONMENT }}"

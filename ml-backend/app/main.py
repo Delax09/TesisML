@@ -102,12 +102,12 @@ app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(SlowAPIASGIMiddleware)
 
-# Configuración de CORS
+# Configuración de CORS dinámica y segura
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"], 
+    allow_origins=settings.CORS_ORIGINS, # ← Ahora usa la variable del .env
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"], # ← Métodos restringidos
     allow_headers=["*"],
 )
 
