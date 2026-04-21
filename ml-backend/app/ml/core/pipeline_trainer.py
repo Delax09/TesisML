@@ -88,7 +88,7 @@ class PipelineTrainer:
             early_stopping(-val_score, model)
 
             if early_stopping.detener:
-                self.logger.info("Early stopping activado", extra={"epoch": epoch+1, "mejor_score": early_stopping.mejor_score})
+                self.logger.info("Early stopping activado", extra={"epoch": epoch+1, "mejor_score": early_stopping.mejor_loss})
                 break
 
             mejor_modelo = early_stopping.mejores_pesos
