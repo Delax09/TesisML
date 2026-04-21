@@ -13,8 +13,22 @@ from app.ml.core.logger import configurar_logger
 from app.ml.core.metrics import MetricasNormalizadas
 from app.ml.core.validation import validacion_cruzada_k_fold
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, confusion_matrix, mean_absolute_error
-
 from app.ml.core.early_stopping import EarlyStopping
+
+class FocalLoss(nn.Module):
+    def __init__(self, gamma=2.0, pos_weight=None):
+        super().__init__()
+        self.gamma = gamma
+        self.pos_weight = pos_weight
+
+    def forward(self, inputs, targets):
+        bce_loss = nn.functional.binary_cross_entropy_with_logits(inputs, targets, reduction='none', pos_weight=self.pos_weight)
+        probs = torch.sigmoid(inputs)
+        
+        p_t = probs * targets + (1 - probs) * (1 - targets)
+        # Modulador focal: se centra en ejemplos difíciles
+        focal_loss = ((1 - p_t) ** self.gamma) * bce_loss
+        return focal_loss.mean()
 
 class PipelineTrainer:
     def __init__(self, architecture_name: str, log_file: str):
@@ -22,13 +36,14 @@ class PipelineTrainer:
         self.logger = configurar_logger(f"ML.Trainer.{architecture_name}", archivo_log=log_file)
 
     def ejecutar_entrenamiento(self, model, train_loader, val_loader, device, epochs=50, pos_weight_factor=2.0):
-        #Calcular pos_weight dinámicamente basado en datos de entrenamiento
+        # Calcular pos_weight dinámicamente
         pos_weight = self._calcular_pos_weight_dinamico(train_loader, device, pos_weight_factor)
+        
         criterion_reg = nn.HuberLoss(delta=0.01)
-        criterion_clf = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
-
-        #Optimizador con parámetros mejorados
-        optimizer = optim.AdamW(model.parameters(), lr=0.001, weight_decay=1e-4, betas=(0.9, 0.999))
+        criterion_clf = FocalLoss(gamma=2.0, pos_weight=pos_weight)
+        
+        
+        optimizer = optim.AdamW(model.parameters(), lr=0.001, weight_decay=1e-4)
 
         #Scheduler de LR para mejor convergencia
         scheduler = CosineAnnealingLR(optimizer, T_max=epochs, eta_min=1e-6)

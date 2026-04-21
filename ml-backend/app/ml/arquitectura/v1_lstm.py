@@ -3,17 +3,8 @@ import torch.nn as nn
 
 class ModeloLSTM_v1(nn.Module):
     def __init__(self, num_features: int, hidden_size: int = 64, num_layers: int = 2):
-        """
-        LSTM mejorado para predicción de precios.
-        
-        Args:
-            num_features: Número de indicadores técnicos
-            hidden_size: Dimensión del estado oculto (recomendado: 64-128)
-            num_layers: Número de capas LSTM apiladas
-        """
         super().__init__()
         
-        # Motor Temporal Multi-capa
         self.lstm = nn.LSTM(
             input_size=num_features, 
             hidden_size=hidden_size, 
@@ -22,51 +13,48 @@ class ModeloLSTM_v1(nn.Module):
             dropout=0.3 if num_layers > 1 else 0
         )
         
-        # Batch Norm después de LSTM
+        #Capa de Atención Temporal
+        self.attention = nn.Sequential(
+            nn.Linear(hidden_size, hidden_size),
+            nn.Tanh(),
+            nn.Linear(hidden_size, 1)
+        )
+        
         self.bn1 = nn.BatchNorm1d(hidden_size)
         self.dropout1 = nn.Dropout(0.4)
         
-        # Capas densas progresivas
         self.fc1 = nn.Linear(hidden_size, hidden_size // 2)
         self.bn2 = nn.BatchNorm1d(hidden_size // 2)
         self.relu = nn.ReLU()
         self.dropout2 = nn.Dropout(0.3)
         
-        self.fc2 = nn.Linear(hidden_size // 2, 32)
-        self.bn3 = nn.BatchNorm1d(32)
+        self.fc2 = nn.Linear(hidden_size // 2, hidden_size // 4)
+        self.bn3 = nn.BatchNorm1d(hidden_size // 4)
         
-        # Cabezas Multi-Tarea
-        self.head_regression = nn.Linear(32, 1)
-        self.head_classification = nn.Linear(32, 1)
-        
+        self.cabeza_regresion = nn.Linear(hidden_size // 4, 1)     
+        self.cabeza_clasificacion = nn.Linear(hidden_size // 4, 1)
+
         self._init_weights()
-    
+
     def _init_weights(self):
-        """Inicialización robusta para convergencia más estable"""
         for name, param in self.named_parameters():
             if 'weight' in name:
-                if param.dim() >= 2:  # Para tensores 2D+ (Linear, LSTM)
-                    if 'lstm' in name:
-                        nn.init.orthogonal_(param)
-                    else:
-                        nn.init.xavier_uniform_(param)
-                elif 'bn' in name: 
-                    # CRÍTICO: El multiplicador Gamma del BatchNorm DEBE iniciar en 1
-                    nn.init.ones_(param)
-                else:
-                    # Otros pesos 1D genéricos
-                    nn.init.normal_(param, 0, 0.01)
+                if param.dim() >= 2:  
+                    if 'lstm' in name: nn.init.orthogonal_(param)
+                    else: nn.init.xavier_uniform_(param)
+                elif 'bn' in name: nn.init.ones_(param)
+                else: nn.init.normal_(param, 0, 0.01)
             elif 'bias' in name:
-                # Los sesgos inician en 0
                 nn.init.constant_(param, 0.0)
     
     def forward(self, x):
-        lstm_out, _ = self.lstm(x)
+        lstm_out, _ = self.lstm(x) # lstm_out: (batch, seq_len, hidden)
         
-        # Tomar solo la última posición temporal
-        x = lstm_out[:, -1, :]
+        #Cálculo de Atención
+        attn_weights = torch.softmax(self.attention(lstm_out), dim=1) # Qué días importan
+        context_vector = torch.sum(attn_weights * lstm_out, dim=1)    # Resumen enfocado
         
-        x = self.bn1(x)
+        x = self.bn1(context_vector)
         x = self.dropout1(x)
         
         x = self.fc1(x)
@@ -78,10 +66,9 @@ class ModeloLSTM_v1(nn.Module):
         x = self.bn3(x)
         x = self.relu(x)
         
-        reg_pred = self.head_regression(x)
-        clf_pred = self.head_classification(x)
-        
-        return reg_pred, clf_pred
+        p_reg = self.cabeza_regresion(x)
+        l_clf = self.cabeza_clasificacion(x)
+        return p_reg, l_clf
 
 def obtener_modelo_v1(dias_pasados, num_features, hidden_size=64, num_layers=2):
     return ModeloLSTM_v1(num_features, hidden_size, num_layers)

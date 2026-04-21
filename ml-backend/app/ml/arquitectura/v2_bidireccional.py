@@ -2,65 +2,78 @@ import torch
 import torch.nn as nn
 
 class ModeloBidireccional_v2(nn.Module):
-    def __init__(self, num_features):
-        super(ModeloBidireccional_v2, self).__init__()
+    def __init__(self, num_features: int, hidden_size: int = 64, num_layers: int = 2):
+        super().__init__()
         
-        #Motor Temporal Bidireccional
-        self.lstm = nn.LSTM(input_size=num_features, hidden_size=32, batch_first=True, bidirectional=True)
+        #Aumentamos num_layers a 2 y hidden_size a 64
+        self.lstm = nn.LSTM(
+            input_size=num_features, 
+            hidden_size=hidden_size, 
+            num_layers=num_layers,
+            batch_first=True, 
+            bidirectional=True,
+            dropout=0.3 if num_layers > 1 else 0
+        )
         
-        #ESTABILIZADOR 1: Es 64 porque (32 neuronas de ida + 32 de vuelta = 64)
-        self.bn1 = nn.BatchNorm1d(64)
-        self.dropout = nn.Dropout(0.4)
+        # Al ser bidireccional, la salida de la LSTM es el doble (hidden_size * 2)
+        lstm_out_size = hidden_size * 2
         
-        #Capa de Razonamiento
-        self.fc1 = nn.Linear(64, 16) 
+        #Capa de Atención Temporal para BiLSTM
+        self.attention = nn.Sequential(
+            nn.Linear(lstm_out_size, lstm_out_size),
+            nn.Tanh(),
+            nn.Linear(lstm_out_size, 1)
+        )
         
-        #ESTABILIZADOR 2
-        self.bn2 = nn.BatchNorm1d(16)
+        self.bn1 = nn.BatchNorm1d(lstm_out_size)
+        self.dropout1 = nn.Dropout(0.4)
+        
+        self.fc1 = nn.Linear(lstm_out_size, hidden_size) 
+        self.bn2 = nn.BatchNorm1d(hidden_size)
         self.relu = nn.ReLU()
+        self.dropout2 = nn.Dropout(0.3)
+
+        self.fc2 = nn.Linear(hidden_size, hidden_size // 2)
+        self.bn3 = nn.BatchNorm1d(hidden_size // 2)
         
-        #Cabezas Multi-Tarea
-        self.cabeza_regresion = nn.Linear(16, 1)
-        self.cabeza_clasificacion = nn.Linear(16, 1)
+        self.cabeza_regresion = nn.Linear(hidden_size // 2, 1)
+        self.cabeza_clasificacion = nn.Linear(hidden_size // 2, 1)
 
         self._init_weights()
 
     def _init_weights(self):
-        """Inicialización robusta para convergencia más estable"""
         for name, param in self.named_parameters():
             if 'weight' in name:
-                if param.dim() >= 2:  # Para tensores 2D+ (Linear, LSTM)
-                    if 'lstm' in name:
-                        nn.init.orthogonal_(param)
-                    else:
-                        nn.init.xavier_uniform_(param)
-                elif 'bn' in name: 
-                    # CRÍTICO: El multiplicador Gamma del BatchNorm DEBE iniciar en 1
-                    nn.init.ones_(param)
-                else:
-                    # Otros pesos 1D genéricos
-                    nn.init.normal_(param, 0, 0.01)
+                if param.dim() >= 2:
+                    if 'lstm' in name: nn.init.orthogonal_(param)
+                    else: nn.init.xavier_uniform_(param)
+                elif 'bn' in name: nn.init.ones_(param)
+                else: nn.init.normal_(param, 0, 0.01)
             elif 'bias' in name:
-                # Los sesgos inician en 0
                 nn.init.constant_(param, 0.0)
 
     def forward(self, x):
         lstm_out, _ = self.lstm(x)
         
-        x = lstm_out[:, -1, :]
+        #Cálculo de Atención Bidireccional
+        attn_weights = torch.softmax(self.attention(lstm_out), dim=1) 
+        context_vector = torch.sum(attn_weights * lstm_out, dim=1)    
         
-        # Aplicamos la estabilización
-        x = self.bn1(x)
-        x = self.dropout(x)
+        x = self.bn1(context_vector)
+        x = self.dropout1(x)
         
         x = self.fc1(x)
         x = self.bn2(x)
         x = self.relu(x)
+        x = self.dropout2(x)
+
+        x = self.fc2(x)
+        x = self.bn3(x)
+        x = self.relu(x)
         
-        precio_predicho = self.cabeza_regresion(x)
-        direccion_predicha = self.cabeza_clasificacion(x)
-        
-        return precio_predicho, direccion_predicha
+        p_reg = self.cabeza_regresion(x)
+        l_clf = self.cabeza_clasificacion(x)
+        return p_reg, l_clf
 
 def obtener_modelo_v2(dias_pasados, num_features):
     return ModeloBidireccional_v2(num_features)
