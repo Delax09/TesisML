@@ -6,19 +6,17 @@ import {
     Dialog, DialogTitle, DialogContent, IconButton // AÑADIDO: Componentes de Modal
 } from '@mui/material';
 
-// Context & Hooks
-import { useAuth } from '../../../context';
-import { useDashboard } from '../../../features/dashboard/hooks/useDashboard';
-import PageHeader from '../../../components/PageHeader';
+import { useAuth } from 'context';
 
-// Componentes extraídos
-import KpiPanel from '../../../features/dashboard/components/KpiPanel';
-import TopPrediccionesList from '../../../features/dashboard/components/TopPrediccionesList';
-import GraficoSectores from '../../../features/dashboard/components/GraficoSectores';
-
-// AÑADIDO: Componentes para el Modal
-import PrecioChart from '../../../features/mercado/components/PrecioChart';
-import ResultadoPanel from '../../../features/ia_analisis/components/ResultadoPanel';
+import { PageHeader } from 'components';
+import { 
+    useDashboard,
+    KpiPanel,
+    TopPrediccionesList,
+    GraficoSectores,
+    PrecioChart,
+    ResultadoPanel
+ } from 'features'; 
 
 // Iconos
 import HomeIcon from '@mui/icons-material/Home';

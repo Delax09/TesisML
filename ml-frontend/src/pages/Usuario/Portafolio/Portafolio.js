@@ -1,11 +1,11 @@
 // src/pages/Usuario/Portafolio/Portafolio.js
 import React from 'react';
 import { Box, Paper, Grid, CircularProgress } from '@mui/material';
-import { useAuth } from '../../../context'; // Ajustar ruta
-import { usePortafolio } from '../../../features/portafolio/hooks/usePortafolio';
-import ListaPortafolio from '../../../features/portafolio/components/ListaPortafolio';
-import PageHeader from '../../../components/PageHeader';
+import { useAuth } from 'context'; 
+import { usePortafolio, ListaPortafolio } from 'features';
+import { PageHeader } from 'components';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
+
 
 export default function Portafolio() {
   const { usuario } = useAuth();

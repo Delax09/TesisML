@@ -3,13 +3,13 @@ import React, { useState, useCallback, useTransition } from 'react';
 import { Box, Typography, Paper, Grid, Alert, CircularProgress, Collapse } from '@mui/material'; // <-- Agregamos Collapse
 import AnalyticsIcon from '@mui/icons-material/Analytics';
 
-// Importaciones de features refactorizadas
-import { useEmpresas } from '../../../features/empresas/hooks/useEmpresas';
-import EmpresaTable from '../../../features/empresas/components/EmpresaTable';
-import PrecioChart from '../../../features/mercado/components/PrecioChart';
-import ResultadoPanel from '../../../features/ia_analisis/components/ResultadoPanel';
-import ErrorBoundary from '../../../components/ErrorBoundary';
-import PageHeader from '../../../components/PageHeader';
+import { ErrorBoundary, PageHeader } from 'components'; 
+import { 
+    useEmpresas,
+    EmpresaTable,
+    PrecioChart,
+    ResultadoPanel
+} from 'features'; 
 
 export default function Mercado() {
   const [empresaSeleccionada, setEmpresaSeleccionada] = useState({ id: null, nombre: "" });
