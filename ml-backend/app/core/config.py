@@ -4,6 +4,7 @@ Carga variables de entorno desde el archivo .env
 """
 
 from pydantic_settings import BaseSettings
+from pydantic import ConfigDict
 from typing import List
 
 
@@ -30,11 +31,13 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
 
     FINNHUB_API_KEY: str
-
-    class Config:
-        """Configuración de Pydantic Settings."""
-        env_file = ".env"
-        env_file_encoding = "utf-8"
+    FRED_API_KEY: str
+    # Pydantic v2 config
+    model_config = ConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore"  # Ignorar variables de entorno no definidas
+    )
 
 
 # Instancia global de configuración

@@ -198,7 +198,17 @@ class DataValidator:
             # Ejecutar el cruce de datos con la macroeconomía usando Spark
             if fusionar_datos_con_spark is not None:
                 logger.info("Enriqueciendo dataset con Spark (FRED API)...")
-                df = fusionar_datos_con_spark(df)
+                df_enriquecido = fusionar_datos_con_spark(df)
+                
+                # Verificar si el enriquecimiento fue exitoso
+                if df_enriquecido is not None and not df_enriquecido.empty and 'FEDFUNDS' in df_enriquecido.columns:
+                    df = df_enriquecido
+                    logger.info("Enriquecimiento con Spark exitoso")
+                elif df_enriquecido is not None and not df_enriquecido.empty:
+                    df = df_enriquecido
+                    logger.warning("Enriquecimiento parcial: DataFrame retornado pero sin columna FEDFUNDS")
+                else:
+                    logger.warning("Enriquecimiento fallido: Usando datos base sin FRED")
             else:
                 logger.warning("Módulo de Spark no disponible. Continuando con datos base.")
             # -------------------------
@@ -212,8 +222,10 @@ class DataValidator:
                 return None
 
             # --- NUEVA LÍNEA DE SEGURIDAD (FALLBACK) ---
+            # Si FEDFUNDS no existe, inyectar valor por defecto (0.0)
+            # Esto asegura compatibilidad con MLEngine.FEATURES que incluye 'FEDFUNDS'
             if 'FEDFUNDS' not in df_limpio.columns:
-                logger.warning("Columna FEDFUNDS no encontrada. Inyectando valor por defecto (0.0).")
+                logger.warning("Columna FEDFUNDS no encontrada. Inyectando valores por defecto (0.0).")
                 df_limpio['FEDFUNDS'] = 0.0
             # -------------------------------------------
 
@@ -221,5 +233,5 @@ class DataValidator:
             return df_limpio
 
         except Exception as e:
-            logger.error(f"Error al validar y limpiar dataset: {str(e)}")
+            logger.error(f"Error al validar y limpiar dataset: {str(e)}", exc_info=True)
             return None
