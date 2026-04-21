@@ -1,10 +1,9 @@
 // src/pages/Admin/Empresas/Empresas.js
 import React from 'react';
-import { useEmpresas } from '../../../features/empresas/hooks/useEmpresas';
-import EmpresaTable from '../../../features/empresas/components/EmpresaTable';
 import { Box, Paper, Alert } from '@mui/material';
 import BusinessIcon from '@mui/icons-material/Business'; // Ícono para el Header
-import PageHeader from '../../../components/PageHeader'; // Importamos tu componente
+import { PageHeader } from 'components'; // Importamos tu componente
+import { useEmpresas, EmpresaTable } from 'features';
 
 const AdminEmpresas = () => {
   const { empresas, sectores, cargando } = useEmpresas();

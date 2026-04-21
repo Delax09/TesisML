@@ -2,13 +2,16 @@ import React from 'react';
 import { Box, Grid } from '@mui/material';
 import SettingsSuggestIcon from '@mui/icons-material/SettingsSuggest';
 
-// Hook
-import { useAccesosIA } from '../../../features/admin/hooks/useAccesosIA';
-
 // Componentes
-import PageHeader from '../../../components/PageHeader';
-import UsuarioList from '../../../features/admin/components/UsuarioList';
-import ModelosPanel from '../../../features/admin/components/ModelosPanel';
+import {
+  PageHeader
+} from 'components';
+
+import { 
+  useAccesosIA,
+  UsuarioList, 
+  ModelosPanel 
+} from 'features';
 
 const AccesosIA = () => {
   const {

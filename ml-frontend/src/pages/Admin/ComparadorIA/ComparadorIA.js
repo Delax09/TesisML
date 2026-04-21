@@ -1,9 +1,9 @@
 // src/pages/Admin/ComparadorIA/ComparadorIA.js
 import React from 'react';
-import ComparadorIAComponent from '../../../features/ia_analisis/components/ComparadorIA';
+import {ComparadorIAComponent} from 'features';
 import { Box } from '@mui/material';
 import AnalyticsIcon from '@mui/icons-material/Analytics'; // Ícono para el Header
-import PageHeader from '../../../components/PageHeader'; // Importamos tu componente
+import {PageHeader} from 'components'; // Importamos tu componente
 
 const ComparadorIAPage = () => {
   return (
