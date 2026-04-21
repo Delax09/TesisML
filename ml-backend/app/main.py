@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 import os
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from app.core.config import settings
 
 # Importaciones de Caché (Redis e In-Memory)
@@ -97,12 +98,40 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# --- NUEVO MIDDLEWARE: CABECERAS DE SEGURIDAD (ASGI PURO) ---
+
+# --- MIDDLEWARE DE PROTECCIÓN ANTI-CSRF (ASGI PURO) ---
+class CSRFProtectionMiddleware:
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        # Si no es una petición HTTP (ej. WebSockets), dejamos pasar
+        if scope["type"] != "http":
+            return await self.app(scope, receive, send)
+
+        # Instanciamos Request SOLO con el scope para leer headers/cookies 
+        # sin interferir con el cuerpo (body) de la petición original
+        request = Request(scope)
+
+        if request.method in ["POST", "PUT", "DELETE", "PATCH"]:
+            if request.url.path != "/api/v1/auth/login":
+                csrf_cookie = request.cookies.get("csrf_token")
+                csrf_header = request.headers.get("x-csrf-token")
+
+                if not csrf_cookie or not csrf_header or csrf_cookie != csrf_header:
+                    response = JSONResponse(
+                        status_code=403,
+                        content={"detail": "CSRF token inválido o ausente. Petición rechazada por seguridad."}
+                    )
+                    # Retornamos la respuesta de error directamente
+                    return await response(scope, receive, send)
+
+        # Si todo está bien, continuamos con la aplicación
+        return await self.app(scope, receive, send)
+
+
+# --- MIDDLEWARE: CABECERAS DE SEGURIDAD (ASGI PURO) ---
 class SecurityHeadersMiddleware:
-    """
-    Middleware ASGI puro para inyectar cabeceras de seguridad HTTP
-    sin interferir con SlowAPI ni CORSMiddleware.
-    """
     def __init__(self, app):
         self.app = app
 
@@ -113,7 +142,6 @@ class SecurityHeadersMiddleware:
         async def send_wrapper(message):
             if message["type"] == "http.response.start":
                 headers = message.setdefault("headers", [])
-                # En ASGI, las cabeceras deben ser tuplas de bytes en minúsculas
                 headers.append((b"strict-transport-security", b"max-age=31536000; includeSubDomains"))
                 headers.append((b"x-content-type-options", b"nosniff"))
                 headers.append((b"x-frame-options", b"DENY"))
@@ -125,11 +153,7 @@ class SecurityHeadersMiddleware:
 
 # Agregar el Middleware de Seguridad
 app.add_middleware(SecurityHeadersMiddleware)
-
-# Configuración de límites de peticiones (Seguridad)
-app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
-app.add_middleware(SlowAPIASGIMiddleware)
+app.add_middleware(CSRFProtectionMiddleware)
 
 # Configuración de límites de peticiones (Seguridad)
 app.state.limiter = limiter

@@ -18,6 +18,7 @@ from app.utils.security import create_access_token, verify_password
 from app.core.limiter import limiter
 from app.utils.deps import obtener_usuario_actual
 from app.templates import template_recuperacion
+import secrets
 
 router = APIRouter(prefix="/api/v1/auth", tags=["Autenticación"])
 
@@ -51,6 +52,16 @@ def login(response: Response, form_data: OAuth2PasswordRequestForm = Depends(), 
         key="access_token",
         value=f"Bearer {access_token}",
         httponly=True,
+        samesite="lax",
+        max_age=max_age_seconds,
+        secure=is_production
+    )
+
+    csrf_token = secrets.token_hex(32) # Genera un token aleatorio seguro
+    response.set_cookie(
+        key="csrf_token",
+        value=csrf_token,
+        httponly=False, # IMPORTANTE: Debe ser False para que React lo pueda leer
         samesite="lax",
         max_age=max_age_seconds,
         secure=is_production
@@ -91,6 +102,15 @@ def obtener_perfil_actual(response: Response, usuario_actual: Usuario = Depends(
         secure=is_production
     )
     # --------------------------------------------
+    csrf_token = secrets.token_hex(32) # Genera un token aleatorio seguro
+    response.set_cookie(
+        key="csrf_token",
+        value=csrf_token,
+        httponly=False, # IMPORTANTE: Debe ser False para que React lo pueda leer
+        samesite="lax",
+        max_age=max_age_seconds,
+        secure=is_production
+    )
 
     nombre_rol_db = usuario_actual.rol.NombreRol.lower() if usuario_actual.rol else 'usuario'
     rol_estandarizado = 'admin' if 'admin' in nombre_rol_db else 'usuario'
