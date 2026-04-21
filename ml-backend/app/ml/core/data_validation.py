@@ -5,7 +5,6 @@ import pandas as pd
 from typing import Dict, Any, Optional
 import logging
 from sklearn.preprocessing import MinMaxScaler
-from app.ml.core.spark_processor import fusionar_datos_con_spark
 
 
 logger = logging.getLogger(__name__)

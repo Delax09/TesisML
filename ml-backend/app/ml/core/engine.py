@@ -35,7 +35,6 @@ class MLEngine:
         'OBV', 'CMF', 'TRIX', 'Force_Index', 'ADX', 'CCI',
         'Aroon_Up', 'Aroon_Down', 'Ultimate_Oscillator',
         'Keltner_Channel', 'VWAP', 'Z_Score', 'Ichimoku_Upper', 'Ichimoku_Lower', 
-        'FEDFUNDS'
     ]
 
     def __init__(self, version="v1"):
@@ -112,7 +111,6 @@ class MLEngine:
             "BB_Lower": float(ultima_fila.get("BB_Lower", 0)),
             "Volatilidad": float(ultima_fila.get("Volatilidad_10d", 0)),
             "ProbAlcista": float(probabilidad_alcista * 100),
-            "FEDFUNDS": float(ultima_fila.get("FEDFUNDS", 0))
         }
 
         return {
