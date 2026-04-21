@@ -18,13 +18,11 @@ function PrecioChart({ empresaId, nombreEmpresa }) {
     const seriesRefs = useRef({});
 
     const botonesRango = [
-        { label: '1 día', v: '1D' }, { label: '5 días', v: '5D' },
-        { label: '1 mes', v: '1M' }, { label: '6 meses', v: '6M' },
-        { label: '1 año', v: '1Y' }, { label: '5 años', v: '5Y' },
-        { label: 'Todo', v: 'TODO' }
+        { label: '1D', v: '1D' }, { label: '5D', v: '5D' },
+        { label: '1M', v: '1M' }, { label: '6M', v: '6M' },
+        { label: '1Y', v: '1Y' }, { label: '6Y', v: 'TODO' }
     ];
 
-    // INICIALIZACIÓN DEL GRÁFICO (Solo 1 vez por ciclo de vida)
     useEffect(() => {
         if (!chartContainerRef.current) return;
 
@@ -41,11 +39,10 @@ function PrecioChart({ empresaId, nombreEmpresa }) {
             rightPriceScale: { borderColor: theme.palette.divider },
             timeScale: {
                 borderColor: theme.palette.divider,
-                timeVisible: true,     
+                timeVisible: true,
                 secondsVisible: false,
-                shiftVisibleRangeOnNewBar: true, 
             },
-            autoSize: true,
+            autoSize: true, // Esto es vital para que responda al contenedor flexible
         });
         
         chartRef.current = chart;
@@ -55,29 +52,18 @@ function PrecioChart({ empresaId, nombreEmpresa }) {
                 chartRef.current.remove();
                 chartRef.current = null;
             }
-            // CRÍTICO: Limpiar las referencias de las series si el gráfico muere
             seriesRefs.current = {}; 
         };
-    // CRÍTICO: Dependemos de los colores específicos (strings), NO del objeto 'theme' completo
     }, [theme.palette.text.secondary, theme.palette.divider]);
 
-    // INYECCIÓN DE DATOS Y RENDERIZADO
     useEffect(() => {
         if (!chartRef.current || !datosFiltrados || datosFiltrados.length === 0) return;
 
         const chart = chartRef.current;
         const mapTime = (d) => Math.floor(d.tiempoMs / 1000);
 
-        // Limpieza ultra-segura de series anteriores
         Object.values(seriesRefs.current).forEach(serie => {
-            if (serie) {
-                try {
-                    // Try-catch previene colapsos si la serie ya no existe en el DOM
-                    chart.removeSeries(serie);
-                } catch (error) {
-                    console.warn("Serie fantasma ignorada al renderizar.");
-                }
-            }
+            if (serie) { try { chart.removeSeries(serie); } catch (e) {} }
         });
         seriesRefs.current = {}; 
 
@@ -94,18 +80,16 @@ function PrecioChart({ empresaId, nombreEmpresa }) {
                 close: Number(d.PrecioCierre),
             })));
             seriesRefs.current.principal = serieVelas;
-
-            const serieSMA = chart.addSeries(LineSeries, { color: '#ff9800', lineWidth: 2, lineStyle: 2 });
-            serieSMA.setData(datosFiltrados.filter(d => d.SMA_20 != null).map(d => ({ time: mapTime(d), value: Number(d.SMA_20) })));
-            seriesRefs.current.sma = serieSMA;
-
-            const serieBandaSup = chart.addSeries(LineSeries, { color: '#f44336', lineWidth: 1, opacity: 0.8 });
-            serieBandaSup.setData(datosFiltrados.filter(d => d.Banda_Superior != null).map(d => ({ time: mapTime(d), value: Number(d.Banda_Superior) })));
-            seriesRefs.current.bandaSup = serieBandaSup;
-
-            const serieBandaInf = chart.addSeries(LineSeries, { color: '#4caf50', lineWidth: 1, opacity: 0.8 });
-            serieBandaInf.setData(datosFiltrados.filter(d => d.Banda_Inferior != null).map(d => ({ time: mapTime(d), value: Number(d.Banda_Inferior) })));
-            seriesRefs.current.bandaInf = serieBandaInf;
+            
+            // Medias y Bandas
+            const addLine = (key, color, dataKey, style = 1) => {
+                const s = chart.addSeries(LineSeries, { color, lineWidth: style === 2 ? 2 : 1, lineStyle: style });
+                s.setData(datosFiltrados.filter(d => d[dataKey] != null).map(d => ({ time: mapTime(d), value: Number(d[dataKey]) })));
+                seriesRefs.current[key] = s;
+            };
+            addLine('sma', '#ff9800', 'SMA_20', 2);
+            addLine('bandaSup', '#f44336', 'Banda_Superior');
+            addLine('bandaInf', '#4caf50', 'Banda_Inferior');
         } else {
             const serieArea = chart.addSeries(AreaSeries, {
                 lineColor: theme.palette.primary.main,
@@ -118,96 +102,77 @@ function PrecioChart({ empresaId, nombreEmpresa }) {
         }
 
         aplicarZoomNativo(rango, datosFiltrados);
-
     }, [datosFiltrados, modoTecnico, rango, theme.palette.primary.main]); 
 
-    // LÓGICA DEL ZOOM NATIVO
     const aplicarZoomNativo = (nuevoRango, dataArray) => {
         if (!chartRef.current || !dataArray || dataArray.length === 0) return;
         const timeScale = chartRef.current.timeScale();
-
         const primerDato = dataArray[0];
         const ultimoDato = dataArray[dataArray.length - 1];
-        
         const fromTimeMin = Math.floor(primerDato.tiempoMs / 1000);
         const toTimeMax = Math.floor(ultimoDato.tiempoMs / 1000);
         const diasSegundos = 24 * 60 * 60;
 
         if (nuevoRango === 'TODO') {
-            timeScale.setVisibleRange({ 
-                from: fromTimeMin, 
-                to: toTimeMax + diasSegundos 
-            });
+            timeScale.setVisibleRange({ from: fromTimeMin, to: toTimeMax + diasSegundos });
             return;
         }
 
         let fromTime = toTimeMax;
-        
         switch(nuevoRango) {
             case '1D': fromTime -= 1 * diasSegundos; break;
             case '5D': fromTime -= 5 * diasSegundos; break;
             case '1M': fromTime -= 30 * diasSegundos; break;
             case '6M': fromTime -= 180 * diasSegundos; break;
             case '1Y': fromTime -= 365 * diasSegundos; break;
-            case '5Y': fromTime -= 1825 * diasSegundos; break;
-            default: break;
+            default: fromTime -= 180 * diasSegundos;
         }
-
-        const startRango = fromTime < fromTimeMin ? fromTimeMin : fromTime;
-        timeScale.setVisibleRange({ from: startRango, to: toTimeMax + diasSegundos });
+        timeScale.setVisibleRange({ from: Math.max(fromTime, fromTimeMin), to: toTimeMax + diasSegundos });
     };
 
     return (
-        <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%' }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%', overflow: 'hidden' }}>
+            {/* Header: Tamaño fijo basado en contenido */}
             <Box sx={{ 
+                flex: '0 0 auto',
                 display: 'flex', justifyContent: 'space-between', alignItems: 'center', 
-                flexWrap: { xs: 'wrap', md: 'nowrap' }, gap: 2, mb: 3 
+                gap: 1, mb: 1.5 
             }}>
                 <Box>
-                    <Typography variant="h6" fontWeight="bold" color="primary">
+                    <Typography variant="subtitle1" fontWeight="bold" color="primary" noWrap>
                         {nombreEmpresa || 'Cargando...'}
                     </Typography>
-                    
-                    <Box sx={{ display: 'flex', gap: 2 }}>
-                        <FormControlLabel
-                            control={
-                                <Switch size="small" checked={modoTecnico} onChange={(e) => setModoTecnico(e.target.checked)} color="secondary" />
-                            }
-                            label={<Typography variant="caption" color="text.secondary">Análisis Técnico (Velas + Bollinger)</Typography>}
-                        />
-                    </Box>
+                    <FormControlLabel
+                        sx={{ ml: 0 }}
+                        control={<Switch size="small" checked={modoTecnico} onChange={(e) => setModoTecnico(e.target.checked)} color="secondary" />}
+                        label={<Typography variant="caption" color="text.secondary">Análisis Técnico</Typography>}
+                    />
                 </Box>
 
-                <ToggleButtonGroup
-                    value={rango} 
-                    exclusive 
-                    onChange={handleCambioRango} 
-                    size="small" 
-                    color="primary"
-                >
+                <ToggleButtonGroup value={rango} exclusive onChange={handleCambioRango} size="small" color="primary">
                     {botonesRango.map((b) => (
-                        <ToggleButton key={b.v} value={b.v} sx={{ px: { xs: 1, sm: 2 }, fontSize: '0.75rem' }}>
+                        <ToggleButton key={b.v} value={b.v} sx={{ px: 1, py: 0.5, fontSize: '0.65rem' }}>
                             {b.label}
                         </ToggleButton>
                     ))}
                 </ToggleButtonGroup>
             </Box>
 
-            <Box sx={{ width: '100%', flexGrow: 1, minHeight: 400, position: 'relative' }}>
-                {!empresaId && (
-                    <Box sx={{ position: 'absolute', inset: 0, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                        <Typography color="text.secondary">Selecciona una empresa para ver su historial</Typography>
-                    </Box>
-                )}
-                
+            {/* Contenedor del Gráfico: Ocupa el 100% del resto del Paper sin desbordar */}
+            <Box sx={{ 
+                flex: '1 1 auto', 
+                width: '100%', 
+                position: 'relative',
+                minHeight: 0 // CRÍTICO: Permite que el contenedor se encoja dentro del modal
+            }}>
                 {empresaId && cargando && (
-                    <Box sx={{ position: 'absolute', inset: 0, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 2, zIndex: 10 }}>
+                    <Box sx={{ position: 'absolute', inset: 0, display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 10, bgcolor: 'rgba(255,255,255,0.05)' }}>
                         <CircularProgress size={24} />
-                        <Typography variant="body2">Procesando datos...</Typography>
                     </Box>
                 )}
                 
-                <Box ref={chartContainerRef} sx={{ width: '100%', height: '100%', position: 'absolute', inset: 0 }} />
+                {/* El Canvas se monta aquí y llena exactamente el área sobrante */}
+                <Box ref={chartContainerRef} sx={{ position: 'absolute', inset: 0 }} />
             </Box>
         </Box>
     );
