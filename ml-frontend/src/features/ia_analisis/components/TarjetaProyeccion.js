@@ -87,9 +87,9 @@ const TarjetaProyeccion = ({ datos, seleccionado, onToggle }) => {
                         disableRipple
                     />
                     <Typography variant="h6" fontWeight="800" color="text.primary" sx={{ letterSpacing: '-0.5px' }}>
-                        {datos.simbolo}
+                        {datos.empresa}
                         <Box component="span" sx={{ ml: 1, fontWeight: 500, fontSize: '0.85rem', color: 'text.secondary' }}>
-                            {datos.empresa}
+                            {datos.simbolo}
                         </Box>
                     </Typography>
                 </Box>
