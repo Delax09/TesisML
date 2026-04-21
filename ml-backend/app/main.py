@@ -151,14 +151,19 @@ class SecurityHeadersMiddleware:
 
         await self.app(scope, receive, send_wrapper)
 
-# Agregar el Middleware de Seguridad
-app.add_middleware(SecurityHeadersMiddleware)
-app.add_middleware(CSRFProtectionMiddleware)
+
 
 # Configuración de límites de peticiones (Seguridad)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(SlowAPIASGIMiddleware)
+
+if settings.ENVIRONMENT != "development":
+    print("🔒 Modo Producción: Activando middlewares de seguridad (CSRF, CSP, HSTS)...")
+    app.add_middleware(SecurityHeadersMiddleware)
+    app.add_middleware(CSRFProtectionMiddleware)
+else:
+    print("🔓 Modo Desarrollo: Middlewares de seguridad estrictos desactivados (Swagger UI habilitado).")
 
 # Configuración de CORS dinámica y segura
 app.add_middleware(
