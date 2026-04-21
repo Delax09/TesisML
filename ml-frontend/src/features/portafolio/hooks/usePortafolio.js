@@ -1,100 +1,89 @@
 // src/features/portafolio/hooks/usePortafolio.js
-import { useState, useEffect, useCallback } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { empresaService, portafolioService } from '../../../services'; // Ajusta la ruta a tu config global de API si es necesario
+import { empresaService, portafolioService } from '../../../services';
 
 export const usePortafolio = (usuarioId) => {
-  const [empresasDisponibles, setEmpresasDisponibles] = useState([]);
-  const [misEmpresas, setMisEmpresas] = useState([]);
-  const [sectoresDisponibles, setSectoresDisponibles] = useState([]);
-  const [cargando, setCargando] = useState(true);
-  const [procesandoMasivo, setProcesandoMasivo] = useState(false);
+  const queryClient = useQueryClient();
 
-  const cargarDatos = useCallback(async () => {
-    if (!usuarioId) return;
-    try {
-      setCargando(true);
-      const dataEmpresas = await empresaService.obtenerEmpresasConSectores();
-      const todosLosPortafolios = await portafolioService.obtenerTodos();
-      
-      const misConexiones = todosLosPortafolios.filter(p => p.IdUsuario === usuarioId && p.Activo !== false);
+  // 1. Obtención de datos declarativa y en caché con React Query
+  const { data, isLoading: cargando } = useQuery({
+    queryKey: ['portafolioDatos', usuarioId],
+    queryFn: async () => {
+      // Cargamos ambos servicios en paralelo para mayor velocidad
+      const [dataEmpresas, todosLosPortafolios] = await Promise.all([
+        empresaService.obtenerEmpresasConSectores(),
+        portafolioService.obtenerTodos()
+      ]);
+      return { dataEmpresas, todosLosPortafolios };
+    },
+    enabled: !!usuarioId, // Solo se ejecuta si hay un usuarioId válido
+  });
 
-      const enPortafolio = [];
-      const fueraDePortafolio = [];
-      const sectoresSet = new Set(); 
+  // 2. Derivación del estado basada en la caché (evita usar múltiples useState y efectos)
+  let misEmpresas = [];
+  let empresasDisponibles = [];
+  let sectoresDisponibles = [];
 
-      dataEmpresas.empresas.forEach((empresa) => {
-        const conexion = misConexiones.find((p) => p.IdEmpresa === empresa.IdEmpresa);
-        if (conexion) {
-          enPortafolio.push({ ...empresa, IdPortafolio: conexion.IdPortafolio });
-        } else {
-          fueraDePortafolio.push(empresa);
-          sectoresSet.add(empresa.NombreSector); 
-        }
-      });
+  if (data) {
+    const misConexiones = data.todosLosPortafolios.filter(p => p.IdUsuario === usuarioId && p.Activo !== false);
+    const sectoresSet = new Set();
 
-      setMisEmpresas(enPortafolio);
-      setEmpresasDisponibles(fueraDePortafolio);
-      setSectoresDisponibles(Array.from(sectoresSet).sort()); 
-    } catch (error) {
-      console.error("Error al cargar datos", error);
-      toast.error("Error al cargar tu portafolio");
-    } finally {
-      setCargando(false);
-    }
-  }, [usuarioId]);
+    data.dataEmpresas.empresas.forEach((empresa) => {
+      const conexion = misConexiones.find((p) => p.IdEmpresa === empresa.IdEmpresa);
+      if (conexion) {
+        misEmpresas.push({ ...empresa, IdPortafolio: conexion.IdPortafolio });
+      } else {
+        empresasDisponibles.push(empresa);
+        sectoresSet.add(empresa.NombreSector);
+      }
+    });
 
-  useEffect(() => {
-    cargarDatos();
-  }, [cargarDatos]);
+    sectoresDisponibles = Array.from(sectoresSet).sort();
+  }
 
-  const agregarUna = async (idEmpresa) => {
-    try {
-      await portafolioService.crear(usuarioId, idEmpresa);
+  // 3. Mutaciones para crear/eliminar, con invalidación automática
+  const mutacionAgregarUna = useMutation({
+    mutationFn: (idEmpresa) => portafolioService.crear(usuarioId, idEmpresa),
+    onSuccess: () => {
       toast.success("Empresa agregada");
-      cargarDatos(); 
-    } catch (error) {
-      toast.error("Error al agregar");
-    }
-  };
+      // ESTA ES LA MAGIA: Le dice a React Query que los datos son viejos, obligando un re-fetch automático en segundo plano
+      queryClient.invalidateQueries({ queryKey: ['portafolioDatos', usuarioId] });
+    },
+    onError: () => toast.error("Error al agregar")
+  });
 
-  const eliminarUna = async (idPortafolio) => {
-    try {
-      await portafolioService.eliminar(idPortafolio);
+  const mutacionEliminarUna = useMutation({
+    mutationFn: (idPortafolio) => portafolioService.eliminar(idPortafolio),
+    onSuccess: () => {
       toast.success("Empresa removida");
-      cargarDatos();
-    } catch (error) {
-      toast.error("Error al remover");
-    }
-  };
+      queryClient.invalidateQueries({ queryKey: ['portafolioDatos', usuarioId] });
+    },
+    onError: () => toast.error("Error al remover")
+  });
 
-  const agregarMultiples = async (idsAgregar) => {
-    setProcesandoMasivo(true);
-    const idNoti = toast.loading(`Agregando ${idsAgregar.length} empresas...`);
-    try {
+  const mutacionAgregarMultiples = useMutation({
+    mutationFn: async (idsAgregar) => {
+      const idNoti = toast.loading(`Agregando ${idsAgregar.length} empresas...`);
       await Promise.all(idsAgregar.map(id => portafolioService.crear(usuarioId, id)));
       toast.success(`Agregadas correctamente`, { id: idNoti });
-      cargarDatos();
-    } catch (error) {
-      toast.error("Error al agregar masivamente", { id: idNoti });
-    } finally {
-      setProcesandoMasivo(false);
-    }
-  };
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['portafolioDatos', usuarioId] }),
+    onError: (error, variables, context) => toast.error("Error al agregar masivamente")
+  });
 
-  const eliminarMultiples = async (idsEliminar) => {
-    setProcesandoMasivo(true);
-    const idNoti = toast.loading(`Removiendo ${idsEliminar.length} empresas...`);
-    try {
+  const mutacionEliminarMultiples = useMutation({
+    mutationFn: async (idsEliminar) => {
+      const idNoti = toast.loading(`Removiendo ${idsEliminar.length} empresas...`);
       await Promise.all(idsEliminar.map(id => portafolioService.eliminar(id)));
       toast.success(`Removidas correctamente`, { id: idNoti });
-      cargarDatos();
-    } catch (error) {
-      toast.error("Error al remover masivamente", { id: idNoti });
-    } finally {
-      setProcesandoMasivo(false);
-    }
-  };
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['portafolioDatos', usuarioId] }),
+    onError: () => toast.error("Error al remover masivamente")
+  });
+
+  // El flag de proceso masivo lo calculamos si alguna de las mutaciones grupales está activa
+  const procesandoMasivo = mutacionAgregarMultiples.isPending || mutacionEliminarMultiples.isPending;
 
   return {
     misEmpresas,
@@ -102,9 +91,10 @@ export const usePortafolio = (usuarioId) => {
     sectoresDisponibles,
     cargando,
     procesandoMasivo,
-    agregarUna,
-    eliminarUna,
-    agregarMultiples,
-    eliminarMultiples
+    // Exponemos las funciones trigger de las mutaciones
+    agregarUna: mutacionAgregarUna.mutate,
+    eliminarUna: mutacionEliminarUna.mutate,
+    agregarMultiples: mutacionAgregarMultiples.mutate,
+    eliminarMultiples: mutacionEliminarMultiples.mutate
   };
 };
