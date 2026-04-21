@@ -6,11 +6,9 @@ import {
 } from '@mui/material';
 import NewspaperIcon from '@mui/icons-material/Newspaper';
 
-import { useNoticias } from '../../../features/noticias/hooks/useNoticias';
-import { usePortafolio } from '../../../features/portafolio/hooks/usePortafolio';
-import { useAuth } from '../../../context/AuthContext';
-import PageHeader from '../../../components/PageHeader';
-import NoticiaCard from '../../../features/noticias/components/NoticiaCard'; // IMPORTAMOS LA TARJETA
+import { useNoticias, usePortafolio, NoticiaCard } from 'features';
+import { useAuth } from 'context';
+import { PageHeader } from 'components';
 
 const Noticias = () => {
   const { usuario } = useAuth();

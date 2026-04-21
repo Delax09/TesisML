@@ -1,9 +1,10 @@
 // src/pages/Usuario/AnalisisPortafolio/AnalisisPortafolio.js
 import React from 'react';
 import { Box } from '@mui/material';
-import DashboardAnalitico from '../../../features/portafolio/components/DashboardAnalitico'; // Ajusta la ruta si es necesario
-import PageHeader from '../../../components/PageHeader';
 import PieChartIcon from '@mui/icons-material/PieChart';
+import { PageHeader } from 'components';
+import { DashboardAnalitico } from 'features';
+
 
 const AnalisisPortafolio = () => {
   return (

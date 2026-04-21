@@ -1,16 +1,15 @@
 // src/pages/Usuario/ProyeccionesIA/ProyeccionesIA.js
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../../../context/AuthContext'; 
-import { useProyeccionesIA } from '../../../features/portafolio/hooks/useProyeccionesIA';
-import iaService from '../../../services/iaService'; 
-import TarjetaProyeccion from '../../../features/ia_analisis/components/TarjetaProyeccion';
-import GraficoComparativo from '../../../features/ia_analisis/components/GraficoComparativo';
 import { 
     Box, Typography, Paper, FormControl, InputLabel, Select, 
     MenuItem, CircularProgress, ToggleButton, ToggleButtonGroup 
 } from '@mui/material'; 
-import PageHeader from '../../../components/PageHeader';
 import AreaChartIcon from '@mui/icons-material/AreaChart';
+
+import iaService from '../../../services/iaService'; 
+import { useAuth } from 'context'; 
+import { useProyeccionesIA, TarjetaProyeccion, GraficoComparativo } from 'features'; 
+import { PageHeader } from 'components';
 
 const VistaProyecciones = () => {
     const { usuario } = useAuth(); 
