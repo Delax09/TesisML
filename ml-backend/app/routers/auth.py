@@ -45,12 +45,15 @@ def login(response: Response, form_data: OAuth2PasswordRequestForm = Depends(), 
     # CORRECCIÓN: Calcular los segundos dinámicamente según la configuración
     max_age_seconds = settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
 
+    is_production = settings.ENVIRONMENT == "production"
+
     response.set_cookie(
         key="access_token",
         value=f"Bearer {access_token}",
         httponly=True,
         samesite="lax",
-        max_age=max_age_seconds
+        max_age=max_age_seconds,
+        secure=is_production
     )
     
     return {
@@ -76,6 +79,7 @@ def obtener_perfil_actual(response: Response, usuario_actual: Usuario = Depends(
     
     # 2. Calculamos los segundos de vida de la cookie
     max_age_seconds = settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
+    is_production = settings.ENVIRONMENT == "production"
     
     # 3. Sobrescribimos la cookie actual del navegador con este nuevo token
     response.set_cookie(
@@ -83,7 +87,8 @@ def obtener_perfil_actual(response: Response, usuario_actual: Usuario = Depends(
         value=f"Bearer {nuevo_token}",
         httponly=True,
         samesite="lax",
-        max_age=max_age_seconds
+        max_age=max_age_seconds,
+        secure=is_production
     )
     # --------------------------------------------
 
@@ -102,10 +107,14 @@ def logout(response: Response):
     """
     Invalida la sesión eliminando la cookie del navegador.
     """
+
+    is_production = settings.ENVIRONMENT == "production"
+
     response.delete_cookie(
         key="access_token",
         httponly=True,
-        samesite="lax"
+        samesite="lax",
+        secure=is_production
     )
     return {"message": "Sesión cerrada correctamente"}
 

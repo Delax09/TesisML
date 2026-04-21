@@ -13,6 +13,9 @@ class Settings(BaseSettings):
     # Información de la aplicación
     PROJECT_NAME: str = "TesisML API"
     VERSION: str = "1.0.0"
+    
+    ENVIRONMENT: str = "development"
+
     # Base de datos
     DATABASE_URL: str
     # API
