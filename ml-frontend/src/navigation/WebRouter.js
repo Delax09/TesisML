@@ -4,6 +4,8 @@ import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom'
 import { UserLayout, AdminLayout } from 'layouts'; 
 import { CircularProgress, Box } from '@mui/material';
 import RutaProtegida from '../features/auth/components/RutaProtegida';
+import ErrorBoundary from '../components/ErrorBoundary'; 
+import { ROLES } from '../constants/roles'; 
 
 // IMPORTACIONES PEREZOSAS USUARIO
 const Landing = lazy(() => import('pages/Landing/Landing'));
@@ -24,13 +26,15 @@ const AdminMetricas = lazy(() => import('pages/Admin/Metricas/AdminMetricas'));
 const AccesosIA = lazy(() => import('pages/Admin/AccesosIA/AccesosIA'));
 
 const conSuspense = (Componente) => (
-  <Suspense fallback={
-    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', minHeight: '60vh' }}>
-      <CircularProgress />
-    </Box>
-  }>
-    <Componente />
-  </Suspense>
+  <ErrorBoundary mensajeFallo="Error de red al cargar esta vista. Por favor, recarga la página.">
+    <Suspense fallback={
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', minHeight: '60vh' }}>
+        <CircularProgress />
+      </Box>
+    }>
+      <Componente />
+    </Suspense>
+  </ErrorBoundary>
 );
 
 const router = createBrowserRouter([
@@ -39,7 +43,7 @@ const router = createBrowserRouter([
   { path: "/olvide-password", element: conSuspense(OlvidePassword) },
   { path: "/reset-password", element: conSuspense(ResetPassword) },
   {
-    element: <RutaProtegida rolPermitido="usuario"><UserLayout /></RutaProtegida>,
+    element: <RutaProtegida rolPermitido={ROLES.USUARIO}><UserLayout /></RutaProtegida>,
     children: [
       { path: "home", element: conSuspense(Home) },
       { path: "portafolio", element: conSuspense(Portafolio) },
@@ -50,7 +54,7 @@ const router = createBrowserRouter([
     ],
   },
   {
-    element: <RutaProtegida rolPermitido="admin"><AdminLayout /></RutaProtegida>,
+    element: <RutaProtegida rolPermitido={ROLES.ADMIN}><AdminLayout /></RutaProtegida>,
     children: [
       // Redirigir la raíz del admin a tareas por defecto
       { path: "panel", element: <Navigate to="/admin/tareas" replace /> }, 
