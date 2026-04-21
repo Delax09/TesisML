@@ -24,7 +24,7 @@ function PrecioChart({ empresaId, nombreEmpresa }) {
         { label: 'Todo', v: 'TODO' }
     ];
 
-    // INICIALIZACIÓN DEL GRÁFICO (Solo 1 vez)
+    // INICIALIZACIÓN DEL GRÁFICO (Solo 1 vez por ciclo de vida)
     useEffect(() => {
         if (!chartContainerRef.current) return;
 
@@ -51,10 +51,15 @@ function PrecioChart({ empresaId, nombreEmpresa }) {
         chartRef.current = chart;
 
         return () => {
-            chart.remove();
-            chartRef.current = null;
+            if (chartRef.current) {
+                chartRef.current.remove();
+                chartRef.current = null;
+            }
+            // CRÍTICO: Limpiar las referencias de las series si el gráfico muere
+            seriesRefs.current = {}; 
         };
-    }, [theme]);
+    // CRÍTICO: Dependemos de los colores específicos (strings), NO del objeto 'theme' completo
+    }, [theme.palette.text.secondary, theme.palette.divider]);
 
     // INYECCIÓN DE DATOS Y RENDERIZADO
     useEffect(() => {
@@ -63,9 +68,16 @@ function PrecioChart({ empresaId, nombreEmpresa }) {
         const chart = chartRef.current;
         const mapTime = (d) => Math.floor(d.tiempoMs / 1000);
 
-        // Limpieza segura de series anteriores
+        // Limpieza ultra-segura de series anteriores
         Object.values(seriesRefs.current).forEach(serie => {
-            if (serie) chart.removeSeries(serie);
+            if (serie) {
+                try {
+                    // Try-catch previene colapsos si la serie ya no existe en el DOM
+                    chart.removeSeries(serie);
+                } catch (error) {
+                    console.warn("Serie fantasma ignorada al renderizar.");
+                }
+            }
         });
         seriesRefs.current = {}; 
 
@@ -107,15 +119,13 @@ function PrecioChart({ empresaId, nombreEmpresa }) {
 
         aplicarZoomNativo(rango, datosFiltrados);
 
-    // CORRECCIÓN WARNING: Se añadió theme.palette.primary.main a las dependencias
     }, [datosFiltrados, modoTecnico, rango, theme.palette.primary.main]); 
 
-    // LÓGICA DEL ZOOM NATIVO (CORREGIDA PARA "TODO")
+    // LÓGICA DEL ZOOM NATIVO
     const aplicarZoomNativo = (nuevoRango, dataArray) => {
         if (!chartRef.current || !dataArray || dataArray.length === 0) return;
         const timeScale = chartRef.current.timeScale();
 
-        // Extraemos las marcas de tiempo absolutas (el dato más viejo y el más nuevo)
         const primerDato = dataArray[0];
         const ultimoDato = dataArray[dataArray.length - 1];
         
@@ -124,7 +134,6 @@ function PrecioChart({ empresaId, nombreEmpresa }) {
         const diasSegundos = 24 * 60 * 60;
 
         if (nuevoRango === 'TODO') {
-            // Forzamos manualmente el encuadre exacto desde el día 1 hasta hoy
             timeScale.setVisibleRange({ 
                 from: fromTimeMin, 
                 to: toTimeMax + diasSegundos 
@@ -144,10 +153,7 @@ function PrecioChart({ empresaId, nombreEmpresa }) {
             default: break;
         }
 
-        // Si el filtro pide más días de los que existen (ej. pedir 5 años y solo hay 2),
-        // evitamos que la gráfica intente mostrar el vacío hacia la izquierda.
         const startRango = fromTime < fromTimeMin ? fromTimeMin : fromTime;
-
         timeScale.setVisibleRange({ from: startRango, to: toTimeMax + diasSegundos });
     };
 
