@@ -91,7 +91,7 @@ def entrenar_pipeline_lstm(id_modelo: int = None):
 
             mejores_pesos = ejecutar_entrenamiento_lstm(modelo_pt, train_loader, val_loader, device)
 
-            # Evaluación y Guardado
+            # Evaluación y Guardado con umbral optimizado
             metricas = evaluar_modelo_lstm(modelo_pt, val_loader, device)
             metricas['DiasFuturo'] = MLEngine.DIAS_PREDICCION
 
