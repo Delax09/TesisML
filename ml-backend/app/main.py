@@ -1,6 +1,6 @@
 from contextlib import asynccontextmanager
 import os
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 
@@ -96,6 +96,40 @@ app = FastAPI(
     version="2.0.0",
     lifespan=lifespan
 )
+
+# --- NUEVO MIDDLEWARE: CABECERAS DE SEGURIDAD (ASGI PURO) ---
+class SecurityHeadersMiddleware:
+    """
+    Middleware ASGI puro para inyectar cabeceras de seguridad HTTP
+    sin interferir con SlowAPI ni CORSMiddleware.
+    """
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            return await self.app(scope, receive, send)
+
+        async def send_wrapper(message):
+            if message["type"] == "http.response.start":
+                headers = message.setdefault("headers", [])
+                # En ASGI, las cabeceras deben ser tuplas de bytes en minúsculas
+                headers.append((b"strict-transport-security", b"max-age=31536000; includeSubDomains"))
+                headers.append((b"x-content-type-options", b"nosniff"))
+                headers.append((b"x-frame-options", b"DENY"))
+                headers.append((b"x-xss-protection", b"1; mode=block"))
+                headers.append((b"content-security-policy", b"default-src 'self'"))
+            await send(message)
+
+        await self.app(scope, receive, send_wrapper)
+
+# Agregar el Middleware de Seguridad
+app.add_middleware(SecurityHeadersMiddleware)
+
+# Configuración de límites de peticiones (Seguridad)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_middleware(SlowAPIASGIMiddleware)
 
 # Configuración de límites de peticiones (Seguridad)
 app.state.limiter = limiter
