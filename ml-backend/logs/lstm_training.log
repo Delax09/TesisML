@@ -54,3 +54,28 @@
 {"timestamp": "2026-04-21T22:24:53.488180", "level": "INFO", "logger": "ML.Trainer.LSTM", "message": "Early stopping activado", "module": "pipeline_trainer", "function": "ejecutar_entrenamiento", "line": 91}
 {"timestamp": "2026-04-21T22:24:53.488863", "level": "INFO", "logger": "ML.Trainer.LSTM", "message": "Entrenamiento completado", "module": "pipeline_trainer", "function": "ejecutar_entrenamiento", "line": 100}
 {"timestamp": "2026-04-21T22:24:56.044065", "level": "INFO", "logger": "ML.Trainer.LSTM", "message": "Umbral optimizado", "module": "pipeline_trainer", "function": "optimizar_umbral_decision", "line": 193}
+{"timestamp": "2026-04-21T22:32:26.141873", "level": "INFO", "logger": "ML.Trainer.LSTM", "message": "Iniciando entrenamiento mejorado", "module": "pipeline_trainer", "function": "ejecutar_entrenamiento", "line": 39}
+{"timestamp": "2026-04-21T22:32:26.144138", "level": "INFO", "logger": "ML.Trainer.LSTM", "message": "GPU disponible", "module": "pipeline_trainer", "function": "ejecutar_entrenamiento", "line": 44}
+{"timestamp": "2026-04-21T22:32:57.623063", "level": "INFO", "logger": "ML.Trainer.LSTM", "message": "Epoch completada", "module": "pipeline_trainer", "function": "ejecutar_entrenamiento", "line": 81}
+{"timestamp": "2026-04-21T22:33:18.873300", "level": "INFO", "logger": "ML.Trainer.LSTM", "message": "Epoch completada", "module": "pipeline_trainer", "function": "ejecutar_entrenamiento", "line": 81}
+{"timestamp": "2026-04-21T22:33:38.934882", "level": "INFO", "logger": "ML.Trainer.LSTM", "message": "Epoch completada", "module": "pipeline_trainer", "function": "ejecutar_entrenamiento", "line": 81}
+{"timestamp": "2026-04-21T22:33:57.665038", "level": "INFO", "logger": "ML.Trainer.LSTM", "message": "Epoch completada", "module": "pipeline_trainer", "function": "ejecutar_entrenamiento", "line": 81}
+{"timestamp": "2026-04-21T22:34:16.550827", "level": "INFO", "logger": "ML.Trainer.LSTM", "message": "Epoch completada", "module": "pipeline_trainer", "function": "ejecutar_entrenamiento", "line": 81}
+{"timestamp": "2026-04-21T22:34:36.502956", "level": "INFO", "logger": "ML.Trainer.LSTM", "message": "Epoch completada", "module": "pipeline_trainer", "function": "ejecutar_entrenamiento", "line": 81}
+{"timestamp": "2026-04-21T22:34:55.572589", "level": "INFO", "logger": "ML.Trainer.LSTM", "message": "Epoch completada", "module": "pipeline_trainer", "function": "ejecutar_entrenamiento", "line": 81}
+{"timestamp": "2026-04-21T22:35:14.648233", "level": "INFO", "logger": "ML.Trainer.LSTM", "message": "Epoch completada", "module": "pipeline_trainer", "function": "ejecutar_entrenamiento", "line": 81}
+{"timestamp": "2026-04-21T22:35:33.656336", "level": "INFO", "logger": "ML.Trainer.LSTM", "message": "Epoch completada", "module": "pipeline_trainer", "function": "ejecutar_entrenamiento", "line": 81}
+{"timestamp": "2026-04-21T22:35:54.033914", "level": "INFO", "logger": "ML.Trainer.LSTM", "message": "Epoch completada", "module": "pipeline_trainer", "function": "ejecutar_entrenamiento", "line": 81}
+{"timestamp": "2026-04-21T22:36:15.347760", "level": "INFO", "logger": "ML.Trainer.LSTM", "message": "Epoch completada", "module": "pipeline_trainer", "function": "ejecutar_entrenamiento", "line": 81}
+{"timestamp": "2026-04-21T22:36:34.453408", "level": "INFO", "logger": "ML.Trainer.LSTM", "message": "Epoch completada", "module": "pipeline_trainer", "function": "ejecutar_entrenamiento", "line": 81}
+{"timestamp": "2026-04-21T22:36:55.071891", "level": "INFO", "logger": "ML.Trainer.LSTM", "message": "Epoch completada", "module": "pipeline_trainer", "function": "ejecutar_entrenamiento", "line": 81}
+{"timestamp": "2026-04-21T22:39:02.699354", "level": "INFO", "logger": "ML.Trainer.LSTM", "message": "Epoch completada", "module": "pipeline_trainer", "function": "ejecutar_entrenamiento", "line": 81}
+{"timestamp": "2026-04-21T22:40:18.171778", "level": "INFO", "logger": "ML.Trainer.LSTM", "message": "Epoch completada", "module": "pipeline_trainer", "function": "ejecutar_entrenamiento", "line": 81}
+{"timestamp": "2026-04-21T22:41:33.511541", "level": "INFO", "logger": "ML.Trainer.LSTM", "message": "Epoch completada", "module": "pipeline_trainer", "function": "ejecutar_entrenamiento", "line": 81}
+{"timestamp": "2026-04-21T22:42:24.007680", "level": "INFO", "logger": "ML.Trainer.LSTM", "message": "Epoch completada", "module": "pipeline_trainer", "function": "ejecutar_entrenamiento", "line": 81}
+{"timestamp": "2026-04-21T22:42:51.683621", "level": "INFO", "logger": "ML.Trainer.LSTM", "message": "Epoch completada", "module": "pipeline_trainer", "function": "ejecutar_entrenamiento", "line": 81}
+{"timestamp": "2026-04-21T22:45:25.818771", "level": "INFO", "logger": "ML.Trainer.LSTM", "message": "Epoch completada", "module": "pipeline_trainer", "function": "ejecutar_entrenamiento", "line": 81}
+{"timestamp": "2026-04-21T22:48:04.466071", "level": "INFO", "logger": "ML.Trainer.LSTM", "message": "Epoch completada", "module": "pipeline_trainer", "function": "ejecutar_entrenamiento", "line": 81}
+{"timestamp": "2026-04-21T22:48:04.469795", "level": "INFO", "logger": "ML.Trainer.LSTM", "message": "Early stopping activado", "module": "pipeline_trainer", "function": "ejecutar_entrenamiento", "line": 91}
+{"timestamp": "2026-04-21T22:48:04.470758", "level": "INFO", "logger": "ML.Trainer.LSTM", "message": "Entrenamiento completado", "module": "pipeline_trainer", "function": "ejecutar_entrenamiento", "line": 100}
+{"timestamp": "2026-04-21T22:48:07.429255", "level": "INFO", "logger": "ML.Trainer.LSTM", "message": "Umbral optimizado", "module": "pipeline_trainer", "function": "optimizar_umbral_decision", "line": 193}
