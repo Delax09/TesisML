@@ -1,14 +1,9 @@
 // src/pages/Admin/Tareas/Tareas.js
 import React from 'react';
-import AdminPanelTareas from '../../../features/admin/components/AdminPanelTareas';
-import AnalisisIAButton from '../../../features/ia_analisis/components/AnalisisIAButton';
-import EntrenamientoSelector from '../../../features/ia_analisis/components/EntrenamientoSelector';
-import AnalisisPorModeloSelector from '../../../features/ia_analisis/components/AnalisisPorModeloSelector'; // <-- Importamos el nuevo componente
-import { useEmpresas } from '../../../features/empresas/hooks/useEmpresas';
-
+import { PageHeader } from 'components';
+import { useEmpresas, AdminPanelTareas, AnalisisIAButton, AnalisisPorModeloSelector, EntrenamientoSelector } from 'features';
 import { Box, Typography, Paper, Divider } from '@mui/material';
 import BuildIcon from '@mui/icons-material/Build';
-import PageHeader from '../../../components/PageHeader';
 
 const AdminTareas = () => {
   const { cargarDatos } = useEmpresas();

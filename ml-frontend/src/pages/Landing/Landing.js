@@ -1,7 +1,7 @@
 // src/pages/Landing/Landing.js
 import React, { useState, useCallback } from 'react';
 import { Navigate } from 'react-router-dom';
-import { useAuth, useThemeContext } from '../../context'; 
+import { useAuth, useThemeContext } from 'context'; 
 
 import { Box, Dialog, DialogContent, IconButton, Grid, Paper } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
@@ -10,15 +10,16 @@ import CloseIcon from '@mui/icons-material/Close';
 import fondoClaro from '../../assets/modo-claro3.jpg';
 import fondoOscuro from '../../assets/modo-oscuro2.avif'; // Asegúrate de usar la extensión correcta
 
-import AuthForm from '../../features/auth/components/AuthForm';
-import EmpresaTable from '../../features/empresas/components/EmpresaTable';
-import { useEmpresas } from '../../features/empresas/hooks/useEmpresas';
-
-import LandingNavbar from '../../features/landing/components/LandingNavbar'; 
-import HeroSection from '../../features/landing/components/HeroSection';
-import MisionVisionSection from '../../features/landing/components/MisionVisionSection';
-import FaqSection from '../../features/landing/components/FaqSection';
-import ContactoSection from '../../features/landing/components/ContactoSection';
+import { 
+  AuthForm, 
+  EmpresaTable, 
+  useEmpresas,
+  LandingNavbar,
+  HeroSection,
+  MisionVisionSection,
+  FaqSection,
+  ContactoSection
+} from 'features';
 
 export default function Landing() {
     const [modalAuth, setModalAuth] = useState({ open: false, esRegistro: false });

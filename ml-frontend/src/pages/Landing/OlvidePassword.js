@@ -1,7 +1,7 @@
 // src/pages/Landing/OlvidePassword.js
 import React from 'react';
 import { Box } from '@mui/material';
-import OlvidePasswordForm from '../../features/auth/components/OlvidePasswordForm';
+import { OlvidePasswordForm } from 'features';
 
 const OlvidePassword = () => {
     return (

@@ -3,7 +3,7 @@ import React, { Suspense, lazy } from 'react';
 import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
 import { UserLayout, AdminLayout } from 'layouts'; 
 import { CircularProgress, Box } from '@mui/material';
-import RutaProtegida from '../features/auth/components/RutaProtegida';
+import { RutaProtegida } from 'features';
 import ErrorBoundary from '../components/ErrorBoundary'; 
 import { ROLES } from '../constants/roles'; 
 

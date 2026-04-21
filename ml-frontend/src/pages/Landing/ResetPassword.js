@@ -2,7 +2,7 @@
 import React from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Box } from '@mui/material';
-import ResetPasswordForm from '../../features/auth/components/ResetPasswordForm';
+import { ResetPasswordForm } from 'features';
 
 const ResetPassword = () => {
     const [searchParams] = useSearchParams();

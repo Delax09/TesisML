@@ -3,8 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { Box, Paper, Switch, Table, TableBody, TableCell, TableHead, TableRow, Chip, Button, CircularProgress } from '@mui/material';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import api from '../../../services/api';
-import iaService from '../../../services/iaService'; // Importamos el servicio actualizado
-import PageHeader from '../../../components/PageHeader';
+import iaService from '../../../services/iaService'; 
+import { PageHeader } from 'components';
 import SmartToyIcon from '@mui/icons-material/SmartToy';
 
 export default function AdminModelos() {

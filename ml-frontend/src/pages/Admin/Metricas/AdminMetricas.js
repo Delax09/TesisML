@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { Box, Typography, Paper } from '@mui/material';
-import PageHeader from '../../../components/PageHeader';
-import { useMetricas } from '../../../features/metricas/hooks/useMetricas';
-import MetricasFiltros from '../../../features/metricas/components/MetricasFiltros';
-import MetricasTable from '../../../features/metricas/components/MetricasTable';
+import { PageHeader } from 'components';
+import { useMetricas, MetricasFiltros, MetricasTable } from 'features';
+
+
 import DataSaverOnIcon from '@mui/icons-material/DataSaverOn';
 
 const AdminMetricas = () => {
