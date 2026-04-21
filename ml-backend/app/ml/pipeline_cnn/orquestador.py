@@ -1,104 +1,122 @@
 import os
-import gc
-import joblib
-import torch
-import sys
 from tqdm import tqdm
-import traceback
+import sys
+import torch
+import joblib
+import gc
 from concurrent.futures import ProcessPoolExecutor, as_completed
+import logging
 
 from app.db.sessions import SessionLocal
-from app.models.modelo_ia import ModeloIA
 from app.models.empresa import Empresa
+from app.models.modelo_ia import ModeloIA
 from app.services.metrica_service import MetricaService
 from app.ml.arquitectura.v3_cnn import obtener_modelo_v3
 from app.ml.core.engine import MLEngine
-from app.ml.core.utils import Timer 
+from app.ml.core.logger import configurar_logger
+from app.ml.core.model_versioning import ModelVersionManager
 
 from app.ml.pipeline_cnn.data_processor import extraer_y_procesar_empresa_cnn, preparar_datos_cnn, crear_dataloaders_cnn
 from app.ml.pipeline_cnn.trainer import ejecutar_entrenamiento_cnn, evaluar_modelo_cnn
+from app.ml.core.utils import Timer
 
-def entrenar_pipeline_cnn(id_modelo_especifico: int = None, epochs: int = 50):
+# Configurar logger
+logger = configurar_logger("ML.Pipeline.CNN", archivo_log="logs/cnn_pipeline.log")
+
+def entrenar_pipeline_cnn(id_modelo: int = None):
+    """Orquesta el flujo completo de entrenamiento para CNNs"""
     db = SessionLocal()
     try:
-        # 1. Cargar Configuración
+        # 1. Cargar configuración
+        modelos = db.query(ModeloIA).filter(ModeloIA.Activo == True, ModeloIA.Version == 'v3')
+        if id_modelo: modelos = modelos.filter(ModeloIA.IdModelo == id_modelo)
+
         empresas = db.query(Empresa).filter(Empresa.Activo == True).all()
         ids_empresas = [e.IdEmpresa for e in empresas]
 
-        query_modelos = db.query(ModeloIA).filter(ModeloIA.Activo == True, ModeloIA.Version == "v3")
-        if id_modelo_especifico:
-            query_modelos = query_modelos.filter(ModeloIA.IdModelo == id_modelo_especifico)
-        modelos_activos = query_modelos.all()
-
-        if not modelos_activos:
-            print("No hay modelos CNN v3 activos para entrenar.")
-            return
-
-        # 2. Extracción Paralela (POR LOTES CON BARRA CLÁSICA)
         datos_procesados = []
-        lote_size = 15 
-        
-        print(f"📥 Iniciando extracción para {len(ids_empresas)} empresas (CNN)...", flush=True)
-        
-        with Timer("Extracción y Procesamiento CNN"):
+        lote_size = 20
+
+        logger.info("Iniciando extracción de datos", extra={"empresas_total": len(ids_empresas)})
+
+        with Timer("Extracción y Procesamiento"):
+            #CREAMOS UNA SOLA BARRA DE PROGRESO GLOBAL
             with tqdm(total=len(ids_empresas), desc="Procesando Empresas", file=sys.stdout) as pbar:
                 for i in range(0, len(ids_empresas), lote_size):
                     lote_actual = ids_empresas[i : i + lote_size]
-                    
-                    with ProcessPoolExecutor(max_workers=4) as executor:
+
+                    with ProcessPoolExecutor(max_workers=2) as executor:
                         futuros = [executor.submit(extraer_y_procesar_empresa_cnn, id_e) for id_e in lote_actual]
-                        
+
                         for f in as_completed(futuros):
                             try:
-                                res = f.result(timeout=180) 
-                                if res is not None: 
+                                res = f.result(timeout=180)
+                                if res is not None:
                                     datos_procesados.append(res)
                             except Exception as e:
-                                print(f"\n❌ Error en worker CNN: {str(e)}", flush=True)
+                                logger.error("Error en procesamiento de empresa", extra={"error": str(e)}, exc_info=True)
+
                             finally:
                                 pbar.update(1)
+
                     gc.collect()
 
-        print(f"✅ Extracción completa. {len(datos_procesados)} empresas válidas para la CNN.", flush=True)
+        logger.info("Extracción completa", extra={"empresas_validas": len(datos_procesados)})
 
         # 3. Preparación de Tensores
-        with Timer("Preparación de Tensores CNN"):
+        with Timer("Preparación de Tensores"):
             xt, yrt, yct, xv, yrv, ycv, scaler = preparar_datos_cnn(datos_procesados)
             train_loader, val_loader = crear_dataloaders_cnn(xt, yrt, yct, xv, yrv, ycv)
             del datos_procesados, xt, xv
             gc.collect()
 
-        # 4. Entrenamiento de Modelos
+        # 4. Bucle de Entrenamiento por Arquitectura
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         ruta_modelos = os.path.join(os.getcwd(), "app", "ml", "models")
         os.makedirs(ruta_modelos, exist_ok=True)
 
-        for modelo_db in modelos_activos:
-            print(f"\n--- Entrenando CNN: {modelo_db.Nombre} ---", flush=True)
-            
-            # Instanciar el modelo dinámicamente según Engine
-            modelo_pt = obtener_modelo_v3(MLEngine.DIAS_MEMORIA_IA, len(MLEngine.FEATURES))
-            modelo_pt = modelo_pt.to(device)
+        # Inicializar version manager
+        version_manager = ModelVersionManager(ruta_modelos)
 
-            mejores_pesos = ejecutar_entrenamiento_cnn(modelo_pt, train_loader, val_loader, device, epochs)
-            
+        for mod_db in modelos.all():
+            logger.info("Iniciando entrenamiento de modelo", extra={"modelo": mod_db.Nombre, "version": mod_db.Version})
+
+            modelo_pt = obtener_modelo_v3(dias_pasados = MLEngine.DIAS_MEMORIA_IA, num_features = len(MLEngine.FEATURES))
+
+            modelo_pt.to(device)
+
+            mejores_pesos = ejecutar_entrenamiento_cnn(modelo_pt, train_loader, val_loader, device)
+
+            # Evaluación y Guardado con umbral optimizado
             metricas = evaluar_modelo_cnn(modelo_pt, val_loader, device)
             metricas['DiasFuturo'] = MLEngine.DIAS_PREDICCION
-            
+
+            # Guardar métricas en BD
             db_guardado = SessionLocal()
             try:
-                MetricaService.guardar_metricas(db_guardado, modelo_db.IdModelo, metricas)
+                MetricaService.guardar_metricas(db_guardado, mod_db.IdModelo, metricas)
             finally:
                 db_guardado.close()
 
-            torch.save(mejores_pesos, os.path.join(ruta_modelos, f'modelo_acciones_{modelo_db.Version}.pth'))
-            print(f"✅ CNN {modelo_db.Nombre} guardada - Acc: {metricas['accuracy']:.3f} | AUC: {metricas['auc']:.3f}", flush=True)
+            # Guardar modelo con versionamiento
+            ruta_version = version_manager.guardar_modelo_versionado(
+                mejores_pesos,
+                scaler,
+                metricas,
+                f"CNN_{mod_db.Version}",
+                mod_db.Version,
+                f"Entrenamiento automático - {len(ids_empresas)} empresas"
+            )
 
-        joblib.dump(scaler, os.path.join(ruta_modelos, "scaler_cnn.pkl")) 
-        print("💾 Pipeline CNN Finalizado y Guardado.", flush=True)
+            logger.info("Modelo guardado exitosamente",
+                        extra={"version": mod_db.Version, "accuracy": metricas.get('accuracy', 0),
+                                "auc": metricas.get('auc', 0), "ruta": ruta_version})
+
+        # Guardar scaler global (para compatibilidad)
+        joblib.dump(scaler, os.path.join(ruta_modelos, "scaler.pkl"))
+        logger.info("Pipeline CNN finalizado exitosamente")
 
     except Exception as e:
-        print(f"❌ ERROR CRÍTICO EN ORQUESTADOR CNN:", flush=True)
-        traceback.print_exc()
+        logger.error("Error crítico en orquestador CNN", extra={"error": str(e)}, exc_info=True)
     finally:
         db.close()

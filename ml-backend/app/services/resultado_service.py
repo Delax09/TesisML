@@ -20,7 +20,7 @@ class ResultadoService:
                 EMA50 = float(features['EMA50']),
                 Score = float(data_ml['score']),
                 Recomendacion = data_ml['recomendacion'],
-                ProbAlcista = float(data_ml.get('prob_alcista', 0.5)),  # ← Campo faltante
+                ProbAlcista = float(features.get('ProbAlcista', 50)),  # Corregido: usar features en lugar de data_ml
                 IdModelo = int(data_ml['id_modelo']),
                 FechaAnalisis = obtener_hora_formateada()
             )

@@ -1,83 +1,9 @@
-import numpy as np
-import pandas as pd
-import torch
-from torch.utils.data import TensorDataset, DataLoader
-from sklearn.preprocessing import RobustScaler
-from numpy.lib.stride_tricks import sliding_window_view
-import gc
-from typing import Tuple, List, Optional
-from tqdm import tqdm
-
-from app.db.sessions import SessionLocal
-from app.models.precio_historico import PrecioHistorico
-from app.ml.core.engine import MLEngine
-from app.ml.core.data_utils import preparar_datos_generico, crear_dataloaders_generico
-from app.ml.core.data_validation import DataValidator
-
-def extraer_y_procesar_empresa(id_empresa: int) -> Optional[pd.DataFrame]:
-    """Extrae datos de la BD y aplica indicadores técnicos con validación"""
-    db = SessionLocal()
-    try:
-        # 1. OPTIMIZACIÓN: Solo consultamos las columnas exactas con el alias esperado
-        query = db.query(
-            PrecioHistorico.Fecha.label('Date'),
-            PrecioHistorico.PrecioApertura.label('Open'),
-            PrecioHistorico.PrecioMaximo.label('High'),
-            PrecioHistorico.PrecioMinimo.label('Low'),
-            PrecioHistorico.PrecioCierre.label('Close'),
-            PrecioHistorico.Volumen.label('Volume')
-        ).filter(
-            PrecioHistorico.IdEmpresa == id_empresa
-        ).order_by(PrecioHistorico.Fecha.asc())
-
-        # 2. OPTIMIZACIÓN: Pandas lee directo de la consulta SQL sin crear objetos ORM
-        df = pd.read_sql(query.statement, db.get_bind())
-
-        if len(df) < 60: 
-            return None
-
-        # 3. Establecemos el índice directamente
-        df.set_index('Date', inplace=True)
-        
-        df = df.astype(float)
-        df.replace([np.inf, -np.inf], np.nan, inplace=True) # Prevenir veneno
-
-        # Validar datos antes de procesar
-        df_valido = DataValidator.validar_y_limpiar(df)
-
-        if df_valido is None or df_valido.empty:
-            print(f"Datos inválidos para empresa {id_empresa}")
-            return None
-
-        df_procesado = MLEngine.calcular_indicadores(df_valido)
-        df_procesado.ffill(inplace=True)
-        df_procesado.bfill(inplace=True)
-
-        # Validar datos procesados
-        df_procesado_valido = DataValidator.validar_y_limpiar(df_procesado)
-        return df_procesado_valido if df_procesado_valido is not None and not df_procesado_valido.empty else None
-
-    except Exception as e:
-        print(f"Error procesando empresa {id_empresa}: {str(e)}")
-        return None
-    finally:
-        db.close()
+from app.ml.core.pipeline_base import extraer_y_procesar_empresa, preparar_datos, crear_dataloaders
 
 def preparar_datos_lstm(lista_dfs: List[pd.DataFrame], batch_size: int = 50):
-    """Usa la implementación genérica para consistencia con validación de datos"""
-    # Validar todos los dataframes antes de procesar
-    dfs_validos = []
-
-    for df in lista_dfs:
-        df_valido = DataValidator.validar_y_limpiar(df)
-        if df_valido is not None and not df_valido.empty:
-            dfs_validos.append(df_valido)
-
-    if not dfs_validos:
-        raise ValueError("No hay dataframes válidos después de la validación")
-
-    return preparar_datos_generico(dfs_validos, batch_size)
+    """Alias para consistencia con nomenclatura LSTM"""
+    return preparar_datos(lista_dfs, batch_size)
 
 def crear_dataloaders_lstm(x_t, yr_t, yc_t, x_v, yr_v, yc_v, batch_size=256):
-    """Usa la implementación genérica para consistencia"""
-    return crear_dataloaders_generico(x_t, yr_t, yc_t, x_v, yr_v, yc_v, batch_size, drop_last=True)
+    """Alias para consistencia con nomenclatura LSTM"""
+    return crear_dataloaders(x_t, yr_t, yc_t, x_v, yr_v, yc_v, batch_size)
