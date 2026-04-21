@@ -166,8 +166,7 @@ class DataValidator:
                             min_filas: int = 50,
                             required_columns: list = None) -> Optional[pd.DataFrame]:
         """
-        Valida y limpia un dataframe de una sola vez, enriqueciendo 
-        los datos con Spark si el módulo está disponible.
+        Valida y limpia un dataframe de una sola vez.
 
         Args:
             df: DataFrame a validar y limpiar
@@ -175,7 +174,7 @@ class DataValidator:
             required_columns: Columnas requeridas (opcional)
 
         Returns:
-            DataFrame limpio y enriquecido si es válido, None si no lo es
+            DataFrame limpio y válido, None si no lo es
         """
         if df is None or df.empty:
             logger.warning("DataFrame vacío o None")
@@ -186,7 +185,7 @@ class DataValidator:
             logger.warning(f"Dataset muy pequeño: {len(df)} < {min_filas} filas")
             return None
 
-        # Validar columnas requeridas (antes de enriquecer)
+        # Validar columnas requeridas (antes de procesar)
         if required_columns:
             missing_cols = [col for col in required_columns if col not in df.columns]
             if missing_cols:
@@ -194,40 +193,13 @@ class DataValidator:
                 return None
 
         try:
-            # --- INTEGRACIÓN SPARK ---
-            # Ejecutar el cruce de datos con la macroeconomía usando Spark
-            if fusionar_datos_con_spark is not None:
-                logger.info("Enriqueciendo dataset con Spark (FRED API)...")
-                df_enriquecido = fusionar_datos_con_spark(df)
-                
-                # Verificar si el enriquecimiento fue exitoso
-                if df_enriquecido is not None and not df_enriquecido.empty and 'FEDFUNDS' in df_enriquecido.columns:
-                    df = df_enriquecido
-                    logger.info("Enriquecimiento con Spark exitoso")
-                elif df_enriquecido is not None and not df_enriquecido.empty:
-                    df = df_enriquecido
-                    logger.warning("Enriquecimiento parcial: DataFrame retornado pero sin columna FEDFUNDS")
-                else:
-                    logger.warning("Enriquecimiento fallido: Usando datos base sin FRED")
-            else:
-                logger.warning("Módulo de Spark no disponible. Continuando con datos base.")
-            # -------------------------
-
-            # Sanitizar datos (ahora incluye las features de macroeconomía si Spark operó con éxito)
+            # Sanitizar datos
             df_limpio = DataValidator.sanitizar_datos(df, fillna_strategy='ffill')
 
             # Verificar que no quedó vacío después de la limpieza
             if df_limpio.empty:
                 logger.warning("Dataset quedó vacío después de limpieza")
                 return None
-
-            # --- NUEVA LÍNEA DE SEGURIDAD (FALLBACK) ---
-            # Si FEDFUNDS no existe, inyectar valor por defecto (0.0)
-            # Esto asegura compatibilidad con MLEngine.FEATURES que incluye 'FEDFUNDS'
-            if 'FEDFUNDS' not in df_limpio.columns:
-                logger.warning("Columna FEDFUNDS no encontrada. Inyectando valores por defecto (0.0).")
-                df_limpio['FEDFUNDS'] = 0.0
-            # -------------------------------------------
 
             logger.debug(f"Dataset validado y limpio: {len(df_limpio)} filas, {len(df_limpio.columns)} columnas")
             return df_limpio

@@ -31,7 +31,6 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
 
     FINNHUB_API_KEY: str
-    FRED_API_KEY: str
     # Pydantic v2 config
     model_config = ConfigDict(
         env_file=".env",
