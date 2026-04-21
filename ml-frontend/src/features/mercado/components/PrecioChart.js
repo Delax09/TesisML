@@ -1,6 +1,7 @@
 // src/features/mercado/components/PrecioChart.js
 import React, { memo, useState, useEffect, useRef } from 'react';
-import { createChart, CrosshairMode } from 'lightweight-charts';
+// IMPORTANTE: Se importan explícitamente AreaSeries, CandlestickSeries y LineSeries
+import { createChart, CrosshairMode, AreaSeries, CandlestickSeries, LineSeries } from 'lightweight-charts';
 import { 
     Box, Typography, ToggleButton, ToggleButtonGroup, 
     CircularProgress, Switch, FormControlLabel 
@@ -38,7 +39,7 @@ function PrecioChart({ empresaId, nombreEmpresa }) {
                 textColor: theme.palette.text.secondary,
             },
             grid: {
-                vertLines: { color: theme.palette.divider, style: 1 }, // 1 = Dotted
+                vertLines: { color: theme.palette.divider, style: 1 }, 
                 horzLines: { color: theme.palette.divider, style: 1 },
             },
             crosshair: {
@@ -52,14 +53,13 @@ function PrecioChart({ empresaId, nombreEmpresa }) {
                 timeVisible: true,
                 secondsVisible: false,
             },
-            autoSize: true, // Maneja el resize automáticamente
+            autoSize: true,
         });
         
         chartRef.current = chart;
 
-        // Preparar y ordenar datos. Lightweight Charts requiere timestamps en segundos (UNIX)
+        // Preparar y ordenar datos
         const datosOrdenados = [...datosFiltrados].sort((a, b) => a.tiempoMs - b.tiempoMs);
-        
         const mapTime = (d) => Math.floor(d.tiempoMs / 1000);
 
         if (modoTecnico) {
@@ -72,7 +72,8 @@ function PrecioChart({ empresaId, nombreEmpresa }) {
                 close: Number(d.PrecioCierre),
             }));
 
-            const serieVelas = chart.addCandlestickSeries({
+            // CAMBIO API v5: chart.addSeries(CandlestickSeries, ...)
+            const serieVelas = chart.addSeries(CandlestickSeries, {
                 upColor: '#4caf50',
                 downColor: '#ef5350',
                 borderVisible: false,
@@ -82,10 +83,11 @@ function PrecioChart({ empresaId, nombreEmpresa }) {
             serieVelas.setData(dataVelas);
 
             // Bollinger: Media Móvil 20d
-            const serieSMA = chart.addLineSeries({
+            // CAMBIO API v5: chart.addSeries(LineSeries, ...)
+            const serieSMA = chart.addSeries(LineSeries, {
                 color: '#ff9800',
                 lineWidth: 2,
-                lineStyle: 2, // Dashed
+                lineStyle: 2, 
                 title: 'SMA 20',
             });
             const dataSMA = datosOrdenados
@@ -94,7 +96,7 @@ function PrecioChart({ empresaId, nombreEmpresa }) {
             serieSMA.setData(dataSMA);
 
             // Bollinger: Banda Superior
-            const serieBandaSup = chart.addLineSeries({
+            const serieBandaSup = chart.addSeries(LineSeries, {
                 color: '#f44336',
                 lineWidth: 1,
                 opacity: 0.8,
@@ -105,7 +107,7 @@ function PrecioChart({ empresaId, nombreEmpresa }) {
             serieBandaSup.setData(dataBandaSup);
 
             // Bollinger: Banda Inferior
-            const serieBandaInf = chart.addLineSeries({
+            const serieBandaInf = chart.addSeries(LineSeries, {
                 color: '#4caf50',
                 lineWidth: 1,
                 opacity: 0.8,
@@ -122,9 +124,10 @@ function PrecioChart({ empresaId, nombreEmpresa }) {
                 value: Number(d.PrecioCierre),
             }));
 
-            const serieArea = chart.addAreaSeries({
+            // CAMBIO API v5: chart.addSeries(AreaSeries, ...)
+            const serieArea = chart.addSeries(AreaSeries, {
                 lineColor: theme.palette.primary.main,
-                topColor: `${theme.palette.primary.main}40`, // Añade opacidad (hex)
+                topColor: `${theme.palette.primary.main}40`, 
                 bottomColor: `${theme.palette.primary.main}00`,
                 lineWidth: 2,
             });
@@ -133,7 +136,6 @@ function PrecioChart({ empresaId, nombreEmpresa }) {
 
         chart.timeScale().fitContent();
 
-        // Cleanup al desmontar
         return () => {
             if (chartRef.current) {
                 chartRef.current.remove();
@@ -146,11 +148,8 @@ function PrecioChart({ empresaId, nombreEmpresa }) {
         <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%' }}>
             
             <Box sx={{ 
-                display: 'flex', 
-                justifyContent: 'space-between', 
-                alignItems: 'center', 
-                flexWrap: { xs: 'wrap', md: 'nowrap' }, 
-                gap: 2, mb: 3 
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center', 
+                flexWrap: { xs: 'wrap', md: 'nowrap' }, gap: 2, mb: 3 
             }}>
                 <Box>
                     <Typography variant="h6" fontWeight="bold" color="primary">
@@ -177,11 +176,7 @@ function PrecioChart({ empresaId, nombreEmpresa }) {
                 </Box>
 
                 <ToggleButtonGroup
-                    value={rango}
-                    exclusive
-                    onChange={handleCambioRango}
-                    size="small"
-                    color="primary"
+                    value={rango} exclusive onChange={handleCambioRango} size="small" color="primary"
                 >
                     {botonesRango.map((b) => (
                         <ToggleButton key={b.v} value={b.v} sx={{ px: { xs: 1, sm: 2 }, fontSize: '0.75rem' }}>
@@ -205,11 +200,7 @@ function PrecioChart({ empresaId, nombreEmpresa }) {
                     </Box>
                 )}
                 
-                {/* Contenedor del gráfico de TradingView */}
-                <Box 
-                    ref={chartContainerRef} 
-                    sx={{ width: '100%', height: '100%', position: 'absolute', inset: 0 }} 
-                />
+                <Box ref={chartContainerRef} sx={{ width: '100%', height: '100%', position: 'absolute', inset: 0 }} />
             </Box>
         </Box>
     );
