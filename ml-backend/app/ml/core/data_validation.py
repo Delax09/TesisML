@@ -5,6 +5,8 @@ import pandas as pd
 from typing import Dict, Any, Optional
 import logging
 from sklearn.preprocessing import MinMaxScaler
+from app.ml.core.spark_processor import fusionar_datos_con_spark
+
 
 logger = logging.getLogger(__name__)
 
@@ -132,14 +134,6 @@ class DataValidator:
                             method: str = 'smote') -> tuple:
         """
         Balancea dataset desequilibrado
-
-        Args:
-            X: Features
-            y_clf: Labels de clasificación
-            method: Método de balanceo ('smote', 'undersample', 'oversample')
-
-        Returns:
-            X_balanceado, y_balanceado
         """
         try:
             if method == 'smote':
@@ -172,7 +166,8 @@ class DataValidator:
                             min_filas: int = 50,
                             required_columns: list = None) -> Optional[pd.DataFrame]:
         """
-        Valida y limpia un dataframe de una sola vez
+        Valida y limpia un dataframe de una sola vez, enriqueciendo 
+        los datos con Spark si el módulo está disponible.
 
         Args:
             df: DataFrame a validar y limpiar
@@ -180,7 +175,7 @@ class DataValidator:
             required_columns: Columnas requeridas (opcional)
 
         Returns:
-            DataFrame limpio si es válido, None si no lo es
+            DataFrame limpio y enriquecido si es válido, None si no lo es
         """
         if df is None or df.empty:
             logger.warning("DataFrame vacío o None")
@@ -191,7 +186,7 @@ class DataValidator:
             logger.warning(f"Dataset muy pequeño: {len(df)} < {min_filas} filas")
             return None
 
-        # Validar columnas requeridas
+        # Validar columnas requeridas (antes de enriquecer)
         if required_columns:
             missing_cols = [col for col in required_columns if col not in df.columns]
             if missing_cols:
@@ -199,10 +194,19 @@ class DataValidator:
                 return None
 
         try:
-            # Sanitizar datos
+            # --- INTEGRACIÓN SPARK ---
+            # Ejecutar el cruce de datos con la macroeconomía usando Spark
+            if fusionar_datos_con_spark is not None:
+                logger.info("Enriqueciendo dataset con Spark (FRED API)...")
+                df = fusionar_datos_con_spark(df)
+            else:
+                logger.warning("Módulo de Spark no disponible. Continuando con datos base.")
+            # -------------------------
+
+            # Sanitizar datos (ahora incluye las features de macroeconomía si Spark operó con éxito)
             df_limpio = DataValidator.sanitizar_datos(df, fillna_strategy='ffill')
 
-            # Verificar que no quedó vacío
+            # Verificar que no quedó vacío después de la limpieza
             if df_limpio.empty:
                 logger.warning("Dataset quedó vacío después de limpieza")
                 return None
