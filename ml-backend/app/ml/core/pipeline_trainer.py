@@ -22,18 +22,18 @@ class PipelineTrainer:
         self.logger = configurar_logger(f"ML.Trainer.{architecture_name}", archivo_log=log_file)
 
     def ejecutar_entrenamiento(self, model, train_loader, val_loader, device, epochs=50, pos_weight_factor=2.0):
-        # 🆕 MEJORA: Calcular pos_weight dinámicamente basado en datos de entrenamiento
+        #Calcular pos_weight dinámicamente basado en datos de entrenamiento
         pos_weight = self._calcular_pos_weight_dinamico(train_loader, device, pos_weight_factor)
         criterion_reg = nn.HuberLoss(delta=0.01)
         criterion_clf = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
 
-        # 🆕 MEJORA: Optimizador con parámetros mejorados
+        #Optimizador con parámetros mejorados
         optimizer = optim.AdamW(model.parameters(), lr=0.001, weight_decay=1e-4, betas=(0.9, 0.999))
 
-        # 🆕 MEJORA: Scheduler de LR para mejor convergencia
+        #Scheduler de LR para mejor convergencia
         scheduler = CosineAnnealingLR(optimizer, T_max=epochs, eta_min=1e-6)
 
-        # 🆕 MEJORA: Early stopping más paciente y con mejor criterio
+        #Early stopping más paciente y con mejor criterio
         early_stopping = EarlyStopping(paciencia=12, delta=0.001)
 
         self.logger.info("Iniciando entrenamiento mejorado",
