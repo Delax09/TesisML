@@ -24,6 +24,7 @@ const AdminEmpresas = lazy(() => import('pages/Admin/Empresas/Empresas'));
 const AdminModelos = lazy(() => import('pages/Admin/Modelos/AdminModelos'));
 const AdminMetricas = lazy(() => import('pages/Admin/Metricas/AdminMetricas'));
 const AccesosIA = lazy(() => import('pages/Admin/AccesosIA/AccesosIA'));
+const CompararModelos = lazy(() => import('pages/Usuario/CompararModelos/CompararModelos'));
 
 const conSuspense = (Componente) => (
   <ErrorBoundary mensajeFallo="Error de red al cargar esta vista. Por favor, recarga la página.">
@@ -51,6 +52,7 @@ const router = createBrowserRouter([
       { path: "noticias", element: conSuspense(Noticias) },
       { path: "mercado", element: conSuspense(Mercado) },
       { path: "proyecciones-ia", element: conSuspense(ProyeccionesIA) },
+      { path: "comparar-modelos", element: conSuspense(CompararModelos) },
     ],
   },
   {
