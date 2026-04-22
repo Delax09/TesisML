@@ -52,3 +52,13 @@
 {"timestamp": "2026-04-21T22:31:48.372760", "level": "INFO", "logger": "ML.Pipeline.LSTM", "message": "Iniciando entrenamiento de modelo", "module": "orquestador", "function": "entrenar_pipeline_lstm", "line": 83}
 {"timestamp": "2026-04-21T22:48:10.112438", "level": "INFO", "logger": "ML.Pipeline.LSTM", "message": "Modelo guardado exitosamente", "module": "orquestador", "function": "entrenar_pipeline_lstm", "line": 115}
 {"timestamp": "2026-04-21T22:48:10.114266", "level": "INFO", "logger": "ML.Pipeline.LSTM", "message": "Pipeline LSTM finalizado exitosamente", "module": "orquestador", "function": "entrenar_pipeline_lstm", "line": 121}
+{"timestamp": "2026-04-22T15:13:01.086569", "level": "INFO", "logger": "ML.Pipeline.LSTM", "message": "Iniciando extracción de datos", "module": "orquestador", "function": "entrenar_pipeline_lstm", "line": 41}
+{"timestamp": "2026-04-22T15:14:34.794258", "level": "INFO", "logger": "ML.Pipeline.LSTM", "message": "Extracción completa", "module": "orquestador", "function": "entrenar_pipeline_lstm", "line": 65}
+{"timestamp": "2026-04-22T15:14:47.873069", "level": "INFO", "logger": "ML.Pipeline.LSTM", "message": "Iniciando entrenamiento de modelo", "module": "orquestador", "function": "entrenar_pipeline_lstm", "line": 83}
+{"timestamp": "2026-04-22T15:22:47.018414", "level": "INFO", "logger": "ML.Pipeline.LSTM", "message": "Modelo guardado exitosamente", "module": "orquestador", "function": "entrenar_pipeline_lstm", "line": 115}
+{"timestamp": "2026-04-22T15:22:47.020945", "level": "INFO", "logger": "ML.Pipeline.LSTM", "message": "Pipeline LSTM finalizado exitosamente", "module": "orquestador", "function": "entrenar_pipeline_lstm", "line": 121}
+{"timestamp": "2026-04-22T15:22:58.202374", "level": "INFO", "logger": "ML.Pipeline.LSTM", "message": "Iniciando extracción de datos", "module": "orquestador", "function": "entrenar_pipeline_lstm", "line": 41}
+{"timestamp": "2026-04-22T15:25:00.577361", "level": "INFO", "logger": "ML.Pipeline.LSTM", "message": "Extracción completa", "module": "orquestador", "function": "entrenar_pipeline_lstm", "line": 65}
+{"timestamp": "2026-04-22T15:25:12.526172", "level": "INFO", "logger": "ML.Pipeline.LSTM", "message": "Iniciando entrenamiento de modelo", "module": "orquestador", "function": "entrenar_pipeline_lstm", "line": 83}
+{"timestamp": "2026-04-22T15:51:10.688510", "level": "INFO", "logger": "ML.Pipeline.LSTM", "message": "Modelo guardado exitosamente", "module": "orquestador", "function": "entrenar_pipeline_lstm", "line": 115}
+{"timestamp": "2026-04-22T15:51:10.690768", "level": "INFO", "logger": "ML.Pipeline.LSTM", "message": "Pipeline LSTM finalizado exitosamente", "module": "orquestador", "function": "entrenar_pipeline_lstm", "line": 121}

@@ -7,7 +7,7 @@ from app.db.sessions import SessionLocal
 from app.models.empresa import Empresa
 from app.models.precio_historico import PrecioHistorico
 from app.models.modelo_ia import ModeloIA
-from app.ml.core.engine import MLEngine
+from app.ml.core.engine import MLEngine #Aqui esta el MLEngine 
 from app.services.resultado_service import ResultadoService
 
 logger = logging.getLogger(__name__)
@@ -21,7 +21,9 @@ def limpiar_numero(valor):
 
 def validar_modelo_existe(version):
     """Valida que el archivo .pth del modelo exista en el directorio raíz de models"""
-    modelo_path = Path(__file__).parent.parent / "ml" / "models" / f"modelo_acciones_{version}.pth"
+    # Normalizar versión: "vv3" → "v3", etc.
+    version_normalizada = version.lstrip('v') if version.startswith('vv') else version
+    modelo_path = Path(__file__).parent.parent / "ml" / "models" / f"modelo_acciones_{version_normalizada}.pth"
     return modelo_path.exists()
 
 def ejecutar_analisis_diario(modelo_id = None):
@@ -42,7 +44,7 @@ def ejecutar_analisis_diario(modelo_id = None):
         empresas = db.query(Empresa).filter(Empresa.Activo == True).all()
         print(f"🏢 Empresas activas encontradas: {len(empresas)}")
 
-        # ✅ FIX 1: Validar que al menos un modelo exista antes de crear engine temporal
+        #Validar que al menos un modelo exista antes de crear engine temporal
         if not modelos_activos:
             logger.error("❌ No hay modelos activos en la base de datos")
             return {"status": "error", "mensaje": "No hay modelos activos"}
@@ -69,8 +71,11 @@ def ejecutar_analisis_diario(modelo_id = None):
                     print(f"⚠️ Empresa {emp.Ticket}: insuficientes datos ({len(precios)} < {engine_temp.DIAS_MEMORIA_IA + 50})")
                     continue
 
-                df = pd.DataFrame([{'Close': float(p.PrecioCierre), 'Volume': float(p.Volumen or 0),
-                                    'High': float(p.PrecioCierre), 'Low': float(p.PrecioCierre)} for p in reversed(precios)])
+                df = pd.DataFrame([{'Close': float(p.PrecioCierre), 
+                                    'Volume': float(p.Volumen),
+                                    'High': float(p.PrecioMaximo if p.PrecioMaximo else p.PrecioCierre), 
+                                    'Low': float(p.PrecioMinimo if p.PrecioMinimo else p.PrecioCierre)} 
+                                   for p in reversed(precios)])
 
                 # ✅ FIX 2: Validar que el método existe
                 if not hasattr(engine_temp, 'calcular_indicadores'):

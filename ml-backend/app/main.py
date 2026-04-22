@@ -71,7 +71,6 @@ async def lifespan(app: FastAPI):
             app.state.model_v2 = torch.load(os.path.join(base_path, "modelo_acciones_v2.pth"))
             app.state.model_v3 = torch.load(os.path.join(base_path, "modelo_acciones_v3.pth"))
             app.state.scaler = joblib.load(os.path.join(base_path, "scaler.pkl"))
-            app.state.scaler_cnn = joblib.load(os.path.join(base_path, "scaler_cnn.pkl"))
             print("✅ Modelos y escaladores cargados exitosamente.")
         except Exception as e:
             print(f"⚠️ Error cargando modelos locales: {e}")
