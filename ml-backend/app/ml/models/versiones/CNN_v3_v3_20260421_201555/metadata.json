@@ -1,0 +1,25 @@
+{
+  "version_id": "CNN_v3_v3_20260421_201555",
+  "nombre_modelo": "CNN_v3",
+  "version": "v3",
+  "descripcion": "Entrenamiento automático - 88 empresas",
+  "fecha_creacion": "2026-04-21T20:15:55.981810",
+  "metricas": {
+    "accuracy": 0.5340989191729323,
+    "precision": 0.49757654569098003,
+    "recall": 0.13283888275209088,
+    "f1_score": 0.20969509764846553,
+    "auc": 0.5152027260254919,
+    "mae": 7.383272171020508,
+    "val_loss": 0.0,
+    "tp": 4209,
+    "tn": 32161,
+    "fp": 4250,
+    "fn": 27476,
+    "DiasFuturo": 5
+  },
+  "archivos": {
+    "modelo": "versiones\\CNN_v3_v3_20260421_201555\\model.pth",
+    "scaler": "versiones\\CNN_v3_v3_20260421_201555\\scaler.pkl"
+  }
+}
