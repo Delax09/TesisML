@@ -53,7 +53,9 @@ class MLEngine:
         base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         model_path = os.path.join(base_dir, "models", f"modelo_acciones_{self.version}.pth")
         
-        scaler_nombre = "scaler_cnn.pkl" if self.version == "v3" else "scaler.pkl"
+        #Revisar que pasa con el Scaler del modelo CNN_v3
+        #scaler_nombre = "scaler_cnn.pkl" if self.version == "v3" else "scaler.pkl"
+        scaler_nombre = "scaler.pkl"
         scaler_path = os.path.join(base_dir, "models", scaler_nombre)
         
         if os.path.exists(model_path) and os.path.exists(scaler_path):
@@ -75,10 +77,8 @@ class MLEngine:
 
     def _preparar_tensor(self, df_ind):
         scaled_data = self.scaler.transform(df_ind[self.FEATURES].values)
-        if self.version == "v3" or self.version == "vv3":
-            tensor = torch.tensor(scaled_data[-self.DIAS_MEMORIA_IA:], dtype=torch.float32).unsqueeze(0).transpose(1, 2).to(self.device)
-        else:
-            tensor = torch.tensor(scaled_data[-self.DIAS_MEMORIA_IA:], dtype=torch.float32).unsqueeze(0).to(self.device)
+        
+        tensor = torch.tensor(scaled_data[-self.DIAS_MEMORIA_IA:], dtype=torch.float32).unsqueeze(0).to(self.device)
         return tensor
 
     def predecir(self, df_ind):
