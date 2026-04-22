@@ -48,6 +48,9 @@ export { default as EntrenamientoSelector } from './ia_analisis/components/Entre
 export { default as GraficoComparativo } from './ia_analisis/components/GraficoComparativo';
 export { default as ResultadoPanel } from './ia_analisis/components/ResultadoPanel';
 export { default as TarjetaProyeccion } from './ia_analisis/components/TarjetaProyeccion';
+export { default as ComparadorEmpresas } from './ia_analisis/components/ComparadorEmpresas';
+export { default as ComparadorModelos } from './ia_analisis/components/ComparadorModelos';
+export * from './ia_analisis/hooks/useModelosActivos';
 export * from './ia_analisis/hooks/useAnalisisMasivo';
 export * from './ia_analisis/hooks/useEntrenamientoIA';
 export * from './ia_analisis/hooks/useResultadoIA';

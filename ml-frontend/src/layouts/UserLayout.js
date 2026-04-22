@@ -20,6 +20,7 @@ import PieChartIcon from '@mui/icons-material/PieChart';
 import NewspaperIcon from '@mui/icons-material/Newspaper';
 import LightModeIcon from '@mui/icons-material/LightMode';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
+import QueryStatsIcon from '@mui/icons-material/QueryStats';
 
 const drawerWidth = 250; // ¡Necesitamos esto para saber el ancho del menú!
 
@@ -79,6 +80,13 @@ export default function UserLayout() {
           <ListItemButton component={RouterLink} to="/proyecciones-ia" selected={isActivo('/proyecciones-ia')} onClick={() => setMobileOpen(false)}>
             <ListItemIcon sx={{ color: 'inherit', minWidth: 40 }}><AreaChartIcon /></ListItemIcon>
             <ListItemText primary="Proyecciones IA" primaryTypographyProps={{ fontWeight: 500 }} />
+          </ListItemButton>
+        </ListItem> 
+
+        <ListItem disablePadding sx={{ mb: 1 }}>
+          <ListItemButton component={RouterLink} to="/comparar-modelos" selected={isActivo('/comparar-modelos')} onClick={() => setMobileOpen(false)}>
+            <ListItemIcon sx={{ color: 'inherit', minWidth: 40 }}><QueryStatsIcon /></ListItemIcon>
+            <ListItemText primary="Comparar Modelos" primaryTypographyProps={{ fontWeight: 500 }} />
           </ListItemButton>
         </ListItem> 
 
