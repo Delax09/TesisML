@@ -33,12 +33,16 @@ class MLEngine:
     UMBRAL_BAJISTA = 0.38  # Será sobrescrito por umbral optimizado si está disponible 
 
     FEATURES = [
-        'Close', 'Volume', 'RSI', 'MACD', 'ATR', 'EMA20', 'EMA50',
-        'BB_Upper', 'BB_Lower', 'LogReturn', 'Volatilidad_10d', 'Momentum',
-        'ROC', 'MFI', 'Stochastic_K', 'Stochastic_D', 'Williams_R',
-        'OBV', 'CMF', 'TRIX', 'Force_Index', 'ADX', 'CCI',
-        'Aroon_Up', 'Aroon_Down', 'Ultimate_Oscillator',
-        'Keltner_Channel', 'VWAP', 'Z_Score', 'Ichimoku_Upper', 'Ichimoku_Lower', 
+        'Close',            # Referencia base (aunque para entrenar, LogReturn es el verdadero rey).
+        'Volume',           # Liquidez base pura.
+        'LogReturn',        # FUNDAMENTAL. Las redes neuronales necesitan datos estacionarios.
+        'RSI',              # Representante único de osciladores/momentum.
+        'MACD',             # Representante único de dirección/cruce de tendencias.
+        'Z_Score',          # Reemplazo perfecto y normalizado de las Bandas de Bollinger.
+        'ATR',              # Volatilidad cruda en la escala del precio.
+        'Volatilidad_10d',  # Volatilidad estadística de los retornos.
+        'CMF',              # (O OBV) Representante único de la presión de dinero/volumen.
+        'ADX'               # Fuerza pura de la tendencia (sin importar si es alcista o bajista).
     ]
 
     def __init__(self, version="v1"):

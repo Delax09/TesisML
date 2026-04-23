@@ -35,7 +35,7 @@ class PipelineTrainer:
         self.architecture_name = architecture_name
         self.logger = configurar_logger(f"ML.Trainer.{architecture_name}", archivo_log=log_file)
 
-    def ejecutar_entrenamiento(self, model, train_loader, val_loader, device, epochs=50, pos_weight_factor=1.5):
+    def ejecutar_entrenamiento(self, model, train_loader, val_loader, device, epochs=50, pos_weight_factor=1.0):
         # Calcular pos_weight dinámicamente
         pos_weight = self._calcular_pos_weight_dinamico(train_loader, device, pos_weight_factor)
         
@@ -79,7 +79,7 @@ class PipelineTrainer:
                 perdida_base = criterion_reg(p_reg, yr_b) + criterion_clf(l_clf, yc_b)
                 
                 # factor_castigo determina qué tan duro eres con la IA (ej. 0.05, 0.1, 0.5)
-                factor_castigo = 0.1 
+                factor_castigo = 0.0
                 castigo_extremo = factor_castigo * torch.mean(torch.abs(p_reg))
 
                 loss = perdida_base + castigo_extremo
@@ -210,12 +210,23 @@ class PipelineTrainer:
         for umbral in np.arange(0.1, 0.9, 0.05):
             y_pred_clf = (y_prob_clf > umbral).astype(int)
 
-            # Calculamos el F1-Score (balance entre Precision y Recall)
-            f1 = f1_score(y_real_clf, y_pred_clf, zero_division=0)
-            
-            # Buscamos MAXIMIZAR el F1-Score
-            if f1 > mejor_f1:
-                mejor_f1 = f1
+            # Extraer matriz de confusión para este umbral
+            cm = confusion_matrix(y_real_clf, y_pred_clf)
+            if cm.shape == (2, 2):
+                tn, fp, fn, tp = cm.ravel()
+                
+                # Tasa de Verdaderos Positivos (Recall / Sensibilidad)
+                tpr = tp / (tp + fn) if (tp + fn) > 0 else 0
+                # Tasa de Verdaderos Negativos (Especificidad)
+                tnr = tn / (tn + fp) if (tn + fp) > 0 else 0
+                
+                # Estadístico J de Youden (maximiza el balance de ambas clases)
+                score = tpr + tnr - 1
+            else:
+                score = -1
+
+            if score > mejor_score:
+                mejor_score = score
                 mejores_umbral = umbral
 
         #Extraer la matriz de confusión del mejor umbral para el log
