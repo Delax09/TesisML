@@ -103,3 +103,5 @@
 {"timestamp": "2026-04-23T16:49:57.065184", "level": "INFO", "logger": "ML.Trainer.CNN", "message": "Early stopping activado", "module": "pipeline_trainer", "function": "ejecutar_entrenamiento", "line": 114}
 {"timestamp": "2026-04-23T16:49:57.066118", "level": "INFO", "logger": "ML.Trainer.CNN", "message": "Entrenamiento completado", "module": "pipeline_trainer", "function": "ejecutar_entrenamiento", "line": 123}
 {"timestamp": "2026-04-23T16:49:57.984340", "level": "INFO", "logger": "ML.Trainer.CNN", "message": "Umbral optimizado", "module": "pipeline_trainer", "function": "optimizar_umbral_decision", "line": 223}
+{"timestamp": "2026-04-23T19:29:46.681548", "level": "INFO", "logger": "ML.Trainer.CNN", "message": "Iniciando entrenamiento mejorado", "module": "pipeline_trainer", "function": "ejecutar_entrenamiento", "line": 54}
+{"timestamp": "2026-04-23T19:29:46.683330", "level": "INFO", "logger": "ML.Trainer.CNN", "message": "GPU disponible", "module": "pipeline_trainer", "function": "ejecutar_entrenamiento", "line": 59}

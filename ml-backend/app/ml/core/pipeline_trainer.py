@@ -190,7 +190,7 @@ class PipelineTrainer:
         }
 
     def optimizar_umbral_decision(self, model, val_loader, device):
-        #Encuentra el mejor umbral para MAXIMIZAR el F1-Score
+        # Encuentra el mejor umbral para MAXIMIZAR el balance usando J de Youden
         model.eval()
         y_real_clf, y_prob_clf = [], []
 
@@ -205,7 +205,7 @@ class PipelineTrainer:
         y_prob_clf = np.array(y_prob_clf)
 
         mejores_umbral = 0.5
-        mejor_f1 = -1.0  # Inicializamos buscando el valor máximo
+        mejor_score = -1.0  # <--- CORRECCIÓN: Inicialización obligatoria de la variable
 
         for umbral in np.arange(0.1, 0.9, 0.05):
             y_pred_clf = (y_prob_clf > umbral).astype(int)
@@ -220,29 +220,30 @@ class PipelineTrainer:
                 # Tasa de Verdaderos Negativos (Especificidad)
                 tnr = tn / (tn + fp) if (tn + fp) > 0 else 0
                 
-                # Estadístico J de Youden (maximiza el balance de ambas clases)
+                # Estadístico J de Youden (balancea TP y TN)
                 score = tpr + tnr - 1
             else:
-                score = -1
+                score = -1.0
 
             if score > mejor_score:
                 mejor_score = score
                 mejores_umbral = umbral
 
-        #Extraer la matriz de confusión del mejor umbral para el log
+        # Extraer la matriz de confusión del mejor umbral para el log
         y_pred_final = (y_prob_clf > mejores_umbral).astype(int)
         cm = confusion_matrix(y_real_clf, y_pred_final)
         tn, fp, fn, tp = cm.ravel() if cm.shape == (2, 2) else (0,0,0,0)
 
-        # Log enriquecido para que puedas ver en la consola cómo quedó el balance
+        # Log enriquecido
         self.logger.info(
             "Umbral optimizado", 
             extra={
                 "umbral_optimo": round(mejores_umbral, 2), 
-                "mejor_f1": round(mejor_f1, 4),
+                "mejor_youden": round(mejor_score, 4),
                 "tp_estimados": int(tp),
                 "fp_estimados": int(fp),
-                "fn_estimados": int(fn)
+                "fn_estimados": int(fn),
+                "tn_estimados": int(tn)
             }
         )
         

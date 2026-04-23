@@ -4,6 +4,7 @@ from typing import List, Callable, Dict, Any
 import numpy as np
 from sklearn.model_selection import KFold, StratifiedKFold
 import torch
+from sklearn.model_selection import TimeSeriesSplit
 
 def validacion_cruzada_k_fold(
     X: np.ndarray,
@@ -31,7 +32,7 @@ def validacion_cruzada_k_fold(
     Returns:
         Dict con métricas por fold
     """
-    kf = KFold(n_splits=k, shuffle=True, random_state=42)
+    kf = TimeSeriesSplit(n_splits=k)
     resultados = {'fold': [], 'accuracy': [], 'f1': [], 'auc': [], 'mae': []}
 
     for fold, (train_idx, val_idx) in enumerate(kf.split(X), 1):
