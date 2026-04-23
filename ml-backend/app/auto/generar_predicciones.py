@@ -170,8 +170,16 @@ def ejecutar_analisis_diario(modelo_id = None):
         return {"status": "success", "mensaje": f"Análisis completado. {total_predicciones_guardadas} predicciones guardadas"}
         
     except Exception as e:
-        db.rollback()
+        try:
+            db.rollback()
+        except:
+            pass
         logger.error(f"❌ Error en análisis diario: {e}", exc_info=True)
         return {"status": "error", "mensaje": str(e)}
     finally: 
-        db.close()
+        try:
+            if db:
+                db.rollback()
+                db.close()
+        except Exception as close_error:
+            logger.warning(f"⚠️ Error cerrando conexión BD: {close_error}")

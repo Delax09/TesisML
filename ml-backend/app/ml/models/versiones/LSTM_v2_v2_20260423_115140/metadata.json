@@ -1,0 +1,25 @@
+{
+  "version_id": "LSTM_v2_v2_20260423_115140",
+  "nombre_modelo": "LSTM_v2",
+  "version": "v2",
+  "descripcion": "Entrenamiento automático - 88 empresas",
+  "fecha_creacion": "2026-04-23T11:51:41.003601",
+  "metricas": {
+    "accuracy": 0.4667452830188679,
+    "precision": 0.4655720260703782,
+    "recall": 0.999524066376876,
+    "f1_score": 0.6352490421455939,
+    "auc": 0.5195791114684694,
+    "mae": 0.049271877855062485,
+    "val_loss": 0.0,
+    "tp": 31502,
+    "tn": 162,
+    "fp": 36161,
+    "fn": 15,
+    "DiasFuturo": 5
+  },
+  "archivos": {
+    "modelo": "versiones\\LSTM_v2_v2_20260423_115140\\model.pth",
+    "scaler": "versiones\\LSTM_v2_v2_20260423_115140\\scaler.pkl"
+  }
+}

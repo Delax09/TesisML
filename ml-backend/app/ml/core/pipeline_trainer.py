@@ -35,7 +35,7 @@ class PipelineTrainer:
         self.architecture_name = architecture_name
         self.logger = configurar_logger(f"ML.Trainer.{architecture_name}", archivo_log=log_file)
 
-    def ejecutar_entrenamiento(self, model, train_loader, val_loader, device, epochs=50, pos_weight_factor=2.0):
+    def ejecutar_entrenamiento(self, model, train_loader, val_loader, device, epochs=50, pos_weight_factor=1.5):
         # Calcular pos_weight dinámicamente
         pos_weight = self._calcular_pos_weight_dinamico(train_loader, device, pos_weight_factor)
         
@@ -49,7 +49,7 @@ class PipelineTrainer:
         scheduler = CosineAnnealingLR(optimizer, T_max=epochs, eta_min=1e-6)
 
         #Early stopping más paciente y con mejor criterio
-        early_stopping = EarlyStopping(paciencia=12, delta=0.001, modelo_inicial = model)
+        early_stopping = EarlyStopping(paciencia=12, delta=0.0005, modelo_inicial = model)
 
         self.logger.info("Iniciando entrenamiento mejorado",
                         extra={"architecture": self.architecture_name, "device": device.type.upper(),
@@ -75,11 +75,18 @@ class PipelineTrainer:
                 optimizer.zero_grad()
 
                 p_reg, l_clf = model(x_b)
-                loss = criterion_reg(p_reg, yr_b) + criterion_clf(l_clf, yc_b)
+
+                perdida_base = criterion_reg(p_reg, yr_b) + criterion_clf(l_clf, yc_b)
+                
+                # factor_castigo determina qué tan duro eres con la IA (ej. 0.05, 0.1, 0.5)
+                factor_castigo = 0.1 
+                castigo_extremo = factor_castigo * torch.mean(torch.abs(p_reg))
+
+                loss = perdida_base + castigo_extremo
 
                 loss.backward()
 
-                # 🆕 MEJORA: Gradient clipping más agresivo
+                #Gradient clipping más agresivo
                 torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=0.5)
 
                 optimizer.step()
@@ -89,8 +96,9 @@ class PipelineTrainer:
             # Actualizar LR
             scheduler.step()
 
+            mejor_umbral = self.optimizar_umbral_decision(model, val_loader, device)
             # Validación al final de cada epoch
-            val_metrics = self.evaluar_modelo(model, val_loader, device)
+            val_metrics = self.evaluar_modelo(model, val_loader, device, umbral_decision = mejor_umbral)
             val_score = MetricasNormalizadas.calcular_score_global(val_metrics)
 
             self.logger.info("Epoch completada",
@@ -112,8 +120,12 @@ class PipelineTrainer:
         if mejor_modelo is None:
             mejor_modelo = model.state_dict()
 
-        self.logger.info("Entrenamiento completado", extra={"epochs_completadas": epoch+1, "architecture": self.architecture_name})
-        return mejor_modelo
+        # Calcular umbral óptimo final
+        umbral_final = self.optimizar_umbral_decision(model, val_loader, device)
+
+        self.logger.info("Entrenamiento completado", extra={"epochs_completadas": epoch+1, "architecture": self.architecture_name, "umbral_final": round(umbral_final, 3)})
+        
+        return {"pesos": mejor_modelo, "umbral_optimo": umbral_final}
 
     def _calcular_pos_weight_dinamico(self, train_loader, device, factor=2.0):
         """Calcula el peso positivo dinámicamente basado en la distribución de clases"""
@@ -138,8 +150,8 @@ class PipelineTrainer:
 
         return pos_weight
 
-    def evaluar_modelo(self, model, val_loader, device, umbral_decision=0.5):
-        """🆕 MEJORA: Umbral de decisión optimizable"""
+    def evaluar_modelo(self, model, val_loader, device, umbral_decision=0.4):
+        """Umbral de decisión optimizable"""
         model.eval()
         y_real_clf, y_prob_clf, y_real_reg, y_pred_reg = [], [], [], []
 
@@ -157,7 +169,7 @@ class PipelineTrainer:
         y_prob_clf = np.nan_to_num(np.array(y_prob_clf), nan=0.0)
         y_pred_reg = np.nan_to_num(np.array(y_pred_reg), nan=0.0)
 
-        # 🆕 MEJORA: Usar umbral configurable
+        # Usar umbral configurable
         y_pred_clf = (y_prob_clf > umbral_decision).astype(int)
 
         cm = confusion_matrix(y_real_clf, y_pred_clf)
@@ -178,7 +190,7 @@ class PipelineTrainer:
         }
 
     def optimizar_umbral_decision(self, model, val_loader, device):
-        """🆕 MEJORA: Encuentra el mejor umbral para minimizar FP + FN"""
+        #Encuentra el mejor umbral para MAXIMIZAR el F1-Score
         model.eval()
         y_real_clf, y_prob_clf = [], []
 
@@ -193,19 +205,36 @@ class PipelineTrainer:
         y_prob_clf = np.array(y_prob_clf)
 
         mejores_umbral = 0.5
-        mejor_score = float('inf')
+        mejor_f1 = -1.0  # Inicializamos buscando el valor máximo
 
         for umbral in np.arange(0.1, 0.9, 0.05):
             y_pred_clf = (y_prob_clf > umbral).astype(int)
-            cm = confusion_matrix(y_real_clf, y_pred_clf)
-            if cm.shape == (2, 2):
-                tn, fp, fn, tp = cm.ravel()
-                score = fp + fn  # Minimizar falsos positivos + falsos negativos
-                if score < mejor_score:
-                    mejor_score = score
-                    mejores_umbral = umbral
 
-        self.logger.info("Umbral optimizado", extra={"umbral": mejores_umbral, "score_min": mejor_score})
+            # Calculamos el F1-Score (balance entre Precision y Recall)
+            f1 = f1_score(y_real_clf, y_pred_clf, zero_division=0)
+            
+            # Buscamos MAXIMIZAR el F1-Score
+            if f1 > mejor_f1:
+                mejor_f1 = f1
+                mejores_umbral = umbral
+
+        #Extraer la matriz de confusión del mejor umbral para el log
+        y_pred_final = (y_prob_clf > mejores_umbral).astype(int)
+        cm = confusion_matrix(y_real_clf, y_pred_final)
+        tn, fp, fn, tp = cm.ravel() if cm.shape == (2, 2) else (0,0,0,0)
+
+        # Log enriquecido para que puedas ver en la consola cómo quedó el balance
+        self.logger.info(
+            "Umbral optimizado", 
+            extra={
+                "umbral_optimo": round(mejores_umbral, 2), 
+                "mejor_f1": round(mejor_f1, 4),
+                "tp_estimados": int(tp),
+                "fp_estimados": int(fp),
+                "fn_estimados": int(fn)
+            }
+        )
+        
         return mejores_umbral
 
     def ejecutar_validacion_cruzada(self, model_class, data_processor, device, k=5, epochs=50):
@@ -230,8 +259,8 @@ class PipelineTrainer:
             model.to(device)
 
             # Preparar dataloaders
-            train_loader = data_processor.crear_dataloaders_generico(train_data, batch_size=32, shuffle=True)
-            val_loader = data_processor.crear_dataloaders_generico(val_data, batch_size=32, shuffle=False)
+            train_loader = data_processor.crear_dataloaders_generico(train_data, batch_size=64, shuffle=True)
+            val_loader = data_processor.crear_dataloaders_generico(val_data, batch_size=64, shuffle=False)
 
             # Entrenar modelo con mejoras
             mejores_pesos = self.ejecutar_entrenamiento(model, train_loader, val_loader, device, epochs)

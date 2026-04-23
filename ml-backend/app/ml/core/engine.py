@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import torch
 import logging
+import json
 
 # --- APAGAR WARNINGS DE TENSORFLOW ---
 os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
@@ -24,12 +25,12 @@ logger = logging.getLogger(__name__)
 class MLEngine:
     """Motor de Inferencia de Inteligencia Artificial para Mercado de Valores"""
     
-    DIAS_MEMORIA_IA = 30
+    DIAS_MEMORIA_IA = 60 #Variar para mas contexto
     DIAS_PREDICCION = 5
     
     # Umbrales calibrados
-    UMBRAL_ALCISTA = 0.62  
-    UMBRAL_BAJISTA = 0.38  
+    UMBRAL_ALCISTA = 0.62  # Será sobrescrito por umbral optimizado si está disponible
+    UMBRAL_BAJISTA = 0.38  # Será sobrescrito por umbral optimizado si está disponible 
 
     FEATURES = [
         'Close', 'Volume', 'RSI', 'MACD', 'ATR', 'EMA20', 'EMA50',
@@ -70,10 +71,40 @@ class MLEngine:
                 self.model = ModeloCNN_v3(num_features =len(self.FEATURES)).to(self.device)
                 
             self.model.load_state_dict(torch.load(model_path, map_location=self.device, weights_only=True))
-            self.model.eval() 
+            self.model.eval()
+            
+            # Intentar cargar umbral óptimo desde metadata
+            self._cargar_umbral_optimo()
         else:
             if self.version != "dummy":
                 print(f"⚠️ Archivos para el modelo {self.version} no encontrados en: {model_path}")
+    
+    def _cargar_umbral_optimo(self):
+        """Carga el umbral óptimo desde los metadatos del modelo versionado"""
+        try:
+            base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            versiones_dir = os.path.join(base_dir, "models", "versiones")
+            
+            # Buscar la versión más reciente
+            if os.path.exists(versiones_dir):
+                versiones = sorted([d for d in os.listdir(versiones_dir) if os.path.isdir(os.path.join(versiones_dir, d))], reverse=True)
+                
+                for version_id in versiones:
+                    metadata_path = os.path.join(versiones_dir, version_id, "metadata.json")
+                    if os.path.exists(metadata_path):
+                        with open(metadata_path, 'r') as f:
+                            metadata = json.load(f)
+                        
+                        # Buscar si es la versión correcta
+                        if metadata.get('version') == self.version:
+                            umbral = metadata.get('metricas', {}).get('umbral_optimo')
+                            if umbral is not None:
+                                self.UMBRAL_ALCISTA = umbral
+                                self.UMBRAL_BAJISTA = max(0.1, 1 - umbral)  # Complementario
+                                logger.info(f"✅ Umbral óptimo cargado: {umbral:.3f}")
+                                return
+        except Exception as e:
+            logger.warning(f"⚠️ No se pudo cargar umbral optimizado: {e}")
 
     def _preparar_tensor(self, df_ind):
         scaled_data = self.scaler.transform(df_ind[self.FEATURES].values)

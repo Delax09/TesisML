@@ -85,11 +85,14 @@ def entrenar_pipeline_cnn(id_modelo: int = None):
 
             modelo_pt.to(device)
 
-            mejores_pesos = ejecutar_entrenamiento_cnn(modelo_pt, train_loader, val_loader, device)
+            resultado_entrenamiento = ejecutar_entrenamiento_cnn(modelo_pt, train_loader, val_loader, device)
+            mejores_pesos = resultado_entrenamiento["pesos"]
+            umbral_optimo = resultado_entrenamiento["umbral_optimo"]
 
             # Evaluación y Guardado con umbral optimizado
-            metricas = evaluar_modelo_cnn(modelo_pt, val_loader, device)
+            metricas = evaluar_modelo_cnn(modelo_pt, val_loader, device, umbral_decision=umbral_optimo)
             metricas['DiasFuturo'] = MLEngine.DIAS_PREDICCION
+            metricas['umbral_optimo'] = umbral_optimo
 
             # Guardar métricas en BD
             db_guardado = SessionLocal()
@@ -119,4 +122,10 @@ def entrenar_pipeline_cnn(id_modelo: int = None):
     except Exception as e:
         logger.error("Error crítico en orquestador CNN", extra={"error": str(e)}, exc_info=True)
     finally:
-        db.close()
+        # Cerrar conexión de forma segura
+        try:
+            if db:
+                db.rollback()  # Limpiar cualquier transacción pendiente
+                db.close()
+        except Exception as close_error:
+            logger.warning("Error cerrando conexión BD", extra={"error": str(close_error)})

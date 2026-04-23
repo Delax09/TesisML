@@ -37,8 +37,8 @@ class MetricasNormalizadas:
     def calcular_score_global(metricas: Dict[str, float]) -> float:
         """Calcula puntuación global ponderada (0-100)"""
         pesos = {
-            'accuracy': 0.25,
-            'f1_score': 0.25,
+            'accuracy': 0.05,
+            'f1_score': 0.45,
             'auc': 0.25,
             'mae': 0.25,  # Invertido: menos MAE = mejor
         }

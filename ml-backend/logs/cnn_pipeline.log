@@ -7,3 +7,9 @@
 {"timestamp": "2026-04-21T23:32:47.103289", "level": "INFO", "logger": "ML.Pipeline.CNN", "message": "Iniciando entrenamiento de modelo", "module": "orquestador", "function": "entrenar_pipeline_cnn", "line": 82}
 {"timestamp": "2026-04-22T00:15:56.060187", "level": "INFO", "logger": "ML.Pipeline.CNN", "message": "Modelo guardado exitosamente", "module": "orquestador", "function": "entrenar_pipeline_cnn", "line": 111}
 {"timestamp": "2026-04-22T00:15:56.062909", "level": "INFO", "logger": "ML.Pipeline.CNN", "message": "Pipeline CNN finalizado exitosamente", "module": "orquestador", "function": "entrenar_pipeline_cnn", "line": 117}
+{"timestamp": "2026-04-23T15:53:58.448996", "level": "INFO", "logger": "ML.Pipeline.CNN", "message": "Iniciando extracción de datos", "module": "orquestador", "function": "entrenar_pipeline_cnn", "line": 40}
+{"timestamp": "2026-04-23T15:56:53.834394", "level": "INFO", "logger": "ML.Pipeline.CNN", "message": "Extracción completa", "module": "orquestador", "function": "entrenar_pipeline_cnn", "line": 64}
+{"timestamp": "2026-04-23T15:57:26.846777", "level": "INFO", "logger": "ML.Pipeline.CNN", "message": "Iniciando entrenamiento de modelo", "module": "orquestador", "function": "entrenar_pipeline_cnn", "line": 82}
+{"timestamp": "2026-04-23T16:50:00.965418", "level": "INFO", "logger": "ML.Pipeline.CNN", "message": "Modelo guardado exitosamente", "module": "orquestador", "function": "entrenar_pipeline_cnn", "line": 111}
+{"timestamp": "2026-04-23T16:50:00.968435", "level": "INFO", "logger": "ML.Pipeline.CNN", "message": "Pipeline CNN finalizado exitosamente", "module": "orquestador", "function": "entrenar_pipeline_cnn", "line": 117}
+{"timestamp": "2026-04-23T16:50:01.061211", "level": "WARNING", "logger": "ML.Pipeline.CNN", "message": "Error cerrando conexión BD", "module": "orquestador", "function": "entrenar_pipeline_cnn", "line": 128}
