@@ -72,7 +72,7 @@ class MLEngine:
             elif self.version == "v2":
                 self.model = ModeloBidireccional_v2(num_features =len(self.FEATURES)).to(self.device)
             elif self.version == "v3":
-                self.model = ModeloCNN_v3(num_features =len(self.FEATURES)).to(self.device)
+                self.model = ModeloCNN_v3(num_features=len(self.FEATURES), dias_pasados=self.DIAS_MEMORIA_IA).to(self.device)
                 
             self.model.load_state_dict(torch.load(model_path, map_location=self.device, weights_only=True))
             self.model.eval()
