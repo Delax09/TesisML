@@ -67,12 +67,23 @@ function PrecioChart({ empresaId, nombreEmpresa }) {
         });
         seriesRefs.current = {}; 
 
+        // 🟢 NUEVO: Ordenar y deduplicar los datos
+        const datosLimpios = [...datosFiltrados]
+            .sort((a, b) => mapTime(a) - mapTime(b)) // Asegurar orden ascendente
+            .filter((dato, index, array) => {
+                if (index === 0) return true;
+                // Filtrar si el tiempo es igual al del elemento anterior
+                return mapTime(dato) !== mapTime(array[index - 1]);
+            });
+
+        // 👇 A partir de aquí, usa 'datosLimpios' en lugar de 'datosFiltrados'
+
         if (modoTecnico) {
             const serieVelas = chart.addSeries(CandlestickSeries, {
                 upColor: '#4caf50', downColor: '#ef5350', borderVisible: false,
                 wickUpColor: '#4caf50', wickDownColor: '#ef5350',
             });
-            serieVelas.setData(datosFiltrados.map(d => ({
+            serieVelas.setData(datosLimpios.map(d => ({
                 time: mapTime(d),
                 open: Number(d.PrecioApertura || d.PrecioCierre),
                 high: Number(d.PrecioMaximo || Math.max(d.PrecioApertura, d.PrecioCierre)),
@@ -84,7 +95,7 @@ function PrecioChart({ empresaId, nombreEmpresa }) {
             // Medias y Bandas
             const addLine = (key, color, dataKey, style = 1) => {
                 const s = chart.addSeries(LineSeries, { color, lineWidth: style === 2 ? 2 : 1, lineStyle: style });
-                s.setData(datosFiltrados.filter(d => d[dataKey] != null).map(d => ({ time: mapTime(d), value: Number(d[dataKey]) })));
+                s.setData(datosLimpios.filter(d => d[dataKey] != null).map(d => ({ time: mapTime(d), value: Number(d[dataKey]) })));
                 seriesRefs.current[key] = s;
             };
             addLine('sma', '#ff9800', 'SMA_20', 2);
@@ -97,11 +108,11 @@ function PrecioChart({ empresaId, nombreEmpresa }) {
                 bottomColor: `${theme.palette.primary.main}00`,
                 lineWidth: 2,
             });
-            serieArea.setData(datosFiltrados.map(d => ({ time: mapTime(d), value: Number(d.PrecioCierre) })));
+            serieArea.setData(datosLimpios.map(d => ({ time: mapTime(d), value: Number(d.PrecioCierre) })));
             seriesRefs.current.principal = serieArea;
         }
 
-        aplicarZoomNativo(rango, datosFiltrados);
+        aplicarZoomNativo(rango, datosLimpios); // <-- No olvides cambiar esto también
     }, [datosFiltrados, modoTecnico, rango, theme.palette.primary.main]); 
 
     const aplicarZoomNativo = (nuevoRango, dataArray) => {
