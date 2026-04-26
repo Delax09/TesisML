@@ -12,7 +12,7 @@ function getCookie(name) {
 }
 
 const api = axios.create({
-    baseURL: process.env.REACT_APP_API_URL, 
+    baseURL: import.meta.env.VITE_API_URL, 
     withCredentials: true // Perfecto, esto ya lo tenías y es obligatorio para las cookies
 });
 

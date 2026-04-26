@@ -20,4 +20,4 @@ export default function PageHeader({ titulo, subtitulo, icono: Icono }) {
       </Box>
     </Paper>
   );
-}
+} 
