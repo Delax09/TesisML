@@ -5,7 +5,7 @@ from app.core.config import settings
 
 def enviar_correo(destino: str, asunto: str, mensaje: str, es_html: bool = True):
     remitente = "fabianmejias2002@gmail.com"
-    password = "ytcu tofz zelx xyku"
+    password = "NOHAYNADA"
 
     msg = MIMEMultipart()
     msg['From'] = remitente
