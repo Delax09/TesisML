@@ -16,8 +16,7 @@ from datetime import datetime
 # python entrenar_offline.py       
 
 def guardar_metricas_json(modelo_nombre: str, resultados: dict, metricas_finales: dict, 
-                        umbral_optimo: float, carpeta_destino: str, scaler_type: str = "StandardScaler",
-                        balance_method: str = "smote"):
+                        umbral_optimo: float, carpeta_destino: str, scaler_type: str = "StandardScaler"):
     """
     Guarda las métricas del modelo en JSON con estructura lista para base de datos
     
@@ -58,7 +57,7 @@ def guardar_metricas_json(modelo_nombre: str, resultados: dict, metricas_finales
             "features": MLEngine.FEATURES,
             "epochs_entrenados": resultados.get('epochs', 50),
             "batch_size": "32",  # Valor por defecto del data_processor
-            "balance_method": balance_method.upper(),  # ← Agregar método de balanceo
+            "balance_method": MLEngine.BALANCE_METHOD.upper(),  # ← Usar variable global
         },
         "hiperparametros": {
             "umbral_optimo": round(umbral_optimo, 4),
@@ -115,10 +114,10 @@ def iniciar_entrenamiento_csv(modelos: list = [1]):
         print("❌ No hay datos válidos para entrenar. Verifica los CSV.")
         return
 
-    # 2. Preparación tensorial con BALANCEO de clases (SMOTE)
+    # 2. Preparación tensorial con BALANCEO de clases (automático desde MLEngine.BALANCE_METHOD)
     print("🧠 Generando tensores y ventanas de memoria...")
-    print("⚖️  Aplicando balanceo de clases (SMOTE)...")
-    x_t, yr_t, yc_t, x_v, yr_v, yc_v, scaler = preparar_datos_lstm(lista_dfs, balance_method='smote')
+    print(f"⚖️  Aplicando balanceo de clases ({MLEngine.BALANCE_METHOD.upper()})...")
+    x_t, yr_t, yc_t, x_v, yr_v, yc_v, scaler = preparar_datos_lstm(lista_dfs)
     train_loader, val_loader = crear_dataloaders_lstm(x_t, yr_t, yc_t, x_v, yr_v, yc_v)
     
     # 3. Configurar carpeta central de resultados
@@ -198,8 +197,7 @@ def iniciar_entrenamiento_csv(modelos: list = [1]):
             metricas_finales=metricas_finales,
             umbral_optimo=resultados['umbral_optimo'],
             carpeta_destino=carpeta_modelo,
-            scaler_type="StandardScaler",
-            balance_method="smote"
+            scaler_type="StandardScaler"
         )
         
         metricas_por_modelo[f"v{num_modelo}"] = reporte

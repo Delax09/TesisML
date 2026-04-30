@@ -108,7 +108,7 @@ def extraer_y_procesar_desde_csv(ruta_csv: str) -> Optional[pd.DataFrame]:
         print(f"Error leyendo CSV {ruta_csv}: {str(e)}")
         return None
 
-def preparar_datos(lista_dfs: List[pd.DataFrame], batch_size: int = 50, balance_method: str = 'smote'):
+def preparar_datos(lista_dfs: List[pd.DataFrame], batch_size: int = 50):
     """Valida y prepara la memoria tensorial universalmente"""
     dfs_validos = []
 
@@ -120,7 +120,8 @@ def preparar_datos(lista_dfs: List[pd.DataFrame], batch_size: int = 50, balance_
     if not dfs_validos:
         raise ValueError("No hay dataframes válidos después de la validación")
 
-    return preparar_datos_generico(dfs_validos, batch_size, balance_method=balance_method)
+    # Usa MLEngine.BALANCE_METHOD automáticamente
+    return preparar_datos_generico(dfs_validos, batch_size)
 
 def crear_dataloaders(x_t, yr_t, yc_t, x_v, yr_v, yc_v, batch_size=256):
     """Crea los lotes para PyTorch"""

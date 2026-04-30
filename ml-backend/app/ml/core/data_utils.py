@@ -18,9 +18,13 @@ logger = logging.getLogger(__name__)
 def preparar_datos_generico(
     lista_dfs: List[pd.DataFrame],
     batch_size: int = 50,
-    balance_method: str = 'smote'
+    balance_method: str = None
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, RobustScaler]:
     """Preparación universal de datos para cualquier arquitectura"""
+    # Usar el método de balanceo global si no se especifica
+    if balance_method is None:
+        balance_method = MLEngine.BALANCE_METHOD
+    
     if not lista_dfs:
         return None, None, None, None, None, None, None
 

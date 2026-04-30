@@ -28,6 +28,10 @@ class MLEngine:
     DIAS_MEMORIA_IA = 60 #Variar para mas contexto
     DIAS_PREDICCION = 5
     
+    # ⚖️ CONFIGURACIÓN GLOBAL DE BALANCEO DE CLASES
+    # Opciones: 'smote', 'oversample', 'undersample', 'none'
+    BALANCE_METHOD = 'smote'
+    
     # Umbrales calibrados
     UMBRAL_ALCISTA = 0.62  # Será sobrescrito por umbral optimizado si está disponible
     UMBRAL_BAJISTA = 0.38  # Será sobrescrito por umbral optimizado si está disponible 
