@@ -13,3 +13,6 @@ __pycache__/
 
 *.env
 
+# Entrenamientos offline
+app/ml/models/entrenamientos_offline/
+

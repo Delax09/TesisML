@@ -38,6 +38,9 @@ class Settings(BaseSettings):
         extra="ignore"  # Ignorar variables de entorno no definidas
     )
 
+    EMAIL_USER : str
+    EMAIL_PASSWORD: str 
+
 
 # Instancia global de configuración
 settings = Settings()

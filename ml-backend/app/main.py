@@ -62,7 +62,8 @@ async def lifespan(app: FastAPI):
         FastAPICache.init(InMemoryBackend(), prefix="tesisml-ram")
     
     
-    # 2. CARGAR MODELOS DE IA
+    # CARGAN LOS MODELOS IA QUE ESTAN ENTRENADOS CON LOS DATOS DE LA BASE DE DATOS
+    # Los modelos que se ejecutan local no se cargan para evitar problemas de entrenamiento 
     if IA_AVAILABLE:
         print("🚀 Cargando modelos de IA en memoria (Modo Local)...")
         base_path = os.path.join(os.path.dirname(__file__), "ml", "models")

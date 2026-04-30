@@ -2,9 +2,9 @@ import pandas as pd
 from typing import List, Optional
 from app.ml.core.pipeline_base import extraer_y_procesar_empresa, preparar_datos, crear_dataloaders
 
-def preparar_datos_lstm(lista_dfs: List[pd.DataFrame], batch_size: int = 50):
+def preparar_datos_lstm(lista_dfs: List[pd.DataFrame], batch_size: int = 50, balance_method: str = 'smote'):
     """Alias para consistencia con nomenclatura LSTM"""
-    return preparar_datos(lista_dfs, batch_size)
+    return preparar_datos(lista_dfs, batch_size, balance_method=balance_method)
 
 def crear_dataloaders_lstm(x_t, yr_t, yc_t, x_v, yr_v, yc_v, batch_size=256):
     """Alias para consistencia con nomenclatura LSTM"""

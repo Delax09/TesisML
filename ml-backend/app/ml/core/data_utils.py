@@ -8,12 +8,17 @@ from torch.utils.data import TensorDataset, DataLoader
 from sklearn.preprocessing import RobustScaler
 from numpy.lib.stride_tricks import sliding_window_view
 import gc
+import logging
 
 from app.ml.core.engine import MLEngine
+from app.ml.core.data_validation import DataValidator
+
+logger = logging.getLogger(__name__)
 
 def preparar_datos_generico(
     lista_dfs: List[pd.DataFrame],
-    batch_size: int = 50
+    batch_size: int = 50,
+    balance_method: str = 'smote'
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, RobustScaler]:
     """Preparación universal de datos para cualquier arquitectura"""
     if not lista_dfs:
@@ -65,7 +70,26 @@ def preparar_datos_generico(
     del x_chunks, y_reg_chunks, y_clf_chunks
     gc.collect()
 
-    return (x_total[:split_idx], y_reg_total[:split_idx], y_clf_total[:split_idx],
+    # ✅ Balancear dataset de entrenamiento
+    x_t_bal, y_clf_t_bal = DataValidator.balancear_dataset(
+        X=x_total[:split_idx],
+        y_clf=y_clf_total[:split_idx],
+        method=balance_method
+    )
+    
+    # Ajustar y_reg con los nuevos índices del balanceo
+    n_original = len(y_clf_total[:split_idx])
+    n_balanceado = len(y_clf_t_bal)
+    
+    if n_balanceado != n_original:
+        logger.info(f"🔄 Balanceo {balance_method.upper()}: {n_original} → {n_balanceado} muestras (entrenamiento)")
+        # Muestrear y_reg aleatoriamente para que coincida con el tamaño balanceado
+        indices = np.random.choice(n_original, n_balanceado, replace=True)
+        y_reg_t_bal = y_reg_total[:split_idx][indices]
+    else:
+        y_reg_t_bal = y_reg_total[:split_idx]
+    
+    return (x_t_bal, y_reg_t_bal, y_clf_t_bal,
             x_total[split_idx:], y_reg_total[split_idx:], y_clf_total[split_idx:], scaler)
 
 def crear_dataloaders_generico(
