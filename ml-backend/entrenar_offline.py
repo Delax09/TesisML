@@ -12,7 +12,7 @@ import joblib
 import json
 from sklearn.metrics import confusion_matrix
 from datetime import datetime
-
+from data.rutas import rutas
 #Para ejecutar este script
 # python entrenar_offline.py       
 
@@ -89,13 +89,7 @@ def guardar_metricas_json(modelo_nombre: str, resultados: dict, metricas_finales
 def iniciar_entrenamiento_csv(modelos: list = [1]):
     #Importacion de los archivos CSV Localess 
     #ruta de los archivos data/data_TICKET.csv
-    rutas_csv = [
-        "data/data_MSFT.csv",
-        "data/data_AAPL.csv",
-        "data/data_GOOGL.csv",
-        "data/data_NVDA.csv",
-
-    ]
+    rutas_csv = rutas
     
     lista_dfs = []
     
