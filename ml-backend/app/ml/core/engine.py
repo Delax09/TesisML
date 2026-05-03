@@ -18,6 +18,7 @@ torch._dynamo.disable()
 from app.ml.arquitectura.v1_lstm import ModeloLSTM_v1
 from app.ml.arquitectura.v2_bidireccional import ModeloBidireccional_v2
 from app.ml.arquitectura.v3_cnn import ModeloCNN_v3
+from app.ml.arquitectura.v4_lstm_cnn import ModeloLSTMCNN_v4
 from app.ml.core.technical_indicators import TechnicalIndicators # Asumiendo que moviste los indicadores aquí
 
 logger = logging.getLogger(__name__)
@@ -25,16 +26,16 @@ logger = logging.getLogger(__name__)
 class MLEngine:
     """Motor de Inferencia de Inteligencia Artificial para Mercado de Valores"""
     
-    DIAS_MEMORIA_IA = 60 #Variar para mas contexto
-    DIAS_PREDICCION = 5
+    DIAS_MEMORIA_IA = 90 #Variar para mas contexto
+    DIAS_PREDICCION = 21
     
     # ⚖️ CONFIGURACIÓN GLOBAL DE BALANCEO DE CLASES
     # Opciones: 'smote', 'oversample', 'undersample', 'none'
-    BALANCE_METHOD = 'smote'
+    BALANCE_METHOD = 'undersample'
     
     # Umbrales calibrados
-    UMBRAL_ALCISTA = 0.62  # Será sobrescrito por umbral optimizado si está disponible
-    UMBRAL_BAJISTA = 0.38  # Será sobrescrito por umbral optimizado si está disponible 
+    UMBRAL_ALCISTA = 0.635  # Será sobrescrito por umbral optimizado si está disponible
+    UMBRAL_BAJISTA = 0.375  # Será sobrescrito por umbral optimizado si está disponible 
 
     FEATURES = [
         'Close',            # Referencia base (aunque para entrenar, LogReturn es el verdadero rey).
@@ -77,6 +78,8 @@ class MLEngine:
                 self.model = ModeloBidireccional_v2(num_features =len(self.FEATURES)).to(self.device)
             elif self.version == "v3":
                 self.model = ModeloCNN_v3(num_features=len(self.FEATURES), dias_pasados=self.DIAS_MEMORIA_IA).to(self.device)
+            elif self.version == "v4":
+                self.model = ModeloLSTMCNN_v4(num_features=len(self.FEATURES), dias_pasados=self.DIAS_MEMORIA_IA).to(self.device)
                 
             self.model.load_state_dict(torch.load(model_path, map_location=self.device, weights_only=True))
             self.model.eval()

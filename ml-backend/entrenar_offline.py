@@ -6,6 +6,7 @@ from app.ml.core.pipeline_trainer import PipelineTrainer
 from app.ml.arquitectura.v1_lstm import obtener_modelo_v1 
 from app.ml.arquitectura.v2_bidireccional import obtener_modelo_v2
 from app.ml.arquitectura.v3_cnn import obtener_modelo_v3
+from app.ml.arquitectura.v4_lstm_cnn import obtener_modelo_v4
 from app.ml.core.engine import MLEngine
 import joblib 
 import json
@@ -37,11 +38,11 @@ def guardar_metricas_json(modelo_nombre: str, resultados: dict, metricas_finales
     tp = metricas_finales.get('tp', 0)
     
     matriz_confusion = {
-        "verdaderos_negativos": int(tn),
+        "verdaderos_positivos": int(tp),
         "falsos_positivos": int(fp),
         "falsos_negativos": int(fn),
-        "verdaderos_positivos": int(tp),
-        "matriz": [[int(tn), int(fp)], [int(fn), int(tp)]]  # [[TN, FP], [FN, TP]]
+        "verdaderos_negativos": int(tn),
+        "matriz": [[int(tp), int(fp)], [int(fn), int(tn)]]  # [[TP, FP], [FN, TN]]
     }
     
     # Crear reporte con estructura lista para base de datos
@@ -149,8 +150,12 @@ def iniciar_entrenamiento_csv(modelos: list = [1]):
             modelo = obtener_modelo_v3(MLEngine.DIAS_MEMORIA_IA, len(MLEngine.FEATURES)).to(device)
             nombre_modelo = "CNN_v3"
             architecture_name = "CNN_v3"
+        elif num_modelo == 4:
+            modelo = obtener_modelo_v4(MLEngine.DIAS_MEMORIA_IA, len(MLEngine.FEATURES)).to(device)
+            nombre_modelo = "LSTMCNN_v4"
+            architecture_name = "LSTMCNN_v4"
         else:
-            print(f"❌ Modelo v{num_modelo} no válido. Use 1, 2 o 3.")
+            print(f"❌ Modelo v{num_modelo} no válido. Use 1, 2, 3 o 4.")
             continue
         
         # Crear entrenador
@@ -245,15 +250,16 @@ def iniciar_entrenamiento_csv(modelos: list = [1]):
 
 if __name__ == "__main__":
     # OPCIONES:
-    # [1]       → Entrena solo LSTM v1
-    # [2]       → Entrena solo LSTM Bidireccional v2
-    # [3]       → Entrena solo CNN v3
-    # [1, 2, 3] → Entrena los 3 modelos (recomendado para comparación)
+    # [1]          → Entrena solo LSTM v1 (clásica)
+    # [2]          → Entrena solo LSTM Bidireccional v2
+    # [3]          → Entrena solo CNN v3
+    # [4]          → Entrena solo Híbrida CNN+LSTM v4
+    # [1, 2, 3, 4] → Entrena todos los modelos (recomendado para comparación)
     
     print("🚀 SISTEMA DE ENTRENAMIENTO OFFLINE - MODELOS IA")
     print("=" * 60)
     
     # Cambiar esta lista para entrenar diferentes modelos
-    modelos_a_entrenar = [1]  # Entrena los 3 modelos
+    modelos_a_entrenar = [4]  # Entrena todos los modelos incluido el nuevo v4
     
     iniciar_entrenamiento_csv(modelos=modelos_a_entrenar)

@@ -13,6 +13,7 @@ from app.models.modelo_ia import ModeloIA
 from app.services.metrica_service import MetricaService
 from app.ml.arquitectura.v1_lstm import obtener_modelo_v1
 from app.ml.arquitectura.v2_bidireccional import obtener_modelo_v2
+from app.ml.arquitectura.v4_lstm_cnn import obtener_modelo_v4
 from app.ml.core.engine import MLEngine
 from app.ml.core.logger import configurar_logger
 from app.ml.core.model_versioning import ModelVersionManager
@@ -29,7 +30,7 @@ def entrenar_pipeline_lstm(id_modelo: int = None):
     db = SessionLocal()
     try:
         # 1. Cargar configuración
-        modelos = db.query(ModeloIA).filter(ModeloIA.Activo == True, ModeloIA.Version.in_(['v1', 'v2']))
+        modelos = db.query(ModeloIA).filter(ModeloIA.Activo == True, ModeloIA.Version.in_(['v1', 'v2', 'v4']))
         if id_modelo: modelos = modelos.filter(ModeloIA.IdModelo == id_modelo)
 
         empresas = db.query(Empresa).filter(Empresa.Activo == True).all()
@@ -84,6 +85,8 @@ def entrenar_pipeline_lstm(id_modelo: int = None):
 
             if mod_db.Version == 'v2':
                 modelo_pt = obtener_modelo_v2(dias_pasados = MLEngine.DIAS_MEMORIA_IA, num_features = len(MLEngine.FEATURES))
+            elif mod_db.Version == 'v4':
+                modelo_pt = obtener_modelo_v4(dias_pasados = MLEngine.DIAS_MEMORIA_IA, num_features = len(MLEngine.FEATURES))
             else:
                 modelo_pt = obtener_modelo_v1(dias_pasados = MLEngine.DIAS_MEMORIA_IA, num_features = len(MLEngine.FEATURES))
 

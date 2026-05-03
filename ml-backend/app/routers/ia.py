@@ -123,9 +123,9 @@ def entrenar_modelo_individual(id_modelo: int, background_tasks: BackgroundTasks
         version_modelo = modelo_db.Version 
     finally:
         db.close()
-    if version_modelo in ['v1', 'v2']:
+    if version_modelo in ['v1', 'v2', 'v4']:
         background_tasks.add_task(entrenar_pipeline_lstm, id_modelo=id_modelo)
-        tipo = "LSTM/BiLSTM"
+        tipo = "LSTM/BiLSTM/Híbrida"
     elif version_modelo == 'v3':
         background_tasks.add_task(entrenar_pipeline_cnn, id_modelo=id_modelo)
         tipo = "CNN"
