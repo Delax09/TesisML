@@ -31,11 +31,12 @@ class MLEngine:
     
     # ⚖️ CONFIGURACIÓN GLOBAL DE BALANCEO DE CLASES
     # Opciones: 'smote', 'oversample', 'undersample', 'none'
+    #Smote no es eficiente para grandes datasets
     BALANCE_METHOD = 'undersample'
     
     # Umbrales calibrados
-    UMBRAL_ALCISTA = 0.635  # Será sobrescrito por umbral optimizado si está disponible
-    UMBRAL_BAJISTA = 0.375  # Será sobrescrito por umbral optimizado si está disponible 
+    UMBRAL_ALCISTA = 0.65  # Será sobrescrito por umbral optimizado si está disponible
+    UMBRAL_BAJISTA = 0.32  # Será sobrescrito por umbral optimizado si está disponible 
 
     FEATURES = [
         'Close',            # Referencia base (aunque para entrenar, LogReturn es el verdadero rey).
@@ -224,8 +225,8 @@ class MLEngine:
         # Volatilidad
         df_clean['Volatilidad_10d'] = df_clean['LogReturn'].rolling(window=10).std().fillna(0)
         df_clean['ATR'] = np.maximum(df_clean['High'] - df_clean['Low'], 
-                                     np.maximum(abs(df_clean['High'] - df_clean['Close'].shift(1)), 
-                                               abs(df_clean['Low'] - df_clean['Close'].shift(1)))).rolling(window=14).mean()
+                                    np.maximum(abs(df_clean['High'] - df_clean['Close'].shift(1)), 
+                                    abs(df_clean['Low'] - df_clean['Close'].shift(1)))).rolling(window=14).mean()
         
         rolling_std = df_clean['Close'].rolling(window=20).std().clip(lower=0.001)
         df_clean['BB_Upper'] = df_clean['EMA20'] + 2 * rolling_std
@@ -259,12 +260,12 @@ class MLEngine:
         
         mf_sum = positive_mf.rolling(window=14).sum() + negative_mf.rolling(window=14).sum()
         df_clean['MFI'] = 100 - (100 / (1 + (positive_mf.rolling(window=14).sum() / 
-                                             negative_mf.rolling(window=14).sum().clip(lower=0.001))))
+                                            negative_mf.rolling(window=14).sum().clip(lower=0.001))))
         
         df_clean['OBV'] = (np.sign(df_clean['Close'].diff()) * df_clean['Volume']).fillna(0).cumsum()
         
         money_flow_volume = (((df_clean['Close'] - df_clean['Low']) - 
-                             (df_clean['High'] - df_clean['Close'])) / 
+                            (df_clean['High'] - df_clean['Close'])) / 
                             (df_clean['High'] - df_clean['Low']).clip(lower=0.001) * 
                             df_clean['Volume']).replace([np.inf, -np.inf], 0)
         df_clean['CMF'] = money_flow_volume.rolling(window=20).sum() / df_clean['Volume'].rolling(window=20).sum().clip(lower=1)

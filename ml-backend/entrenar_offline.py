@@ -113,6 +113,11 @@ def iniciar_entrenamiento_csv(modelos: list = [1]):
     print("🧠 Generando tensores y ventanas de memoria...")
     print(f"⚖️  Aplicando balanceo de clases ({MLEngine.BALANCE_METHOD.upper()})...")
     x_t, yr_t, yc_t, x_v, yr_v, yc_v, scaler = preparar_datos_lstm(lista_dfs)
+    
+    print(f"✅ Balanceo completado")
+    print(f"   Train: {len(x_t)} muestras")
+    print(f"   Val:   {len(x_v)} muestras")
+    
     train_loader, val_loader = crear_dataloaders_lstm(x_t, yr_t, yc_t, x_v, yr_v, yc_v)
     
     # 3. Configurar carpeta central de resultados
@@ -254,6 +259,6 @@ if __name__ == "__main__":
     print("=" * 60)
     
     # Cambiar esta lista para entrenar diferentes modelos
-    modelos_a_entrenar = [4]  # Entrena todos los modelos incluido el nuevo v4
+    modelos_a_entrenar = [2]  # Entrena todos los modelos incluido el nuevo v4
     
     iniciar_entrenamiento_csv(modelos=modelos_a_entrenar)
