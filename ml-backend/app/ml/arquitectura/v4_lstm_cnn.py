@@ -3,47 +3,51 @@ import torch.nn as nn
 
 class ModeloLSTMCNN_v4(nn.Module):
     """
-    Modelo Híbrido que combina CNN + LSTM para obtener lo mejor de ambos mundos:
-    - CNN extrae características locales de patrones de precios
-    - LSTM procesa las dependencias temporales
+    Modelo Híbrido Optimizado CNN + BiLSTM
+    - CNN con convoluciones dilatadas: Extrae características locales sin destruir la dimensión temporal.
+    - BiLSTM: Procesa las dependencias temporales complejas en ambas direcciones de la ventana histórica.
     """
-    def __init__(self, num_features: int, dias_pasados: int, hidden_size: int = 32):
+    def __init__(self, num_features: int, dias_pasados: int, hidden_size: int = 64):
         super().__init__()
         
-        # ============ RAMA CNN ============
-        # Extrae características locales (patrones de precios)
-        self.conv1 = nn.Conv1d(in_channels=num_features, out_channels=16, kernel_size=3, padding=1)
-        self.bn_conv1 = nn.BatchNorm1d(16)
+        # ============ RAMA CNN (Extracción de Patrones Locales) ============
+        # Usamos Dilation en lugar de MaxPool para mantener la longitud de la secuencia intacta (dias_pasados)
+        # Dilation=2 "estira" el kernel para ver patrones más amplios
+        self.conv1 = nn.Conv1d(in_channels=num_features, out_channels=32, kernel_size=3, padding=2, dilation=2)
+        self.bn_conv1 = nn.BatchNorm1d(32)
         self.relu_conv1 = nn.ReLU()
-        self.pool1 = nn.MaxPool1d(kernel_size=2)  # dias_pasados // 2
         
-        self.conv2 = nn.Conv1d(in_channels=16, out_channels=32, kernel_size=3, padding=1)
-        self.bn_conv2 = nn.BatchNorm1d(32)
+        # Dilation=4 captura patrones aún más amplios (tendencias cortas)
+        self.conv2 = nn.Conv1d(in_channels=32, out_channels=64, kernel_size=3, padding=4, dilation=4)
+        self.bn_conv2 = nn.BatchNorm1d(64)
         self.relu_conv2 = nn.ReLU()
-        # Sin pool para mantener suficiente información temporal
         
-        # ============ RAMA LSTM ============
-        # Procesa la secuencia temporal con características extraídas por CNN
+        # ============ RAMA LSTM (Procesamiento Secuencial) ============
+        # Ahora la LSTM recibe la secuencia completa (dias_pasados) con 64 features enriquecidas por la CNN
         self.lstm = nn.LSTM(
-            input_size=32,  # Salida de la segunda convolución
+            input_size=64,           # Salida de los canales de la conv2
             hidden_size=hidden_size,
             num_layers=2,
             batch_first=True,
-            dropout=0.2
+            dropout=0.3,
+            bidirectional=True       # 🛑 BiLSTM activada para máximo contexto
         )
         
-        # Atención temporal
+        # Salida de la BiLSTM será el doble de hidden_size
+        lstm_out_size = hidden_size * 2
+        
+        # ============ MECANISMO DE ATENCIÓN ============
         self.attention = nn.Sequential(
-            nn.Linear(hidden_size, hidden_size),
+            nn.Linear(lstm_out_size, hidden_size),
             nn.Tanh(),
             nn.Linear(hidden_size, 1)
         )
         
-        # ============ CAPAS DE FUSIÓN ============
-        self.bn_fusion = nn.BatchNorm1d(hidden_size)
-        self.dropout_fusion = nn.Dropout(0.3)
+        # ============ CAPAS DE FUSIÓN Y DECISIÓN ============
+        self.bn_fusion = nn.BatchNorm1d(lstm_out_size)
+        self.dropout_fusion = nn.Dropout(0.4)
         
-        self.fc1 = nn.Linear(hidden_size, hidden_size)
+        self.fc1 = nn.Linear(lstm_out_size, hidden_size)
         self.bn1 = nn.BatchNorm1d(hidden_size)
         self.relu1 = nn.ReLU()
         self.dropout1 = nn.Dropout(0.3)
@@ -65,40 +69,39 @@ class ModeloLSTMCNN_v4(nn.Module):
                     if 'lstm' in name:
                         nn.init.orthogonal_(param)
                     else:
-                        nn.init.xavier_uniform_(param)
+                        nn.init.kaiming_normal_(param, nonlinearity='relu') # Mejor para redes con ReLUs (CNNs)
                 else:
                     nn.init.normal_(param, 0, 0.01)
             elif 'bias' in name:
                 nn.init.constant_(param, 0.0)
     
     def forward(self, x):
-        # x shape: (batch, seq_len, features)
+        # Entrada original: (batch, seq_len, features)
         
         # ============ RAMA CNN ============
-        # Permutar para CNN: (batch, features, seq_len)
+        # Permutar para que la CNN procese la secuencia temporal en la última dimensión: (batch, features, seq_len)
         x_cnn = x.permute(0, 2, 1)
         
-        # Primera convolución con pooling
         x_cnn = self.conv1(x_cnn)
         x_cnn = self.bn_conv1(x_cnn)
         x_cnn = self.relu_conv1(x_cnn)
-        x_cnn = self.pool1(x_cnn)  # (batch, 16, seq_len // 2)
         
-        # Segunda convolución sin pooling
         x_cnn = self.conv2(x_cnn)
         x_cnn = self.bn_conv2(x_cnn)
-        x_cnn = self.relu_conv2(x_cnn)  # (batch, 32, seq_len // 2)
-        
-        # Permutar de vuelta para LSTM: (batch, seq_len // 2, 32)
-        x_cnn = x_cnn.permute(0, 2, 1)
+        x_cnn = self.relu_conv2(x_cnn)  
+        # Salida CNN: (batch, 64_canales, seq_len) -> Note que seq_len se mantiene igual
         
         # ============ RAMA LSTM ============
-        # LSTM procesa las características extraídas por CNN
-        lstm_out, _ = self.lstm(x_cnn)  # (batch, seq_len // 2, hidden_size)
+        # Permutar de vuelta a (batch, seq_len, 64_canales) para que la LSTM lo entienda
+        x_lstm_in = x_cnn.permute(0, 2, 1)
         
-        # Aplicar atención
-        attn_weights = torch.softmax(self.attention(lstm_out), dim=1)
-        context_vector = torch.sum(attn_weights * lstm_out, dim=1)  # (batch, hidden_size)
+        lstm_out, _ = self.lstm(x_lstm_in)  # lstm_out: (batch, seq_len, hidden_size * 2)
+        
+        # ============ MECANISMO DE ATENCIÓN ============
+        attn_scores = self.attention(lstm_out)
+        attn_weights = torch.softmax(attn_scores, dim=1)
+        # Suma ponderada de todos los días basándonos en la atención
+        context_vector = torch.sum(attn_weights * lstm_out, dim=1)  # (batch, hidden_size * 2)
         
         # ============ CAPAS DE FUSIÓN ============
         x = self.bn_fusion(context_vector)
@@ -119,16 +122,9 @@ class ModeloLSTMCNN_v4(nn.Module):
         
         return p_reg, l_clf
 
-def obtener_modelo_v4(dias_pasados: int, num_features: int, hidden_size: int = 32):
+def obtener_modelo_v4(dias_pasados: int, num_features: int, hidden_size: int = 64):
     """
     Factory function para crear el modelo híbrido v4
-    
-    Args:
-        dias_pasados: Número de días de historia (ventana temporal)
-        num_features: Número de features del dataset
-        hidden_size: Tamaño del hidden state del LSTM (default: 32)
-    
-    Returns:
-        ModeloLSTMCNN_v4 instanciado y listo para usar
     """
+    # Usamos hidden_size = 64 por defecto para darle más capacidad a la red (el original tenía 32)
     return ModeloLSTMCNN_v4(num_features, dias_pasados, hidden_size)

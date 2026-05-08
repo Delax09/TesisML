@@ -61,6 +61,12 @@ def preparar_datos_generico(
     total_filas = sum(len(x) for x in x_chunks)
     split_idx = int(0.9 * total_filas)
 
+    gap_purgado = MLEngine.DIAS_MEMORIA_IA + MLEngine.DIAS_PREDICCION
+    val_start_idx = split_idx + gap_purgado
+
+    if val_start_idx >= total_filas:
+        val_start_idx = split_idx
+
     x_total = np.empty((total_filas, MLEngine.DIAS_MEMORIA_IA, len(MLEngine.FEATURES)), dtype=np.float32)
     y_reg_total = np.empty(total_filas, dtype=np.float32)
     y_clf_total = np.empty(total_filas, dtype=np.float32)
@@ -74,14 +80,11 @@ def preparar_datos_generico(
     del x_chunks, y_reg_chunks, y_clf_chunks
     gc.collect()
 
-    # ✅ Balancear dataset de entrenamiento
     x_t_bal, y_clf_t_bal = DataValidator.balancear_dataset(
         X=x_total[:split_idx],
         y_clf=y_clf_total[:split_idx],
         method=balance_method
     )
-    
-    # Ajustar y_reg con los nuevos índices del balanceo
     n_original = len(y_clf_total[:split_idx])
     n_balanceado = len(y_clf_t_bal)
     
@@ -94,7 +97,7 @@ def preparar_datos_generico(
         y_reg_t_bal = y_reg_total[:split_idx]
     
     return (x_t_bal, y_reg_t_bal, y_clf_t_bal,
-            x_total[split_idx:], y_reg_total[split_idx:], y_clf_total[split_idx:], scaler)
+            x_total[val_start_idx:], y_reg_total[val_start_idx:], y_clf_total[val_start_idx:], scaler)
 
 def crear_dataloaders_generico(
     x_t: np.ndarray,

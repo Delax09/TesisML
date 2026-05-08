@@ -48,7 +48,10 @@ class MLEngine:
         'ATR',              # Volatilidad cruda en la escala del precio.
         'Volatilidad_10d',  # Volatilidad estadística de los retornos.
         'CMF',              # (O OBV) Representante único de la presión de dinero/volumen.
-        'ADX'               # Fuerza pura de la tendencia (sin importar si es alcista o bajista).
+        'ADX',               # Fuerza pura de la tendencia (sin importar si es alcista o bajista).
+        'SMA20',
+        'BB_Upper',
+        'BB_Lower'
     ]
 
     def __init__(self, version="v1"):
@@ -214,7 +217,7 @@ class MLEngine:
             return None
         
         # Indicadores Tendenciales
-        df_clean['EMA20'] = df_clean['Close'].ewm(span=20, adjust=False).mean()
+        df_clean['SMA20'] = df_clean['Close'].rolling(window=20).mean()
         df_clean['EMA50'] = df_clean['Close'].ewm(span=50, adjust=False).mean()
         df_clean['MACD'] = df_clean['Close'].ewm(span=12, adjust=False).mean() - df_clean['Close'].ewm(span=26, adjust=False).mean()
         df_clean['LogReturn'] = np.log(df_clean['Close'] / df_clean['Close'].shift(1)).replace([np.inf, -np.inf], 0)
@@ -228,12 +231,14 @@ class MLEngine:
                                     np.maximum(abs(df_clean['High'] - df_clean['Close'].shift(1)), 
                                     abs(df_clean['Low'] - df_clean['Close'].shift(1)))).rolling(window=14).mean()
         
+        # Implementación correcta de SMA20 y Bandas de Bollinger
+        df_clean['SMA20'] = df_clean['Close'].rolling(window=20).mean()
         rolling_std = df_clean['Close'].rolling(window=20).std().clip(lower=0.001)
-        df_clean['BB_Upper'] = df_clean['EMA20'] + 2 * rolling_std
-        df_clean['BB_Lower'] = df_clean['EMA20'] - 2 * rolling_std
-        df_clean['Keltner_Channel'] = df_clean['EMA20'] + 1.5 * df_clean['ATR'].fillna(0)
-        df_clean['Z_Score'] = ((df_clean['Close'] - df_clean['Close'].rolling(window=20).mean()) / rolling_std).replace([np.inf, -np.inf], 0)
+        df_clean['BB_Upper'] = df_clean['SMA20'] + 2 * rolling_std
+        df_clean['BB_Lower'] = df_clean['SMA20'] - 2 * rolling_std
         
+        df_clean['Keltner_Channel'] = df_clean['EMA20'] + 1.5 * df_clean['ATR'].fillna(0)
+        df_clean['Z_Score'] = ((df_clean['Close'] - df_clean['SMA20']) / rolling_std).replace([np.inf, -np.inf], 0)
         # Osciladores - RSI mejorado
         delta = df_clean['Close'].diff()
         gain = delta.clip(lower=0).rolling(window=14).mean()

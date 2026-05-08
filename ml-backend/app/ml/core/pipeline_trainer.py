@@ -16,18 +16,17 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 from app.ml.core.early_stopping import EarlyStopping
 
 class FocalLoss(nn.Module):
-    def __init__(self, gamma=2.0, pos_weight=None):
+    def __init__(self, alpha = 0.25, gamma=2.0, pos_weight=None):
         super().__init__()
+        self.alpha = alpha
         self.gamma = gamma
         self.pos_weight = pos_weight
 
     def forward(self, inputs, targets):
         bce_loss = nn.functional.binary_cross_entropy_with_logits(inputs, targets, reduction='none', pos_weight=self.pos_weight)
-        probs = torch.sigmoid(inputs)
-        
-        p_t = probs * targets + (1 - probs) * (1 - targets)
+        pt = torch.exp(-bce_loss)
         # Modulador focal: se centra en ejemplos difíciles
-        focal_loss = ((1 - p_t) ** self.gamma) * bce_loss
+        focal_loss = self.alpha * (1-pt )**self.gamma * bce_loss
         return focal_loss.mean()
 
 class PipelineTrainer:
@@ -40,7 +39,7 @@ class PipelineTrainer:
         pos_weight = self._calcular_pos_weight_dinamico(train_loader, device, pos_weight_factor)
         
         criterion_reg = nn.HuberLoss(delta=0.01)
-        criterion_clf = FocalLoss(gamma=2.0, pos_weight=pos_weight)
+        criterion_clf = FocalLoss(alpha = 0.25,gamma=2.0, pos_weight=pos_weight)
         
         
         optimizer = optim.AdamW(model.parameters(), lr=0.001, weight_decay=1e-4)
