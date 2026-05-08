@@ -249,16 +249,16 @@ def iniciar_entrenamiento_csv(modelos: list = [1]):
 
 if __name__ == "__main__":
     # OPCIONES:
-    # [1]          → Entrena solo LSTM v1 (clásica)
-    # [2]          → Entrena solo LSTM Bidireccional v2
-    # [3]          → Entrena solo CNN v3
-    # [4]          → Entrena solo Híbrida CNN+LSTM v4
-    # [1, 2, 3, 4] → Entrena todos los modelos (recomendado para comparación)
+    # [1]          LSTM v1 (clásica)
+    # [2]          LSTM Bidireccional v2
+    # [3]          CNN v3
+    # [4]          CNN+LSTM v4
+    # [1, 2, 3, 4] todos los modelos 
     
     print("🚀 SISTEMA DE ENTRENAMIENTO OFFLINE - MODELOS IA")
     print("=" * 60)
     
     # Cambiar esta lista para entrenar diferentes modelos
-    modelos_a_entrenar = [2]  # Entrena todos los modelos incluido el nuevo v4
+    modelos_a_entrenar = [1,2,3,4] 
     
     iniciar_entrenamiento_csv(modelos=modelos_a_entrenar)
