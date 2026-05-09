@@ -28,7 +28,7 @@ def descargar_historicos_csv():
             "PrecioMinimo", 
             "PrecioCierre", 
             "Volumen",
-            "SMA20",
+            "SMA_20",
             "Banda_Superior",
             "Banda_Inferior"
         FROM 
