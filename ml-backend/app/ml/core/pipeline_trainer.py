@@ -48,7 +48,10 @@ class PipelineTrainer:
         scheduler = CosineAnnealingLR(optimizer, T_max=epochs, eta_min=1e-6)
 
         #Early stopping más paciente y con mejor criterio
-        early_stopping = EarlyStopping(paciencia=12, delta=0.0005, modelo_inicial = model)
+        early_stopping = EarlyStopping(paciencia=12, 
+                                        delta=0.005, 
+                                        modelo_inicial = model,
+                                        modo = 'max') # Maximiza el score global
 
         self.logger.info("Iniciando entrenamiento mejorado",
                         extra={"architecture": self.architecture_name, "device": device.type.upper(),
@@ -107,7 +110,7 @@ class PipelineTrainer:
                             "lr": scheduler.get_last_lr()[0]})
 
             # Early stopping con mejor criterio
-            early_stopping(-val_score, model)
+            early_stopping(val_score, model)
 
             if early_stopping.detener:
                 self.logger.info("Early stopping activado", extra={"epoch": epoch+1, "mejor_score": early_stopping.mejor_loss})
