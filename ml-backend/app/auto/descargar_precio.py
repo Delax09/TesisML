@@ -2,6 +2,8 @@ import pandas as pd
 from sqlalchemy import create_engine
 from app.core.config import settings
 
+#En la carpeta ML-BACKEND python -m app.auto.descargar_precio 
+
 # 1. Tu cadena de conexión directa a PostgreSQL (la encuentras en Supabase -> Project Settings -> Database)
 DATABASE_URL = settings.DATABASE_URL
 
@@ -25,7 +27,10 @@ def descargar_historicos_csv():
             "PrecioMaximo", 
             "PrecioMinimo", 
             "PrecioCierre", 
-            "Volumen"
+            "Volumen",
+            "SMA20",
+            "Banda_Superior",
+            "Banda_Inferior"
         FROM 
             public."PrecioHistorico"
         WHERE 
@@ -44,6 +49,7 @@ def descargar_historicos_csv():
             print(f"Archivo generado exitosamente: {nombre_archivo}")
         else:
             print(f"Sin datos para {ticket}")
+
 
 if __name__ == "__main__":
     descargar_historicos_csv()
