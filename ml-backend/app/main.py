@@ -9,6 +9,7 @@ from app.core.config import settings
 from fastapi_cache import FastAPICache
 from fastapi_cache.backends.redis import RedisBackend
 from fastapi_cache.backends.inmemory import InMemoryBackend
+from fastapi.middleware.gzip import GZipMiddleware
 from redis import asyncio as aioredis
 
 from app.routers import (auth_router, 
@@ -97,6 +98,8 @@ app = FastAPI(
     version="2.0.0",
     lifespan=lifespan
 )
+
+app.add_middleware(GZipMiddleware, minimum_size = 1000) #Comprime JSON mayores a 1kb
 
 
 # --- MIDDLEWARE DE PROTECCIÓN ANTI-CSRF (ASGI PURO) ---
