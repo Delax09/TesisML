@@ -20,3 +20,4 @@ class Empresa(Base):
     resultados = relationship("Resultado", back_populates="empresa")
     precios_historicos = relationship("PrecioHistorico", back_populates="empresa")
     portafolios = relationship("Portafolio", back_populates="empresa")
+    noticias_sentimiento = relationship("NoticiaSentimiento", back_populates="empresa")

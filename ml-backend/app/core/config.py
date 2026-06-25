@@ -31,6 +31,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
 
     FINNHUB_API_KEY: str
+    NEWSAPI_KEY: str = ""  # Opcional: para procesamiento de sentimiento
     # Pydantic v2 config
     model_config = ConfigDict(
         env_file=".env",
