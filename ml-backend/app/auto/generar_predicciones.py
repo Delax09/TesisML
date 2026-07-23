@@ -82,7 +82,12 @@ def ejecutar_analisis_diario(modelo_id = None):
                     logger.error(f"❌ MLEngine no tiene método calcular_indicadores")
                     continue
 
-                df_indicadores = engine_temp.calcular_indicadores(df)
+                df_indicadores = engine_temp.calcular_indicadores(
+                    df,
+                    empresa_id=emp.IdEmpresa,
+                    ticker=emp.Ticket,
+                    db=db,
+                )
                 if df_indicadores is None or df_indicadores.empty:
                     logger.warning(f"⚠️ Indicadores vacíos para {emp.Ticket}")
                     continue

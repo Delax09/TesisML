@@ -51,7 +51,8 @@ class MLEngine:
         'ADX',               # Fuerza pura de la tendencia (sin importar si es alcista o bajista).
         'SMA20',
         'BB_Upper',
-        'BB_Lower'
+        'BB_Lower',
+        'NewsSentiment'     # Sentimiento de noticias semanales (0.0-1.0)
     ]
 
     def __init__(self, version="v1"):
@@ -85,7 +86,7 @@ class MLEngine:
             elif self.version == "v4":
                 self.model = ModeloLSTMCNN_v4(num_features=len(self.FEATURES), dias_pasados=self.DIAS_MEMORIA_IA).to(self.device)
                 
-            self.model.load_state_dict(torch.load(model_path, map_location=self.device, weights_only=True))
+            self.model.load_state_dict(torch.load(model_path, map_location=self.device, weights_only=True), strict=False)
             self.model.eval()
             
             # Intentar cargar umbral óptimo desde metadata
@@ -188,6 +189,7 @@ class MLEngine:
                 "BB_Upper": float(ultima_fila.get("BB_Upper", 0)),
                 "BB_Lower": float(ultima_fila.get("BB_Lower", 0)),
                 "Volatilidad": float(ultima_fila.get("Volatilidad_10d", 0)),
+                "NewsSentiment": float(ultima_fila.get("NewsSentiment", 0.5)),
                 "ProbAlcista": float(probabilidad_alcista * 100),
             }
 
@@ -204,7 +206,62 @@ class MLEngine:
             return None
 
     @staticmethod
-    def calcular_indicadores(df: pd.DataFrame) -> pd.DataFrame:
+    def _agregar_feature_sentimiento(df: pd.DataFrame, empresa_id: int = None, ticker: str = None, db=None) -> pd.DataFrame:
+        """Agrega un feature de sentimiento de noticias a la matriz de features con fallback neutral."""
+        if 'NewsSentiment' in df.columns:
+            df['NewsSentiment'] = pd.to_numeric(df['NewsSentiment'], errors='coerce').fillna(0.5).clip(0, 1)
+            return df
+
+        sentiment_series = pd.Series(0.5, index=df.index, dtype=float)
+
+        try:
+            from app.models.noticia_sentimiento import NoticiaSentimiento
+            from app.db.sessions import SessionLocal
+
+            if db is None:
+                db = SessionLocal()
+
+            filtros = []
+            if empresa_id is not None:
+                filtros.append(NoticiaSentimiento.IdEmpresa == empresa_id)
+            if ticker is not None:
+                filtros.append(NoticiaSentimiento.Ticker == str(ticker).upper())
+
+            if filtros:
+                rows = db.query(
+                    NoticiaSentimiento.FechaPublicacionNoticia.label('fecha'),
+                    NoticiaSentimiento.PuntuacionSentimiento.label('score')
+                ).filter(*filtros).all()
+
+                if rows:
+                    sent_df = pd.DataFrame(rows, columns=['fecha', 'score'])
+                    sent_df['fecha'] = pd.to_datetime(sent_df['fecha']).dt.normalize()
+                    daily_scores = sent_df.groupby('fecha')['score'].mean()
+
+                    for idx in df.index:
+                        try:
+                            fecha_idx = pd.to_datetime(idx).normalize()
+                        except Exception:
+                            fecha_idx = pd.Timestamp(idx).normalize()
+
+                        start = fecha_idx - pd.Timedelta(days=7)
+                        window = daily_scores[(daily_scores.index >= start) & (daily_scores.index <= fecha_idx)]
+                        if not window.empty:
+                            sentiment_series.loc[idx] = float(window.mean())
+        except Exception as exc:
+            logger.warning(f"⚠️ No se pudo incorporar NewsSentiment para {ticker or empresa_id}: {exc}")
+        finally:
+            if db is not None and hasattr(db, 'close') and db is not None:
+                try:
+                    db.close()
+                except Exception:
+                    pass
+
+        df['NewsSentiment'] = pd.to_numeric(sentiment_series.reindex(df.index, fill_value=0.5), errors='coerce').fillna(0.5).clip(0, 1)
+        return df
+
+    @staticmethod
+    def calcular_indicadores(df: pd.DataFrame, empresa_id: int = None, ticker: str = None, db=None) -> pd.DataFrame:
         df_clean = df.copy()
         
         # Validar que Close y Volume existan y sean válidos
@@ -294,9 +351,12 @@ class MLEngine:
         
         # Llenar NaN y reemplazar infinitos
         df_clean = df_clean.replace([np.inf, -np.inf], 0).ffill().bfill().fillna(0)
+
+        # Integrar feature de sentimiento de noticias como último feature del vector
+        df_clean = MLEngine._agregar_feature_sentimiento(df_clean, empresa_id=empresa_id, ticker=ticker, db=db)
         
         # Validar que no haya NaN en features críticas
-        critical_features = ['Close', 'Volume', 'EMA50', 'RSI', 'MACD', 'ATR']
+        critical_features = ['Close', 'Volume', 'EMA50', 'RSI', 'MACD', 'ATR', 'NewsSentiment']
         for feat in critical_features:
             if feat in df_clean.columns and df_clean[feat].isna().all():
                 logger.warning(f"⚠️ Feature {feat} quedó con todos NaN")
