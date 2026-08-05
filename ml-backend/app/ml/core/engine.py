@@ -76,7 +76,6 @@ class MLEngine:
         if os.path.exists(model_path) and os.path.exists(scaler_path):
             self.scaler = joblib.load(scaler_path)
 
-            
             if self.version == "v1":
                 self.model = ModeloLSTM_v1(num_features = len(self.FEATURES)).to(self.device)
             elif self.version == "v2":

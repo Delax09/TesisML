@@ -13,6 +13,7 @@ from sqlalchemy import and_, func
 from app.models import Empresa, NoticiaSentimiento
 from app.core.config import settings
 from app.exceptions import InvalidDataError
+from transformers import pipeline
 
 logger = logging.getLogger(__name__)
 

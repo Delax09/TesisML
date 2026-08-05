@@ -6,8 +6,8 @@ import json
 from datetime import datetime
 
 def configurar_logger(nombre: str,
-                      nivel: int = logging.INFO,
-                      archivo_log: str = None) -> logging.Logger:
+                        nivel: int = logging.INFO,
+                        archivo_log: str = None) -> logging.Logger:
     """Configura logger estructurado con rotación"""
 
     logger = logging.getLogger(nombre)
