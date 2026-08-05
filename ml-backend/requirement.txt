@@ -23,3 +23,5 @@ redis>=5.0.0
 imbalanced-learn
 transformers>=4.30.0
 newsapi-python>=1.0.0
+pipeline
+transformers
