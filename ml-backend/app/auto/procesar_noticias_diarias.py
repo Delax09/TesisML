@@ -8,6 +8,8 @@ Uso:
 
 import asyncio
 import logging
+import io
+import sys
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 from app.db.sessions import Base, SessionLocal
@@ -16,12 +18,15 @@ from app.services.sentimiento_service import SentimentoAnalisisService
 from app.core.config import settings
 
 # Configurar logging
+console_handler = logging.StreamHandler(
+    stream=io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
+)
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('logs/procesar_noticias.log'),
-        logging.StreamHandler()
+        logging.FileHandler('logs/procesar_noticias.log', encoding='utf-8'),
+        console_handler
     ]
 )
 logger = logging.getLogger(__name__)

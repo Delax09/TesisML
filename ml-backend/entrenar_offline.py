@@ -260,6 +260,6 @@ if __name__ == "__main__":
     print("=" * 60)
     
     # Cambiar esta lista para entrenar diferentes modelos
-    modelos_a_entrenar = [1] 
+    modelos_a_entrenar = [1,2,3,4] 
     
     iniciar_entrenamiento_csv(modelos=modelos_a_entrenar)
