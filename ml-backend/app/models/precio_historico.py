@@ -25,4 +25,3 @@ class PrecioHistorico(Base):
 
     # Relación inversa con Empresa
     empresa = relationship("Empresa", back_populates="precios_historicos")
-    SentimientoDiario = Column(DECIMAL(18, 4), default=0.0)

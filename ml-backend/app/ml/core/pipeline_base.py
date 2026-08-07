@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import pandas as pd
 import torch
@@ -9,12 +10,13 @@ from typing import Tuple, List, Optional
 from tqdm import tqdm
 
 from app.db.sessions import SessionLocal
+from app.models.empresa import Empresa
 from app.models.precio_historico import PrecioHistorico
 from app.ml.core.engine import MLEngine
 from app.ml.core.data_utils import preparar_datos_generico, crear_dataloaders_generico
 from app.ml.core.data_validation import DataValidator
 
-def _procesar_dataframe_crudo(df: pd.DataFrame, origen_id: str) -> Optional[pd.DataFrame]:
+def _procesar_dataframe_crudo(df: pd.DataFrame, origen_id: str, empresa_id: int = None, ticker: str = None) -> Optional[pd.DataFrame]:
     """
     Motor central de procesamiento. Toma un DataFrame crudo estandarizado,
     aplica indicadores y valida. No le importa si viene de BD o CSV.
@@ -33,7 +35,7 @@ def _procesar_dataframe_crudo(df: pd.DataFrame, origen_id: str) -> Optional[pd.D
         return None
 
     # Calcular indicadores técnicos (SMA, Bandas, RSI, etc.)
-    df_procesado = MLEngine.calcular_indicadores(df_valido)
+    df_procesado = MLEngine.calcular_indicadores(df_valido, empresa_id=empresa_id, ticker=ticker)
     df_procesado.ffill(inplace=True)
     df_procesado.bfill(inplace=True)
 
@@ -62,7 +64,11 @@ def extraer_y_procesar_empresa(id_empresa: int) -> Optional[pd.DataFrame]:
             return None
 
         df.set_index('Date', inplace=True)
-        return _procesar_dataframe_crudo(df, origen_id=f"Empresa_BD_{id_empresa}")
+        return _procesar_dataframe_crudo(
+            df,
+            origen_id=f"Empresa_BD_{id_empresa}",
+            empresa_id=id_empresa
+        )
 
     except Exception as e:
         print(f"Error procesando empresa {id_empresa}: {str(e)}")
@@ -102,7 +108,15 @@ def extraer_y_procesar_desde_csv(ruta_csv: str) -> Optional[pd.DataFrame]:
         # Dejar solo el OHLCV para recalcular indicadores limpios
         df = df[['Open', 'High', 'Low', 'Close', 'Volume']]
 
-        return _procesar_dataframe_crudo(df, origen_id=f"CSV_{ruta_csv}")
+        ticker = os.path.splitext(os.path.basename(ruta_csv))[0]
+        if ticker.startswith('data_'):
+            ticker = ticker.replace('data_', '')
+
+        return _procesar_dataframe_crudo(
+            df,
+            origen_id=f"CSV_{ruta_csv}",
+            ticker=ticker
+        )
 
     except Exception as e:
         print(f"Error leyendo CSV {ruta_csv}: {str(e)}")

@@ -342,6 +342,7 @@ class AnalisisPortafolioOut(BaseModel):
 
 
 # ========================= NOTICIAS SCHEMAS =========================
+
 class NoticiaOut(BaseModel):
     id: int = Field(..., description="ID único de la noticia en Finnhub")
     titular: str = Field(..., description="Titular de la noticia")
@@ -361,4 +362,15 @@ class ContactoCreate(BaseModel):
     email: EmailStr
     asunto: str 
     mensaje: str
+
+# ========================= SENTIMIENTO NOTICIAS SCHEMA =========================
+
+class NoticiaSentimientoBase(BaseModel):
+    Titular: str
+    Contenido: Optional[str] = None
+    UrlFuente: Optional[str] = None
+    IdEmpresa: Optional[int] = None
+    Sentimiento: Optional[float] = None
+    Etiqueta: Optional[str] = None
+    FechaPublicacion: Optional[datetime] = None
 

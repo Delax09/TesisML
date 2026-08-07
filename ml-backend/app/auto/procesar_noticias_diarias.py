@@ -10,8 +10,8 @@ import asyncio
 import logging
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
-from app.db.sessions import SessionLocal, engine
-from app.models import Empresa, Base
+from app.db.sessions import Base, SessionLocal
+from app.models import Empresa, NoticiaSentimiento
 from app.services.sentimiento_service import SentimentoAnalisisService
 from app.core.config import settings
 
@@ -134,7 +134,7 @@ async def limpiar_noticias_antiguas(dias_retencao: int = 90):
         fecha_limite = (datetime.now() - timedelta(days=dias_retencao)).date()
         
         noticias_a_borrar = db.query(NoticiaSentimiento).filter(
-            NoticiaSentimiento.FechaRegistro < fecha_limite
+            NoticiaSentimiento.FechaPublicacion < fecha_limite
         ).delete()
         
         db.commit()

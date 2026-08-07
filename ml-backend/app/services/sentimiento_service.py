@@ -214,13 +214,11 @@ class SentimentoAnalisisService:
         distribucion = {'positivo': 0, 'neutral': 0, 'negativo': 0}
         
         for noticia in noticias:
-            # Analizar usando título + descripción
             texto_analizar = f"{noticia['titulo']}. {noticia['descripcion']}"
             resultado_sentimiento = await SentimentoAnalisisService.analizar_sentimiento_texto(
                 texto_analizar
             )
             
-            # Contar distribución
             if resultado_sentimiento['score'] > 0.6:
                 distribucion['positivo'] += 1
             elif resultado_sentimiento['score'] < 0.4:
@@ -236,24 +234,19 @@ class SentimentoAnalisisService:
                 'url': noticia['url'],
                 'fuente': noticia['fuente'],
                 'fecha_publicacion': noticia['fecha'],
-                **resultado_sentimiento  # score, etiqueta, confianza
+                **resultado_sentimiento
             }
             
-            # 3. Guardar en BD
             if guardar_en_bd:
                 try:
                     nueva_noticia = NoticiaSentimiento(
                         Titular=noticia['titulo'][:500],
-                        Resumen=noticia['descripcion'][:2000] if noticia['descripcion'] else None,
-                        URLNoticia=noticia['url'],
-                        URLImagen=noticia['imagen'],
-                        Fuente=noticia['fuente'],
-                        Ticker=ticker,
+                        Contenido=noticia['descripcion'][:2000] if noticia['descripcion'] else None,
+                        UrlFuente=noticia['url'],
                         IdEmpresa=empresa.IdEmpresa,
-                        PuntuacionSentimiento=resultado_sentimiento['score'],
-                        ModeloSentimiento='FinBERT',
-                        ConfidenciaAnalisis=resultado_sentimiento['confianza'],
-                        FechaPublicacionNoticia=noticia['fecha']
+                        Sentimiento=resultado_sentimiento['score'],
+                        Etiqueta=resultado_sentimiento['etiqueta'],
+                        FechaPublicacion=noticia['fecha']
                     )
                     db.add(nueva_noticia)
                 except Exception as e:
@@ -296,13 +289,16 @@ class SentimentoAnalisisService:
         try:
             hace_7_dias = datetime.now() - timedelta(days=7)
             
+            empresa_id = db.query(Empresa.IdEmpresa).filter(Empresa.Ticket == ticker).scalar()
+            if empresa_id is None:
+                logger.warning(f"Empresa no encontrada para ticker {ticker}")
+                return 0.5
+
             resultado = db.query(
-                func.avg(NoticiaSentimiento.PuntuacionSentimiento).label('promedio')
+                func.avg(NoticiaSentimiento.Sentimiento).label('promedio')
             ).filter(
-                and_(
-                    NoticiaSentimiento.Ticker == ticker,
-                    NoticiaSentimiento.FechaRegistro >= hace_7_dias.date()
-                )
+                NoticiaSentimiento.IdEmpresa == empresa_id,
+                NoticiaSentimiento.FechaPublicacion >= hace_7_dias
             ).first()
             
             sentimiento = resultado.promedio if resultado and resultado.promedio else 0.5

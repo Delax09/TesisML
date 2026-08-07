@@ -145,3 +145,4 @@
 {"timestamp": "2026-06-04T15:23:37.779903", "level": "INFO", "logger": "ML.Pipeline.LSTM", "message": "Iniciando entrenamiento de modelo", "module": "orquestador", "function": "entrenar_pipeline_lstm", "line": 84}
 {"timestamp": "2026-06-04T15:39:31.746976", "level": "INFO", "logger": "ML.Pipeline.LSTM", "message": "Modelo guardado exitosamente", "module": "orquestador", "function": "entrenar_pipeline_lstm", "line": 121}
 {"timestamp": "2026-06-04T15:39:31.748344", "level": "INFO", "logger": "ML.Pipeline.LSTM", "message": "Pipeline LSTM finalizado exitosamente", "module": "orquestador", "function": "entrenar_pipeline_lstm", "line": 127}
+{"timestamp": "2026-08-07T00:13:16.146930", "level": "INFO", "logger": "ML.Pipeline.LSTM", "message": "Iniciando extracción de datos", "module": "orquestador", "function": "entrenar_pipeline_lstm", "line": 42}

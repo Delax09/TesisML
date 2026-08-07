@@ -14,7 +14,8 @@ from sklearn.metrics import confusion_matrix
 from datetime import datetime
 from data.rutas import rutas
 #Para ejecutar este script
-# python entrenar_offline.py       
+# python entrenar_offline.py  
+# python entrenar_con_noticias.py --all     
 
 def guardar_metricas_json(modelo_nombre: str, resultados: dict, metricas_finales: dict, 
                         umbral_optimo: float, carpeta_destino: str, scaler_type: str = "StandardScaler"):

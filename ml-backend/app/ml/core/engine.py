@@ -223,13 +223,11 @@ class MLEngine:
             filtros = []
             if empresa_id is not None:
                 filtros.append(NoticiaSentimiento.IdEmpresa == empresa_id)
-            if ticker is not None:
-                filtros.append(NoticiaSentimiento.Ticker == str(ticker).upper())
 
             if filtros:
                 rows = db.query(
-                    NoticiaSentimiento.FechaPublicacionNoticia.label('fecha'),
-                    NoticiaSentimiento.PuntuacionSentimiento.label('score')
+                    NoticiaSentimiento.FechaPublicacion.label('fecha'),
+                    NoticiaSentimiento.Sentimiento.label('score')
                 ).filter(*filtros).all()
 
                 if rows:
