@@ -174,7 +174,7 @@ app.add_middleware(
     allow_origins=settings.CORS_ORIGINS, # ← Ahora usa la variable del .env
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"], # ← Métodos restringidos
-    allow_headers=["*"],
+    allow_headers=["https://tesis-ml.vercel.app/"],
 )
 
 # Registrar routers
