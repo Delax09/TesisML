@@ -1,14 +1,44 @@
-import React from 'react';
-import { Box, Typography, CircularProgress } from '@mui/material'; 
+import React, { useState, useEffect } from 'react';
+import { 
+    Box, 
+    Typography, 
+    CircularProgress, 
+    Paper, 
+    FormGroup, 
+    FormControlLabel, 
+    Checkbox 
+} from '@mui/material'; 
 import QueryStatsIcon from '@mui/icons-material/QueryStats';
 
 import { useAuth } from 'context'; 
 import { PageHeader } from 'components';
 import { useModelosActivos, ComparadorModelos } from 'features';
 
+// Funciones seguras para extraer los datos del modelo venga como venga de FastAPI
+const getModeloId = (m) => m.modelo_id || m.id || m;
+const getModeloNombre = (m) => m.nombre_modelo || m.nombre || m.name || `Modelo ${getModeloId(m)}`;
+
 const VistaCompararModelos = () => {
     const { usuario } = useAuth(); 
     const { modelosActivos, cargandoModelos } = useModelosActivos(usuario?.id);
+
+    // Estado para controlar qué modelos se dibujan en el gráfico
+    const [modelosVisibles, setModelosVisibles] = useState([]);
+
+    // Cuando cargan los modelos, los marcamos todos como visibles por defecto
+    useEffect(() => {
+        if (modelosActivos && modelosActivos.length > 0) {
+            setModelosVisibles(modelosActivos.map(m => getModeloId(m))); 
+        }
+    }, [modelosActivos]);
+
+    const handleToggleModelo = (idModelo) => {
+        setModelosVisibles(prev => 
+            prev.includes(idModelo)
+                ? prev.filter(id => id !== idModelo) // Lo oculta de la vista
+                : [...prev, idModelo] // Lo muestra
+        );
+    };
 
     if (cargandoModelos) {
         return (
@@ -39,7 +69,36 @@ const VistaCompararModelos = () => {
                     </Typography>
                 </Box>
             ) : (
-                <ComparadorModelos modelosActivos={modelosActivos} usuarioId={usuario?.id} />
+                <>
+                    <Paper elevation={0} sx={{ p: 2, border: '1px solid #e0e0e0', borderRadius: 2 }}>
+                        <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                            Selecciona los modelos a visualizar en el gráfico:
+                        </Typography>
+                        <FormGroup row>
+                            {modelosActivos.map((modelo) => (
+                                <FormControlLabel 
+                                    key={modelo.IdModelo}
+                                    control={
+                                        <Checkbox 
+                                            checked={modelosVisibles.includes(modelo.IdModelo)} 
+                                            onChange={() => handleToggleModelo(modelo.IdModelo)}
+                                            color="primary"
+                                        />
+                                    } 
+                                    label={modelo.Nombre} // Aquí usamos modelo.Nombre con 'N' mayúscula
+                                />
+                            ))}
+                        </FormGroup>
+                    </Paper>
+
+                    {/* IMPORTANTE: Pasamos modelosActivos INTACTO para no romper tu Service/Features */}
+                    {/* Y pasamos "modelosVisibles" como una nueva prop para el gráfico */}
+                    <ComparadorModelos 
+                        modelosActivos={modelosActivos} 
+                        modelosVisibles={modelosVisibles} 
+                        usuarioId={usuario?.id} 
+                    />
+                </>
             )}
         </Box>
     );

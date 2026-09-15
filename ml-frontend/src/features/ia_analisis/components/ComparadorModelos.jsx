@@ -4,27 +4,22 @@ import { Box, FormControl, InputLabel, Select, MenuItem, Paper, Typography, Circ
 import { iaService } from 'services';
 import GraficoComparativo from './GraficoComparativo';
 
-// 1. Importamos el hook original (usando ruta directa respetando la Regla de Oro)
 import { useProyeccionesIA } from 'features/portafolio/hooks/useProyeccionesIA'; 
 
-const ComparadorModelos = ({ modelosActivos, usuarioId }) => {
+const ComparadorModelos = ({ modelosActivos, modelosVisibles, usuarioId }) => {
     const [empresaSeleccionada, setEmpresaSeleccionada] = useState('');
     const [datosModelosMultiples, setDatosModelosMultiples] = useState([]);
     const [cargandoMultiples, setCargandoMultiples] = useState(false);
 
-    // 2. Obtenemos las proyecciones usando el primer modelo activo como referencia
-    // Esto asegura que la lista de empresas del selector provenga de datos reales de IA
     const modeloBase = modelosActivos?.length > 0 ? modelosActivos[0].IdModelo : '';
     const { proyecciones } = useProyeccionesIA(usuarioId, modeloBase);
 
-    // 3. Autoseleccionar la primera empresa válida disponible
     useEffect(() => {
         if (!empresaSeleccionada && proyecciones?.length > 0) {
             setEmpresaSeleccionada(proyecciones[0].idEmpresa);
         }
     }, [proyecciones, empresaSeleccionada]);
 
-    // Fetch dinámico para consultar todos los modelos sobre la empresa seleccionada
     useEffect(() => {
         let montado = true;
         if (empresaSeleccionada && modelosActivos.length > 0) {
@@ -35,7 +30,8 @@ const ComparadorModelos = ({ modelosActivos, usuarioId }) => {
                         const res = await iaService.obtenerPrediccionesMasivas([empresaSeleccionada], modelo.IdModelo);
                         const datosIA = res[empresaSeleccionada] || { historial: [], prediccion: [] };
                         return {
-                            simbolo: modelo.Nombre, // Hack visual: usamos el nombre del modelo como símbolo para la leyenda del gráfico
+                            idModelo: modelo.IdModelo, // Identificador clave para el filtro visual
+                            simbolo: modelo.Nombre, 
                             historial: datosIA.historial,
                             prediccion: datosIA.prediccion
                         };
@@ -51,10 +47,14 @@ const ComparadorModelos = ({ modelosActivos, usuarioId }) => {
             cargarModelos();
         }
         return () => { montado = false; };
-    }, [empresaSeleccionada, modelosActivos]);
+    }, [empresaSeleccionada, modelosActivos]); // Modelos activos ya no muta, no hay peticiones extra
 
-    // Buscamos los datos completos de la empresa seleccionada para mostrar en el título
     const infoEmpresa = proyecciones?.find(p => p.idEmpresa === empresaSeleccionada);
+
+    // Filtramos la data en memoria RAM para no activar el useEffect
+    const datosParaGrafico = datosModelosMultiples.filter(dato => 
+        !modelosVisibles || modelosVisibles.includes(dato.idModelo)
+    );
 
     return (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, width: '100%' }}>
@@ -67,7 +67,6 @@ const ComparadorModelos = ({ modelosActivos, usuarioId }) => {
                         label="Seleccionar Empresa a Analizar"
                         onChange={(e) => setEmpresaSeleccionada(e.target.value)}
                     >
-                        {/* 4. Aplicamos las variables exactas (p.simbolo y p.empresa) de tu código original */}
                         {proyecciones?.map(p => (
                             <MenuItem key={p.idEmpresa} value={p.idEmpresa}>
                                 {p.simbolo} - {p.empresa}
@@ -92,7 +91,8 @@ const ComparadorModelos = ({ modelosActivos, usuarioId }) => {
                         </Box>
                     ) : (
                         <Box sx={{ width: '100%', overflowX: 'hidden' }}>
-                            <GraficoComparativo datos={datosModelosMultiples} compararModelos={true} />
+                            {/* Pasamos los datos ya filtrados al gráfico */}
+                            <GraficoComparativo datos={datosParaGrafico} compararModelos={true} />
                         </Box>
                     )}
                 </Paper>
