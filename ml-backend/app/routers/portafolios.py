@@ -28,6 +28,13 @@ def obtener_portafolios(db: Session = Depends(get_db)):
 def obtener_portafolios_de_usuario(usuario_id: int, db: Session = Depends(get_db)):
     return PortafolioService.obtener_portafolios_usuario(db, usuario_id)
 
+@router.get("/analisis/{usuario_id}", response_model=AnalisisPortafolioOut)
+def obtener_analisis_del_portafolio(usuario_id: int, db: Session = Depends(get_db)):
+    try:
+        return PortafolioService.obtener_analisis_portafolio(db, usuario_id)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
 # RUTA CORREGIDA: Eliminado el error de actualización accidental
 @router.get("/{portafolio_id}", response_model=PortafolioOut)
 def obtener_portafolio(portafolio_id: int, db: Session = Depends(get_db)):
@@ -63,10 +70,3 @@ def eliminar_del_portafolio(portafolio_id: int, db: Session = Depends(get_db)):
         )
         
     return {"message": "Empresa removida del portafolio (Desactivada)"}
-
-@router.get("/analisis/{usuario_id}", response_model=AnalisisPortafolioOut)
-def obtener_analisis_del_portafolio(usuario_id: int, db: Session = Depends(get_db)):
-    try:
-        return PortafolioService.obtener_analisis_portafolio(db, usuario_id)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))

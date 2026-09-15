@@ -141,9 +141,8 @@ class PortafolioService:
         empresa_ids = [p.IdEmpresa for p in portafolios]
         
         # 2. Distribución por Sectores
-        empresas = db.query(Empresa, Sector).join(Sector, Empresa.IdSector == Sector.IdSector)\
-                     .filter(Empresa.IdEmpresa.in_(empresa_ids)).all()
-                     
+        empresas = db.query(Empresa, Sector).join(Sector, Empresa.IdSector == Sector.IdSector).filter(Empresa.IdEmpresa.in_(empresa_ids)).all()
+                    
         sectores_count = {}
         for emp, sec in empresas:
             sectores_count[sec.NombreSector] = sectores_count.get(sec.NombreSector, 0) + 1
@@ -155,7 +154,19 @@ class PortafolioService:
         ]
         
         # 3. Rendimiento Histórico Consolidado (Extracción y limpieza de NaNs)
-        hace_30_dias = datetime.datetime.now() - datetime.timedelta(days=30)
+        # PrecioHistorico.Fecha es un DATE y los datos pueden no estar actualizados
+        # hasta hoy, por lo que la ventana debe partir del último dato disponible.
+        ultima_fecha = db.query(func.max(PrecioHistorico.Fecha)).filter(
+            PrecioHistorico.IdEmpresa.in_(empresa_ids)
+        ).scalar()
+        if ultima_fecha is None:
+            return {
+                "distribucion_sectores": distribucion,
+                "rendimiento_historico": [],
+                "metricas": {"volatilidad": 0.0, "sharpe_ratio": 0.0}
+            }
+
+        hace_30_dias = ultima_fecha - datetime.timedelta(days=30)
         
         # Obtenemos todos los registros sueltos ordenados por fecha
         registros = db.query(PrecioHistorico).filter(
