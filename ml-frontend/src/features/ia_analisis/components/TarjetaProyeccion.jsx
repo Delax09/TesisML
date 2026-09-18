@@ -1,10 +1,10 @@
-// src/features/ia_analisis/components/TarjetaProyeccion.js
+// src/features/ia_analisis/components/TarjetaProyeccion.jsx
 import React, { useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import TrendingUpTwoToneIcon from '@mui/icons-material/TrendingUpTwoTone';
 import TrendingDownTwoToneIcon from '@mui/icons-material/TrendingDownTwoTone';
 import TrendingFlatTwoToneIcon from '@mui/icons-material/TrendingFlatTwoTone';
-import { Box, Card, Typography, Checkbox, alpha, useTheme } from '@mui/material';
+import { Box, Card, Typography, Checkbox, alpha, useTheme, Chip } from '@mui/material';
 
 const TarjetaProyeccion = ({ datos, seleccionado, onToggle }) => {
     const theme = useTheme();
@@ -12,26 +12,26 @@ const TarjetaProyeccion = ({ datos, seleccionado, onToggle }) => {
 
     // NUEVA LÓGICA: Unificar historial y predicción por fecha
     const chartData = useMemo(() => {
-    if (!datos || (!datos.historial && !datos.prediccion)) return [];
-    
-    const map = {};
+        if (!datos || (!datos.historial && !datos.prediccion)) return [];
+        
+        const map = {};
 
-    // 1. Procesar historial
-    (datos.historial || []).forEach(p => {
-        const fecha = p.fecha || p.date;
-        map[fecha] = { fecha, precio: p.precio };
-    });
+        // 1. Procesar historial
+        (datos.historial || []).forEach(p => {
+            const fecha = p.fecha || p.date;
+            map[fecha] = { fecha, precio: p.precio };
+        });
 
-    // 2. Procesar predicciones (IA)
-    (datos.prediccion || []).forEach(p => {
-        const fecha = p.fecha || p.date;
-        if (!map[fecha]) map[fecha] = { fecha };
-        map[fecha].precioEsperado = p.precioEsperado;
-    });
+        // 2. Procesar predicciones (IA)
+        (datos.prediccion || []).forEach(p => {
+            const fecha = p.fecha || p.date;
+            if (!map[fecha]) map[fecha] = { fecha };
+            map[fecha].precioEsperado = p.precioEsperado;
+        });
 
-    return Object.values(map).sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+        return Object.values(map).sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
 
-}, [datos]);
+    }, [datos]);
 
     if (!datos || !datos.historial || !datos.prediccion) {
         return <Box sx={{ p: 3, textAlign: 'center' }}>Cargando datos del gráfico...</Box>;
@@ -88,10 +88,18 @@ const TarjetaProyeccion = ({ datos, seleccionado, onToggle }) => {
                     />
                     <Typography variant="h6" fontWeight="800" color="text.primary" sx={{ letterSpacing: '-0.5px' }}>
                         {datos.empresa}
-                        <Box component="span" sx={{ ml: 1, fontWeight: 500, fontSize: '0.85rem', color: 'text.secondary' }}>
-                            {datos.simbolo}
-                        </Box>
                     </Typography>
+                    
+                    {/* Caso de Uso N°49: Tag visual distintivo con el sector económico */}
+                    {datos.sector && (
+                        <Chip 
+                            label={datos.sector} 
+                            color="primary" 
+                            variant="filled" 
+                            size="small" 
+                            sx={{ fontWeight: 'bold' }}
+                        />
+                    )}
                 </Box>
                 <Box sx={{ textAlign: 'right' }}>
                     <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary', fontWeight: 600, textTransform: 'uppercase' }}>
@@ -131,7 +139,6 @@ const TarjetaProyeccion = ({ datos, seleccionado, onToggle }) => {
                                 border: `1px solid ${theme.palette.divider}`,
                                 boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)'
                             }}
-                            // Formateamos para que se vea más profesional al pasar el mouse
                             formatter={(value, name) => [
                                 `$${Number(value).toFixed(2)}`, 
                                 name === 'precio' ? 'Precio Real' : 'Predicción IA'

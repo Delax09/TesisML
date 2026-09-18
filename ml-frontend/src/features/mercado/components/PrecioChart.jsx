@@ -1,4 +1,4 @@
-// src/features/mercado/components/PrecioChart.js
+// src/features/mercado/components/PrecioChart.jsx
 import React, { memo, useState, useEffect, useRef } from 'react';
 import { createChart, CrosshairMode, AreaSeries, CandlestickSeries, LineSeries } from 'lightweight-charts';
 import { 
@@ -16,6 +16,7 @@ function PrecioChart({ empresaId, nombreEmpresa }) {
     const chartContainerRef = useRef(null);
     const chartRef = useRef(null);
     const seriesRefs = useRef({});
+    const tooltipRef = useRef(null); // Ref para el tooltip del Caso de Uso N°68
 
     const botonesRango = [
         { label: '1D', v: '1D' }, { label: '5D', v: '5D' },
@@ -47,6 +48,69 @@ function PrecioChart({ empresaId, nombreEmpresa }) {
         
         chartRef.current = chart;
 
+        // Caso de Uso N°68: Explorando datos en gráfico mediante tooltip
+        chart.subscribeCrosshairMove((param) => {
+            if (!tooltipRef.current || !chartContainerRef.current) return;
+            
+            const seriePrincipal = seriesRefs.current.principal;
+            if (!seriePrincipal) {
+                tooltipRef.current.style.display = 'none';
+                return;
+            }
+
+            const data = param.seriesData.get(seriePrincipal);
+            
+            if (
+                param.point === undefined ||
+                !param.time ||
+                param.point.x < 0 ||
+                param.point.x > chartContainerRef.current.clientWidth ||
+                param.point.y < 0 ||
+                param.point.y > chartContainerRef.current.clientHeight ||
+                !data
+            ) {
+                tooltipRef.current.style.display = 'none';
+                return;
+            }
+
+            // Detectar si el dato es de velón o de línea y obtener el valor pertinente
+            const price = data.value !== undefined ? data.value : data.close;
+            
+            // Formatear la fecha
+            let dateStr = '';
+            if (typeof param.time === 'object') {
+                dateStr = `${param.time.year}-${String(param.time.month).padStart(2, '0')}-${String(param.time.day).padStart(2, '0')}`;
+            } else {
+                dateStr = new Date(param.time * 1000).toLocaleDateString('es-CL');
+            }
+            
+            // Formatear precio de manera exacta
+            const formattedPrice = price.toLocaleString('es-CL', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+            tooltipRef.current.style.display = 'block';
+            tooltipRef.current.innerHTML = `
+                <div style="color: ${theme.palette.text.secondary}; margin-bottom: 4px; font-size: 0.75rem;">Fecha: ${dateStr}</div>
+                <div style="font-weight: bold; color: ${theme.palette.text.primary};">Precio Exacto: $${formattedPrice}</div>
+            `;
+
+            // Calcular y ajustar la posición dinámica para que no se salga de la pantalla
+            const toolTipWidth = tooltipRef.current.offsetWidth;
+            const toolTipHeight = tooltipRef.current.offsetHeight;
+            
+            let left = param.point.x + 15;
+            if (left > chartContainerRef.current.clientWidth - toolTipWidth) {
+                left = param.point.x - toolTipWidth - 15;
+            }
+            
+            let top = param.point.y - toolTipHeight - 15;
+            if (top < 0) {
+                top = param.point.y + 15;
+            }
+
+            tooltipRef.current.style.left = left + 'px';
+            tooltipRef.current.style.top = top + 'px';
+        });
+
         return () => {
             if (chartRef.current) {
                 chartRef.current.remove();
@@ -54,7 +118,7 @@ function PrecioChart({ empresaId, nombreEmpresa }) {
             }
             seriesRefs.current = {}; 
         };
-    }, [theme.palette.text.secondary, theme.palette.divider]);
+    }, [theme.palette.text.secondary, theme.palette.divider, theme.palette.text.primary]);
 
     useEffect(() => {
         if (!chartRef.current || !datosFiltrados || datosFiltrados.length === 0) return;
@@ -67,16 +131,13 @@ function PrecioChart({ empresaId, nombreEmpresa }) {
         });
         seriesRefs.current = {}; 
 
-        // 🟢 NUEVO: Ordenar y deduplicar los datos
+        // Ordenar y deduplicar los datos
         const datosLimpios = [...datosFiltrados]
-            .sort((a, b) => mapTime(a) - mapTime(b)) // Asegurar orden ascendente
+            .sort((a, b) => mapTime(a) - mapTime(b)) 
             .filter((dato, index, array) => {
                 if (index === 0) return true;
-                // Filtrar si el tiempo es igual al del elemento anterior
                 return mapTime(dato) !== mapTime(array[index - 1]);
             });
-
-        // 👇 A partir de aquí, usa 'datosLimpios' en lugar de 'datosFiltrados'
 
         if (modoTecnico) {
             const serieVelas = chart.addSeries(CandlestickSeries, {
@@ -112,7 +173,7 @@ function PrecioChart({ empresaId, nombreEmpresa }) {
             seriesRefs.current.principal = serieArea;
         }
 
-        aplicarZoomNativo(rango, datosLimpios); // <-- No olvides cambiar esto también
+        aplicarZoomNativo(rango, datosLimpios); 
     }, [datosFiltrados, modoTecnico, rango, theme.palette.primary.main]); 
 
     const aplicarZoomNativo = (nuevoRango, dataArray) => {
@@ -183,7 +244,26 @@ function PrecioChart({ empresaId, nombreEmpresa }) {
                 )}
                 
                 {/* El Canvas se monta aquí y llena exactamente el área sobrante */}
-                <Box ref={chartContainerRef} sx={{ position: 'absolute', inset: 0 }} />
+                <Box ref={chartContainerRef} sx={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }} />
+                
+                {/* Caso de Uso N°68: Componente Tooltip superpuesto controlado por Lightweight-charts */}
+                <Box
+                    ref={tooltipRef}
+                    sx={{
+                        width: 'max-content',
+                        position: 'absolute',
+                        display: 'none',
+                        p: 1.5,
+                        bgcolor: 'background.paper',
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        boxShadow: '0px 4px 10px rgba(0,0,0,0.1)',
+                        borderRadius: '8px',
+                        pointerEvents: 'none',
+                        zIndex: 100,
+                        fontSize: '0.85rem'
+                    }}
+                />
             </Box>
         </Box>
     );

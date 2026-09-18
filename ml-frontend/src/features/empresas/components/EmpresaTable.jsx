@@ -1,11 +1,11 @@
-// src/features/empresas/components/EmpresaTable.js
+// src/features/empresas/components/EmpresaTable.jsx
 import React, { useState, useRef, useMemo, memo } from 'react';
 import { 
     Box, Typography, CircularProgress, Chip, IconButton, Tooltip,
     Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-    TextField, InputAdornment 
+    TextField, InputAdornment, Button 
 } from '@mui/material';
-import { ChevronLeft, ChevronRight, Edit, Delete, Search } from '@mui/icons-material';
+import { ChevronLeft, ChevronRight, Edit, Delete, Search, FilterAltOff } from '@mui/icons-material';
 
 function EmpresaTable({ 
     empresas = [], 
@@ -19,6 +19,12 @@ function EmpresaTable({
     const [sectorSeleccionado, setSectorSeleccionado] = useState('todos'); 
     const [busqueda, setBusqueda] = useState(''); 
     const scrollRef = useRef(null);
+
+    // Caso de Uso N°14: Función centralizada para limpiar todos los filtros
+    const reiniciarFiltros = () => {
+        setBusqueda('');
+        setSectorSeleccionado('todos');
+    };
 
     const empresasAMostrar = useMemo(() => {
         return empresas.filter((emp) => {
@@ -48,6 +54,9 @@ function EmpresaTable({
         );
     }
 
+    // Lógica UX: El botón de limpiar se deshabilita si no hay filtros aplicados
+    const hayFiltrosAplicados = busqueda !== '' || sectorSeleccionado !== 'todos';
+
     return (
         <Box sx={{ width: '100%' }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
@@ -57,21 +66,36 @@ function EmpresaTable({
                     </Typography>
                 </Box>
                 
-                <TextField 
-                    size="small"
-                    variant="outlined"
-                    placeholder="Buscar por nombre o ticker..."
-                    value={busqueda}
-                    onChange={(e) => setBusqueda(e.target.value)}
-                    InputProps={{
-                        startAdornment: (
-                            <InputAdornment position="start">
-                                <Search fontSize="small" color="action" />
-                            </InputAdornment>
-                        ),
-                    }}
-                    sx={{ minWidth: { xs: '100%', sm: '250px' } }}
-                />
+                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
+                    <TextField 
+                        size="small"
+                        variant="outlined"
+                        placeholder="Buscar por nombre o ticker..."
+                        value={busqueda}
+                        onChange={(e) => setBusqueda(e.target.value)}
+                        InputProps={{
+                            startAdornment: (
+                                <InputAdornment position="start">
+                                    <Search fontSize="small" color="action" />
+                                </InputAdornment>
+                            ),
+                        }}
+                        sx={{ minWidth: { xs: '100%', sm: '250px' } }}
+                    />
+                    
+                    {/* Botón Caso de Uso N°14 */}
+                    <Button 
+                        variant="outlined" 
+                        color="secondary" 
+                        onClick={reiniciarFiltros}
+                        startIcon={<FilterAltOff />}
+                        disabled={!hayFiltrosAplicados}
+                        size="small"
+                        sx={{ height: '40px' }}
+                    >
+                        Limpiar
+                    </Button>
+                </Box>
             </Box>
 
             <Box 
@@ -218,8 +242,8 @@ function EmpresaTable({
                         ) : (
                             <TableRow>
                                 <TableCell colSpan={esAdmin ? 4 : 3} align="center" sx={{ py: 6, color: 'text.disabled' }}>
-                                    {busqueda 
-                                        ? `No se encontraron resultados para "${busqueda}"` 
+                                    {busqueda || sectorSeleccionado !== 'todos'
+                                        ? `No se encontraron resultados para los filtros aplicados.` 
                                         : 'No hay empresas en la categoría seleccionada.'}
                                 </TableCell>
                             </TableRow>
