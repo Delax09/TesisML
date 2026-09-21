@@ -3,7 +3,7 @@ import React, { useState, useRef, useMemo, memo } from 'react';
 import { 
     Box, Typography, CircularProgress, Chip, IconButton, Tooltip,
     Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-    TextField, InputAdornment, Button 
+    TextField, InputAdornment, Button, TablePagination 
 } from '@mui/material';
 import { ChevronLeft, ChevronRight, Edit, Delete, Search, FilterAltOff } from '@mui/icons-material';
 
@@ -18,12 +18,28 @@ function EmpresaTable({
 }) {
     const [sectorSeleccionado, setSectorSeleccionado] = useState('todos'); 
     const [busqueda, setBusqueda] = useState(''); 
+    
+    // Caso de Uso N°48: Estado para la paginación
+    const [page, setPage] = useState(0);
+    const [rowsPerPage, setRowsPerPage] = useState(15);
+    
     const scrollRef = useRef(null);
 
     // Caso de Uso N°14: Función centralizada para limpiar todos los filtros
     const reiniciarFiltros = () => {
         setBusqueda('');
         setSectorSeleccionado('todos');
+        setPage(0); // Reiniciar a la primera página
+    };
+
+    const handleBusquedaChange = (e) => {
+        setBusqueda(e.target.value);
+        setPage(0); // Reiniciar a la primera página al buscar
+    };
+
+    const handleSectorChange = (sectorId) => {
+        setSectorSeleccionado(sectorId);
+        setPage(0); // Reiniciar a la primera página al filtrar por sector
     };
 
     const empresasAMostrar = useMemo(() => {
@@ -37,6 +53,21 @@ function EmpresaTable({
             return coincideSector && coincideBusqueda;
         });
     }, [empresas, sectorSeleccionado, busqueda]);
+
+    // Caso de Uso N°48: Calcular las empresas específicas de la página actual
+    const empresasPaginadas = useMemo(() => {
+        const startIndex = page * rowsPerPage;
+        return empresasAMostrar.slice(startIndex, startIndex + rowsPerPage);
+    }, [empresasAMostrar, page, rowsPerPage]);
+
+    const handleChangePage = (event, newPage) => {
+        setPage(newPage);
+    };
+
+    const handleChangeRowsPerPage = (event) => {
+        setRowsPerPage(parseInt(event.target.value, 10));
+        setPage(0);
+    };
 
     const desplazar = (direccion) => {
         if (scrollRef.current) {
@@ -72,7 +103,7 @@ function EmpresaTable({
                         variant="outlined"
                         placeholder="Buscar por nombre o ticker..."
                         value={busqueda}
-                        onChange={(e) => setBusqueda(e.target.value)}
+                        onChange={handleBusquedaChange}
                         InputProps={{
                             startAdornment: (
                                 <InputAdornment position="start">
@@ -132,7 +163,7 @@ function EmpresaTable({
                 >
                     <Chip
                         label="Todos los sectores"
-                        onClick={() => setSectorSeleccionado('todos')}
+                        onClick={() => handleSectorChange('todos')}
                         color={sectorSeleccionado === 'todos' ? "primary" : "default"}
                         variant={sectorSeleccionado === 'todos' ? "filled" : "outlined"}
                         sx={{ fontWeight: 'bold' }}
@@ -141,7 +172,7 @@ function EmpresaTable({
                         <Chip
                             key={sector.IdSector}
                             label={sector.NombreSector}
-                            onClick={() => setSectorSeleccionado(sector.IdSector)}
+                            onClick={() => handleSectorChange(sector.IdSector)}
                             color={sectorSeleccionado === sector.IdSector ? "primary" : "default"}
                             variant={sectorSeleccionado === sector.IdSector ? "filled" : "outlined"}
                             sx={{ fontWeight: 'bold' }}
@@ -175,8 +206,8 @@ function EmpresaTable({
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        {empresasAMostrar.length > 0 ? (
-                            empresasAMostrar.map((emp) => (
+                        {empresasPaginadas.length > 0 ? (
+                            empresasPaginadas.map((emp) => (
                                 <TableRow 
                                     key={emp.IdEmpresa} 
                                     hover
@@ -251,6 +282,25 @@ function EmpresaTable({
                     </TableBody>
                 </Table>
             </TableContainer>
+
+            {/* Caso de Uso N°48: Controles de paginación */}
+            {empresasAMostrar.length > 0 && (
+                <TablePagination
+                    rowsPerPageOptions={[5, 10, 15, 25, 50]}
+                    component="div"
+                    count={empresasAMostrar.length}
+                    rowsPerPage={rowsPerPage}
+                    page={page}
+                    onPageChange={handleChangePage}
+                    onRowsPerPageChange={handleChangeRowsPerPage}
+                    labelRowsPerPage="Empresas por página:"
+                    labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
+                    sx={{
+                        borderTop: '1px solid',
+                        borderColor: 'divider'
+                    }}
+                />
+            )}
         </Box>
     );
 }
