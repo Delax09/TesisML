@@ -1,5 +1,5 @@
 # app/routers/auth.py
-from app.schemas.schemas import RecuperarPassword, ResetearPasswordRequest
+from app.schemas.schemas import RecuperarPassword, ResetearPasswordRequest, RegisterSchema, Token
 from app.utils.security import hash_password
 from app.utils.email import enviar_correo
 from app.services.usuario_service import UsuarioService
@@ -9,10 +9,9 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from datetime import timedelta
 from fastapi.responses import RedirectResponse
-from jose import JWTError,jwt
+from jose import JWTError, jwt
 from app.db.sessions import get_db
 from app.core.config import settings
-from app.schemas.schemas import Token
 from app.models.usuario import Usuario
 from app.utils.security import create_access_token, verify_password
 from app.core.limiter import limiter
@@ -22,19 +21,25 @@ import secrets
 
 router = APIRouter(prefix="/api/v1/auth", tags=["Autenticación"])
 
-##################################################
-#################### NO TOCAR ####################
-##################################################
 @router.post("/login")
 def login(response: Response, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     usuario = db.query(Usuario).filter(Usuario.Email == form_data.username).first()
 
-    if not usuario or not verify_password(form_data.password, usuario.PasswordU):
+    # Caso de Uso N°5: Mensaje cuando el usuario no exista (Error 404)
+    if not usuario:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Las credenciales de acceso no existen"
+        )
+
+    # Validación de contraseña incorrecta (Error 401)
+    if not verify_password(form_data.password, usuario.PasswordU):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Correo o contraseña incorrectos.",
             headers={"WWW-Authenticate": "Bearer"},
         )
+        
     if not usuario.Activo:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -43,9 +48,7 @@ def login(response: Response, form_data: OAuth2PasswordRequestForm = Depends(), 
         
     access_token = create_access_token(data={"sub": str(usuario.IdUsuario), "rol": usuario.IdRol})
 
-    # CORRECCIÓN: Calcular los segundos dinámicamente según la configuración
     max_age_seconds = settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
-
     is_production = settings.ENVIRONMENT == "production"
 
     response.set_cookie(
@@ -57,11 +60,11 @@ def login(response: Response, form_data: OAuth2PasswordRequestForm = Depends(), 
         secure=is_production
     )
 
-    csrf_token = secrets.token_hex(32) # Genera un token aleatorio seguro
+    csrf_token = secrets.token_hex(32) 
     response.set_cookie(
         key="csrf_token",
         value=csrf_token,
-        httponly=False, # IMPORTANTE: Debe ser False para que React lo pueda leer
+        httponly=False, 
         samesite="lax",
         max_age=max_age_seconds,
         secure=is_production
@@ -73,8 +76,40 @@ def login(response: Response, form_data: OAuth2PasswordRequestForm = Depends(), 
         "access_token": access_token
     }
 
+@router.post("/register", status_code=status.HTTP_201_CREATED)
+def register(user_data: RegisterSchema, db: Session = Depends(get_db)):
+    # Caso de Uso N°6: Advertencia al crear usuario ya registrado
+    usuario_existente = db.query(Usuario).filter(Usuario.Email == user_data.Email).first()
+    
+    if usuario_existente:
+        # El sistema NO guarda la información para evitar duplicados
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="El usuario ya registró un correo anteriormente"
+        )
+        
+    # Validamos que la contraseña cumpla con las políticas de seguridad
+    try:
+        UsuarioService.validar_password(user_data.password)
+    except InvalidDataError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    # Lógica para guardar la información proporcionada por el usuario
+    datos_usuario = user_data.dict()
+    password_plana = datos_usuario.pop("password", None)
+    
+    nuevo_usuario = Usuario(**datos_usuario)
+    
+    # Hasheamos la contraseña antes de persistir en base de datos
+    if password_plana:
+        nuevo_usuario.PasswordU = hash_password(password_plana)
+        
+    db.add(nuevo_usuario)
+    db.commit()
+    
+    return {"mensaje": "Usuario creado exitosamente"}
+
 @router.get("/me")
-# CORRECCIÓN: Importante inyectar `response: Response` aquí
 def obtener_perfil_actual(response: Response, usuario_actual: Usuario = Depends(obtener_usuario_actual)):
     """
     Retorna la información del usuario autenticado basándose estrictamente 
@@ -83,16 +118,13 @@ def obtener_perfil_actual(response: Response, usuario_actual: Usuario = Depends(
     """
     
     # --- NUEVA LÓGICA DE RENOVACIÓN DE SESIÓN ---
-    # 1. Generamos un nuevo token con una fecha de expiración fresca (ej: +60 mins)
     nuevo_token = create_access_token(
         data={"sub": str(usuario_actual.IdUsuario), "rol": usuario_actual.IdRol}
     )
     
-    # 2. Calculamos los segundos de vida de la cookie
     max_age_seconds = settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
     is_production = settings.ENVIRONMENT == "production"
     
-    # 3. Sobrescribimos la cookie actual del navegador con este nuevo token
     response.set_cookie(
         key="access_token",
         value=f"Bearer {nuevo_token}",
@@ -102,11 +134,12 @@ def obtener_perfil_actual(response: Response, usuario_actual: Usuario = Depends(
         secure=is_production
     )
     # --------------------------------------------
-    csrf_token = secrets.token_hex(32) # Genera un token aleatorio seguro
+    
+    csrf_token = secrets.token_hex(32) 
     response.set_cookie(
         key="csrf_token",
         value=csrf_token,
-        httponly=False, # IMPORTANTE: Debe ser False para que React lo pueda leer
+        httponly=False, 
         samesite="lax",
         max_age=max_age_seconds,
         secure=is_production
@@ -127,7 +160,6 @@ def logout(response: Response):
     """
     Invalida la sesión eliminando la cookie del navegador.
     """
-
     is_production = settings.ENVIRONMENT == "production"
 
     response.delete_cookie(
@@ -189,6 +221,7 @@ def solicitar_recuperacion(request: RecuperarPassword, db: Session = Depends(get
     
     # --- NUEVA PLANTILLA HTML DE RECUPERACIÓN ---
     html_mensaje = template_recuperacion(usuario.Nombre, enlace)
+    
     # 2. Enviar el correo
     enviar_correo(
         destino=usuario.Email,

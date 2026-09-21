@@ -374,3 +374,8 @@ class NoticiaSentimientoBase(BaseModel):
     Etiqueta: Optional[str] = None
     FechaPublicacion: Optional[datetime] = None
 
+class RegisterSchema(BaseModel):
+    Nombre: str
+    Apellido: Optional[str] = None
+    Email: EmailStr
+    password: str
