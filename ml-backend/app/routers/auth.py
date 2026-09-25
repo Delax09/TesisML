@@ -55,7 +55,7 @@ def login(response: Response, form_data: OAuth2PasswordRequestForm = Depends(), 
         key="access_token",
         value=f"Bearer {access_token}",
         httponly=True,
-        samesite="lax",
+        samesite="none",
         max_age=max_age_seconds,
         secure=is_production
     )
@@ -65,7 +65,7 @@ def login(response: Response, form_data: OAuth2PasswordRequestForm = Depends(), 
         key="csrf_token",
         value=csrf_token,
         httponly=False, 
-        samesite="lax",
+        samesite="none",
         max_age=max_age_seconds,
         secure=is_production
     )
@@ -129,7 +129,7 @@ def obtener_perfil_actual(response: Response, usuario_actual: Usuario = Depends(
         key="access_token",
         value=f"Bearer {nuevo_token}",
         httponly=True,
-        samesite="lax",
+        samesite="none",
         max_age=max_age_seconds,
         secure=is_production
     )
@@ -140,7 +140,7 @@ def obtener_perfil_actual(response: Response, usuario_actual: Usuario = Depends(
         key="csrf_token",
         value=csrf_token,
         httponly=False, 
-        samesite="lax",
+        samesite="none",
         max_age=max_age_seconds,
         secure=is_production
     )
@@ -165,7 +165,7 @@ def logout(response: Response):
     response.delete_cookie(
         key="access_token",
         httponly=True,
-        samesite="lax",
+        samesite="none",
         secure=is_production
     )
     return {"message": "Sesión cerrada correctamente"}
@@ -191,12 +191,12 @@ def verificar_email(token: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Usuario no encontrado.")
         
     if usuario.Activo:
-        return RedirectResponse(url="http://localhost:3000/login?mensaje=ya_activo")
+        return RedirectResponse(url="[https://tesis-ml.vercel.app/login?mensaje=ya_activo](https://tesis-ml.vercel.app/login?mensaje=ya_activo)")
 
     usuario.Activo = True
     db.commit()
     
-    return RedirectResponse(url="http://localhost:3000/login?mensaje=verificado")
+    return RedirectResponse(url="[https://tesis-ml.vercel.app/login?mensaje=verificado](https://tesis-ml.vercel.app/login?mensaje=verificado)")
 
 @router.post("/solicitar-recuperacion")
 def solicitar_recuperacion(request: RecuperarPassword, db: Session = Depends(get_db)):
@@ -217,7 +217,7 @@ def solicitar_recuperacion(request: RecuperarPassword, db: Session = Depends(get
         expires_delta=timedelta(minutes=15)
     )
     
-    enlace = f"http://localhost:3000/reset-password?token={token_recuperacion}"
+    enlace = f"https://tesis-ml.vercel.app/reset-password?token={token_recuperacion}"
     
     # --- NUEVA PLANTILLA HTML DE RECUPERACIÓN ---
     html_mensaje = template_recuperacion(usuario.Nombre, enlace)
