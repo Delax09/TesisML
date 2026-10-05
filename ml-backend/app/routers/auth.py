@@ -50,12 +50,13 @@ def login(response: Response, form_data: OAuth2PasswordRequestForm = Depends(), 
 
     max_age_seconds = settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
     is_production = settings.ENVIRONMENT == "production"
+    same_site = "none" if is_production else "lax"
 
     response.set_cookie(
         key="access_token",
         value=f"Bearer {access_token}",
         httponly=True,
-        samesite="none",
+        samesite=same_site,
         max_age=max_age_seconds,
         secure=is_production
     )
@@ -65,7 +66,7 @@ def login(response: Response, form_data: OAuth2PasswordRequestForm = Depends(), 
         key="csrf_token",
         value=csrf_token,
         httponly=False, 
-        samesite="none",
+        samesite=same_site,
         max_age=max_age_seconds,
         secure=is_production
     )
@@ -124,12 +125,13 @@ def obtener_perfil_actual(response: Response, usuario_actual: Usuario = Depends(
     
     max_age_seconds = settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
     is_production = settings.ENVIRONMENT == "production"
+    same_site = "none" if is_production else "lax"
     
     response.set_cookie(
         key="access_token",
         value=f"Bearer {nuevo_token}",
         httponly=True,
-        samesite="none",
+        samesite=same_site,
         max_age=max_age_seconds,
         secure=is_production
     )
@@ -140,7 +142,7 @@ def obtener_perfil_actual(response: Response, usuario_actual: Usuario = Depends(
         key="csrf_token",
         value=csrf_token,
         httponly=False, 
-        samesite="none",
+        samesite=same_site,
         max_age=max_age_seconds,
         secure=is_production
     )
@@ -161,11 +163,12 @@ def logout(response: Response):
     Invalida la sesión eliminando la cookie del navegador.
     """
     is_production = settings.ENVIRONMENT == "production"
+    same_site = "none" if is_production else "lax"
 
     response.delete_cookie(
         key="access_token",
         httponly=True,
-        samesite="none",
+        samesite=same_site,
         secure=is_production
     )
     return {"message": "Sesión cerrada correctamente"}
