@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, BackgroundTasks, status, Request, HTTPEx
 from sqlalchemy.orm import Session
 from typing import Optional
 from app.db.sessions import get_db
-import datetime
+from datetime import datetime, timedelta, date
 import json
 import os
 import math
@@ -12,6 +12,8 @@ import asyncio
 from pydantic import BaseModel
 from typing import List, Optional
 from app.db.sessions import SessionLocal
+from app.services.metrica_service import MetricaService
+from app.models.metrica_modelo import MetricaModelo
 
 logger = logging.getLogger(__name__)
 
@@ -142,15 +144,16 @@ async def obtener_prediccion_empresa(
     db: Session = Depends(get_db)
 ):
     try:
-        # 1. OPTIMIZACIÓN: Usar `desc` de SQLAlchemy para ordenar en BD y evitar `reverse()` en Python
+        # 1. OPTIMIZACIÓN: Traer historial descendente y luego invertir para el gráfico
         historial_db = db.query(PrecioHistorico).filter(
             PrecioHistorico.IdEmpresa == empresa_id
-        ).order_by(PrecioHistorico.Fecha.asc()).limit(30).all()
+        ).order_by(PrecioHistorico.Fecha.desc()).limit(30).all()
         
-        # Procesamiento limpio y eficiente con list comprehension
+        historial_db = historial_db[::-1] # Invertir para orden cronológico
+        
         historial = [
             {
-                "fecha": h.Fecha.strftime("%d-%m") if isinstance(h.Fecha, datetime.date) else h.Fecha[:10],
+                "fecha": h.Fecha.strftime("%d-%m-%Y") if isinstance(h.Fecha, (datetime, date)) else str(h.Fecha)[:10],
                 "precio": float(h.PrecioCierre) if h.PrecioCierre is not None and not math.isnan(float(h.PrecioCierre)) else None
             } 
             for h in historial_db
@@ -162,42 +165,67 @@ async def obtener_prediccion_empresa(
             query = query.filter(Resultado.IdModelo == modelo_id)
         resultados_db = query.order_by(Resultado.FechaAnalisis.asc()).all()
 
+        # 3. CÁLCULO DE FECHA DE PREDICCIÓN SIN MODIFICAR BD
+        metricas_db = db.query(MetricaModelo.IdModelo, MetricaModelo.DiasFuturo).order_by(MetricaModelo.FechaEntrenamiento.desc()).all()
+        
+        dias_por_modelo = {}
+        for m in metricas_db:
+            if m.IdModelo not in dias_por_modelo:
+                dias_por_modelo[m.IdModelo] = m.DiasFuturo
+
         prediccion = []
         tendencia = "ESTABLE"
         
-        # 3. SEGURIDAD: Evitar errores de índices fuera de rango (IndexError)
+        # 4. SEGURIDAD: Evitar errores de índices fuera de rango
         if historial and resultados_db:
-            # Unir historial con predicción para que el gráfico no tenga "saltos"
-            prediccion.append({"fecha": historial[-1]["fecha"], "precioEsperado": historial[-1]["precio"]})
+            # Unir historial con predicción adaptado al nuevo formato de claves
+            prediccion.append({
+                "fechaAnalisis": historial[-1]["fecha"],
+                "fechaPrediccion": historial[-1]["fecha"],
+                "precioPrediccion": historial[-1]["precio"]
+            })
 
             for r in resultados_db:
-                # Simplificación de formato de fecha
-                fecha_fmt = r.FechaAnalisis.strftime("%d-%m") if isinstance(r.FechaAnalisis, datetime.date) else r.FechaAnalisis[:10]
-                pred_val = float(r.PrediccionIA)
+                dias_futuro = dias_por_modelo.get(r.IdModelo, 0)
                 
+                # Obtener la fecha base
+                if isinstance(r.FechaAnalisis, str):
+                    fecha_base = datetime.strptime(r.FechaAnalisis[:10], "%Y-%m-%d")
+                else:
+                    fecha_base = r.FechaAnalisis
+                
+                # Calcular la fecha futura
+                fecha_objetivo = fecha_base + timedelta(days=dias_futuro)
+                
+                # Extraer Precio Predicción validando que no sea NaN ni None
+                pred_val = float(r.PrediccionIA) if r.PrediccionIA is not None else None
+                precio_pred = pred_val if pred_val is not None and not math.isnan(pred_val) else None
+
+
+                # Agregar con la estructura exacta solicitada
                 prediccion.append({
-                    "fecha": fecha_fmt,
-                    "precioEsperado": None if math.isnan(pred_val) else pred_val
+                    "fechaAnalisis": fecha_base.strftime("%d-%m-%Y"),
+                    "fechaPrediccion": fecha_objetivo.strftime("%d-%m-%Y"),
+                    "precioPrediccion": precio_pred
                 })
 
-            # 4. Lógica de tendencia más robusta
+            # 5. Lógica de tendencia más robusta
             recom = resultados_db[-1].Recomendacion
             if recom:
                 recom = recom.upper()
-                tendencia = "ALZA" if "ALCISTA" in recom else ("BAJA" if "BAJISTA" in recom else "ESTABLE")
+                tendencia = "ALCISTA" if "ALCISTA" in recom else ("BAJISTA" if "BAJISTA" in recom else "MANTENER")
 
         return {
             "historial": historial,
             "prediccion": prediccion,
-            "confianza": 85, # Considera traer esto de la BD también
+            "confianza": 85, 
             "tendencia": tendencia
         }
 
     except Exception as e:
-        # Loguear el error real para debugging
         print(f"Error crítico en prediccion: {e}")
         raise HTTPException(status_code=500, detail="Error al procesar la predicción")
-    
+        
 class MasivoReq(BaseModel):
     empresas_ids: List[int]
     modelo_id: Optional[int] = None

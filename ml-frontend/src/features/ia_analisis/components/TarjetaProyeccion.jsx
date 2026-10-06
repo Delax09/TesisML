@@ -67,24 +67,68 @@ const TarjetaProyeccion = ({ datos, seleccionado, onToggle }) => {
     // LÓGICA ORIGINAL INTACTA: Unificar historial y predicción por fecha
     const chartData = useMemo(() => {
         if (!datos || (!datos.historial && !datos.prediccion)) return [];
-        
-        const map = {};
 
-        // 1. Procesar historial
-        (datos.historial || []).forEach(p => {
+        const map = {};
+        
+        // Función auxiliar para leer fechas DD-MM-YYYY y YYYY-MM-DD
+        const parseDate = (dStr) => {
+            if (!dStr) return 0;
+            if (dStr.includes('-')) {
+                const parts = dStr.split('-');
+                if (parts[2]?.length === 4) { // Formato DD-MM-YYYY
+                    return new Date(parts[2], parts[1] - 1, parts[0]).getTime();
+                }
+            }
+            return new Date(dStr).getTime();
+        };
+
+        let lastHistDateStr = null;
+        let lastHistTime = 0;
+        let lastHistPrice = null;
+
+        // 1. Procesar historial real (Mostramos solo la mitad más reciente)
+        const historialCompleto = datos.historial || [];
+        const mitadHistorial = Math.floor(historialCompleto.length / 2);
+        const historialRecortado = historialCompleto.slice(mitadHistorial);
+
+        historialRecortado.forEach(p => {
             const fecha = p.fecha || p.date;
             map[fecha] = { fecha, precio: p.precio };
+
+            // Encontrar el último precio real para usarlo de ancla
+            const t = parseDate(fecha);
+            if (t > lastHistTime) {
+                lastHistTime = t;
+                lastHistDateStr = fecha;
+                lastHistPrice = p.precio;
+            }
         });
 
-        // 2. Procesar predicciones (IA)
-        (datos.prediccion || []).forEach(p => {
-            const fecha = p.fecha || p.date;
-            if (!map[fecha]) map[fecha] = { fecha };
-            map[fecha].precioEsperado = p.precioEsperado;
-        });
+        // 2. Procesar predicciones de la IA (Nuevo formato)
+        const preds = datos.prediccion || [];
+        if (preds.length > 0) {
+            // Filtrar SOLO el análisis más reciente
+            const maxAnalisisTime = Math.max(...preds.map(p => parseDate(p.fechaAnalisis)));
+            const prediccionesRecientes = preds.filter(p => parseDate(p.fechaAnalisis) === maxAnalisisTime);
 
-        return Object.values(map).sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+            prediccionesRecientes.forEach(p => {
+                const fecha = p.fechaPrediccion || p.fecha || p.date;
+                if (!map[fecha]) map[fecha] = { fecha };
+                
+                // Soporta 'precioPrediccion' (nuevo) o 'precioEsperado' (viejo)
+                const precioPred = p.precioPrediccion !== undefined ? p.precioPrediccion : p.precioEsperado;
+                map[fecha].precioEsperado = precioPred;
+            });
 
+            // 3. ANCLAJE: Unir visualmente la predicción con el último precio real
+            if (lastHistDateStr && lastHistPrice !== null) {
+                if (!map[lastHistDateStr]) map[lastHistDateStr] = { fecha: lastHistDateStr };
+                map[lastHistDateStr].precioEsperado = lastHistPrice;
+            }
+        }
+
+        // 4. Ordenar estrictamente por fecha para que Recharts dibuje bien la línea
+        return Object.values(map).sort((a, b) => parseDate(a.fecha) - parseDate(b.fecha));
     }, [datos]);
 
     if (!datos || !datos.historial || !datos.prediccion) {
