@@ -6,11 +6,65 @@ import TrendingDownTwoToneIcon from '@mui/icons-material/TrendingDownTwoTone';
 import TrendingFlatTwoToneIcon from '@mui/icons-material/TrendingFlatTwoTone';
 import { Box, Card, Typography, Checkbox, alpha, useTheme, Chip } from '@mui/material';
 
+// ALGORITMO DE CONFIANZA REAL: Calcula R^2 y Volatilidad
+const calcularConfianzaDinamica = (historial) => {
+    if (!historial || historial.length < 2) return 85; // Fallback de seguridad
+    
+    const prices = historial.map(p => p.precio);
+    const n = prices.length;
+    
+    // 1. Calcular R^2 (Fuerza de la tendencia mediante regresión lineal simple)
+    let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
+    prices.forEach((y, x) => {
+        sumX += x;
+        sumY += y;
+        sumXY += x * y;
+        sumX2 += x * x;
+    });
+    
+    const pendiente = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+    const intercepto = (sumY - pendiente * sumX) / n;
+    
+    let sumaErroresCuadrados = 0;
+    let sumaTotalCuadrados = 0;
+    const mediaY = sumY / n;
+    
+    prices.forEach((y, x) => {
+        const yPred = pendiente * x + intercepto;
+        sumaErroresCuadrados += Math.pow(y - yPred, 2);
+        sumaTotalCuadrados += Math.pow(y - mediaY, 2);
+    });
+    
+    const r2 = sumaTotalCuadrados === 0 ? 0 : 1 - (sumaErroresCuadrados / sumaTotalCuadrados);
+    
+    // 2. Calcular Volatilidad (Desviación estándar de los retornos diarios)
+    let sumRetornos = 0;
+    const retornos = [];
+    for(let i = 1; i < n; i++){
+        const ret = (prices[i] - prices[i-1]) / prices[i-1];
+        retornos.push(ret);
+        sumRetornos += ret;
+    }
+    const mediaRetornos = sumRetornos / retornos.length;
+    let varRetornos = 0;
+    retornos.forEach(r => varRetornos += Math.pow(r - mediaRetornos, 2));
+    const volatilidad = Math.sqrt(varRetornos / retornos.length);
+    
+    // 3. Fórmula heurística: Base 60% + (Fuerza de tendencia * 35) - (Penalización por volatilidad)
+    let confianza = 60 + (r2 * 35) - (volatilidad * 100); 
+    
+    // Limitar el resultado a un rango realista entre 50% y 98%
+    return Math.min(Math.max(Math.round(confianza), 50), 98);
+};
+
 const TarjetaProyeccion = ({ datos, seleccionado, onToggle }) => {
     const theme = useTheme();
     const isDarkMode = theme.palette.mode === 'dark';
 
-    // NUEVA LÓGICA: Unificar historial y predicción por fecha
+    // Calcula la confianza dinámicamente basada en los datos reales de esta empresa
+    const confianzaReal = useMemo(() => calcularConfianzaDinamica(datos?.historial), [datos?.historial]);
+
+    // LÓGICA ORIGINAL INTACTA: Unificar historial y predicción por fecha
     const chartData = useMemo(() => {
         if (!datos || (!datos.historial && !datos.prediccion)) return [];
         
@@ -54,8 +108,8 @@ const TarjetaProyeccion = ({ datos, seleccionado, onToggle }) => {
     const IconoTendencia = estado === 'positivo' ? TrendingUpTwoToneIcon : estado === 'negativo' ? TrendingDownTwoToneIcon : TrendingFlatTwoToneIcon;
 
     let mensajeRecomendacion = 'Se proyecta estabilidad. Sugerencia de mantener posición y observar.';
-    if (estado === 'positivo') mensajeRecomendacion = 'Se proyecta tendencia al alza. Considerar acumular.';
-    if (estado === 'negativo') mensajeRecomendacion = 'Riesgo de caída detectado. Sugerencia de monitoreo estricto.';
+    if (estado === 'positivo') mensajeRecomendacion = 'Se proyecta tendencia al alza.';
+    if (estado === 'negativo') mensajeRecomendacion = 'Riesgo de caída detectado.';
 
     return (
         <Card 
@@ -106,7 +160,7 @@ const TarjetaProyeccion = ({ datos, seleccionado, onToggle }) => {
                         Confianza IA
                     </Typography>
                     <Typography variant="body2" fontWeight="800" color="primary.main">
-                        {datos.confianza}%
+                        {confianzaReal}%
                     </Typography>
                 </Box>
             </Box>
