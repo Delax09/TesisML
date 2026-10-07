@@ -185,3 +185,36 @@
 {"timestamp": "2026-06-04T15:53:36.623583", "level": "INFO", "logger": "ML.Trainer.CNN", "message": "Early stopping activado", "module": "pipeline_trainer", "function": "ejecutar_entrenamiento", "line": 116}
 {"timestamp": "2026-06-04T15:53:38.990074", "level": "INFO", "logger": "ML.Trainer.CNN", "message": "Umbral optimizado", "module": "pipeline_trainer", "function": "optimizar_umbral_decision", "line": 240}
 {"timestamp": "2026-06-04T15:53:38.990673", "level": "INFO", "logger": "ML.Trainer.CNN", "message": "Entrenamiento completado", "module": "pipeline_trainer", "function": "ejecutar_entrenamiento", "line": 128}
+{"timestamp": "2026-10-07T00:04:01.612159", "level": "INFO", "logger": "ML.Trainer.CNN", "message": "Iniciando entrenamiento mejorado", "module": "pipeline_trainer", "function": "ejecutar_entrenamiento", "line": 56}
+{"timestamp": "2026-10-07T00:04:01.618727", "level": "INFO", "logger": "ML.Trainer.CNN", "message": "GPU disponible", "module": "pipeline_trainer", "function": "ejecutar_entrenamiento", "line": 61}
+{"timestamp": "2026-10-07T00:05:24.783866", "level": "INFO", "logger": "ML.Trainer.CNN", "message": "Umbral optimizado", "module": "pipeline_trainer", "function": "optimizar_umbral_decision", "line": 240}
+{"timestamp": "2026-10-07T00:05:25.940030", "level": "INFO", "logger": "ML.Trainer.CNN", "message": "Epoch completada", "module": "pipeline_trainer", "function": "ejecutar_entrenamiento", "line": 106}
+{"timestamp": "2026-10-07T00:06:53.805325", "level": "INFO", "logger": "ML.Trainer.CNN", "message": "Umbral optimizado", "module": "pipeline_trainer", "function": "optimizar_umbral_decision", "line": 240}
+{"timestamp": "2026-10-07T00:06:55.424268", "level": "INFO", "logger": "ML.Trainer.CNN", "message": "Epoch completada", "module": "pipeline_trainer", "function": "ejecutar_entrenamiento", "line": 106}
+{"timestamp": "2026-10-07T00:08:08.447862", "level": "INFO", "logger": "ML.Trainer.CNN", "message": "Umbral optimizado", "module": "pipeline_trainer", "function": "optimizar_umbral_decision", "line": 240}
+{"timestamp": "2026-10-07T00:08:09.658042", "level": "INFO", "logger": "ML.Trainer.CNN", "message": "Epoch completada", "module": "pipeline_trainer", "function": "ejecutar_entrenamiento", "line": 106}
+{"timestamp": "2026-10-07T00:09:27.579642", "level": "INFO", "logger": "ML.Trainer.CNN", "message": "Umbral optimizado", "module": "pipeline_trainer", "function": "optimizar_umbral_decision", "line": 240}
+{"timestamp": "2026-10-07T00:09:28.858015", "level": "INFO", "logger": "ML.Trainer.CNN", "message": "Epoch completada", "module": "pipeline_trainer", "function": "ejecutar_entrenamiento", "line": 106}
+{"timestamp": "2026-10-07T00:10:50.652317", "level": "INFO", "logger": "ML.Trainer.CNN", "message": "Umbral optimizado", "module": "pipeline_trainer", "function": "optimizar_umbral_decision", "line": 240}
+{"timestamp": "2026-10-07T00:10:51.966731", "level": "INFO", "logger": "ML.Trainer.CNN", "message": "Epoch completada", "module": "pipeline_trainer", "function": "ejecutar_entrenamiento", "line": 106}
+{"timestamp": "2026-10-07T00:12:21.880129", "level": "INFO", "logger": "ML.Trainer.CNN", "message": "Umbral optimizado", "module": "pipeline_trainer", "function": "optimizar_umbral_decision", "line": 240}
+{"timestamp": "2026-10-07T00:12:23.186976", "level": "INFO", "logger": "ML.Trainer.CNN", "message": "Epoch completada", "module": "pipeline_trainer", "function": "ejecutar_entrenamiento", "line": 106}
+{"timestamp": "2026-10-07T00:13:43.689974", "level": "INFO", "logger": "ML.Trainer.CNN", "message": "Umbral optimizado", "module": "pipeline_trainer", "function": "optimizar_umbral_decision", "line": 240}
+{"timestamp": "2026-10-07T00:13:45.003191", "level": "INFO", "logger": "ML.Trainer.CNN", "message": "Epoch completada", "module": "pipeline_trainer", "function": "ejecutar_entrenamiento", "line": 106}
+{"timestamp": "2026-10-07T00:15:00.911905", "level": "INFO", "logger": "ML.Trainer.CNN", "message": "Umbral optimizado", "module": "pipeline_trainer", "function": "optimizar_umbral_decision", "line": 240}
+{"timestamp": "2026-10-07T00:15:02.302576", "level": "INFO", "logger": "ML.Trainer.CNN", "message": "Epoch completada", "module": "pipeline_trainer", "function": "ejecutar_entrenamiento", "line": 106}
+{"timestamp": "2026-10-07T00:16:34.215149", "level": "INFO", "logger": "ML.Trainer.CNN", "message": "Umbral optimizado", "module": "pipeline_trainer", "function": "optimizar_umbral_decision", "line": 240}
+{"timestamp": "2026-10-07T00:16:35.727685", "level": "INFO", "logger": "ML.Trainer.CNN", "message": "Epoch completada", "module": "pipeline_trainer", "function": "ejecutar_entrenamiento", "line": 106}
+{"timestamp": "2026-10-07T00:18:13.961177", "level": "INFO", "logger": "ML.Trainer.CNN", "message": "Umbral optimizado", "module": "pipeline_trainer", "function": "optimizar_umbral_decision", "line": 240}
+{"timestamp": "2026-10-07T00:18:15.217794", "level": "INFO", "logger": "ML.Trainer.CNN", "message": "Epoch completada", "module": "pipeline_trainer", "function": "ejecutar_entrenamiento", "line": 106}
+{"timestamp": "2026-10-07T00:19:48.294227", "level": "INFO", "logger": "ML.Trainer.CNN", "message": "Umbral optimizado", "module": "pipeline_trainer", "function": "optimizar_umbral_decision", "line": 240}
+{"timestamp": "2026-10-07T00:19:49.522648", "level": "INFO", "logger": "ML.Trainer.CNN", "message": "Epoch completada", "module": "pipeline_trainer", "function": "ejecutar_entrenamiento", "line": 106}
+{"timestamp": "2026-10-07T00:21:14.886411", "level": "INFO", "logger": "ML.Trainer.CNN", "message": "Umbral optimizado", "module": "pipeline_trainer", "function": "optimizar_umbral_decision", "line": 240}
+{"timestamp": "2026-10-07T00:21:16.112237", "level": "INFO", "logger": "ML.Trainer.CNN", "message": "Epoch completada", "module": "pipeline_trainer", "function": "ejecutar_entrenamiento", "line": 106}
+{"timestamp": "2026-10-07T00:22:45.952530", "level": "INFO", "logger": "ML.Trainer.CNN", "message": "Umbral optimizado", "module": "pipeline_trainer", "function": "optimizar_umbral_decision", "line": 240}
+{"timestamp": "2026-10-07T00:22:47.305143", "level": "INFO", "logger": "ML.Trainer.CNN", "message": "Epoch completada", "module": "pipeline_trainer", "function": "ejecutar_entrenamiento", "line": 106}
+{"timestamp": "2026-10-07T00:24:21.881081", "level": "INFO", "logger": "ML.Trainer.CNN", "message": "Umbral optimizado", "module": "pipeline_trainer", "function": "optimizar_umbral_decision", "line": 240}
+{"timestamp": "2026-10-07T00:24:23.191108", "level": "INFO", "logger": "ML.Trainer.CNN", "message": "Epoch completada", "module": "pipeline_trainer", "function": "ejecutar_entrenamiento", "line": 106}
+{"timestamp": "2026-10-07T00:24:23.192524", "level": "INFO", "logger": "ML.Trainer.CNN", "message": "Early stopping activado", "module": "pipeline_trainer", "function": "ejecutar_entrenamiento", "line": 116}
+{"timestamp": "2026-10-07T00:24:25.864140", "level": "INFO", "logger": "ML.Trainer.CNN", "message": "Umbral optimizado", "module": "pipeline_trainer", "function": "optimizar_umbral_decision", "line": 240}
+{"timestamp": "2026-10-07T00:24:25.865353", "level": "INFO", "logger": "ML.Trainer.CNN", "message": "Entrenamiento completado", "module": "pipeline_trainer", "function": "ejecutar_entrenamiento", "line": 128}
