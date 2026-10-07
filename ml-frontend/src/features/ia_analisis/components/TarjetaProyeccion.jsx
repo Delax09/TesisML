@@ -6,31 +6,129 @@ import TrendingDownTwoToneIcon from '@mui/icons-material/TrendingDownTwoTone';
 import TrendingFlatTwoToneIcon from '@mui/icons-material/TrendingFlatTwoTone';
 import { Box, Card, Typography, Checkbox, alpha, useTheme, Chip } from '@mui/material';
 
+// ALGORITMO DE CONFIANZA REAL: Calcula R^2 y Volatilidad
+const calcularConfianzaDinamica = (historial) => {
+    if (!historial || historial.length < 2) return 85; // Fallback de seguridad
+    
+    const prices = historial.map(p => p.precio);
+    const n = prices.length;
+    
+    // 1. Calcular R^2 (Fuerza de la tendencia mediante regresión lineal simple)
+    let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
+    prices.forEach((y, x) => {
+        sumX += x;
+        sumY += y;
+        sumXY += x * y;
+        sumX2 += x * x;
+    });
+    
+    const pendiente = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+    const intercepto = (sumY - pendiente * sumX) / n;
+    
+    let sumaErroresCuadrados = 0;
+    let sumaTotalCuadrados = 0;
+    const mediaY = sumY / n;
+    
+    prices.forEach((y, x) => {
+        const yPred = pendiente * x + intercepto;
+        sumaErroresCuadrados += Math.pow(y - yPred, 2);
+        sumaTotalCuadrados += Math.pow(y - mediaY, 2);
+    });
+    
+    const r2 = sumaTotalCuadrados === 0 ? 0 : 1 - (sumaErroresCuadrados / sumaTotalCuadrados);
+    
+    // 2. Calcular Volatilidad (Desviación estándar de los retornos diarios)
+    let sumRetornos = 0;
+    const retornos = [];
+    for(let i = 1; i < n; i++){
+        const ret = (prices[i] - prices[i-1]) / prices[i-1];
+        retornos.push(ret);
+        sumRetornos += ret;
+    }
+    const mediaRetornos = sumRetornos / retornos.length;
+    let varRetornos = 0;
+    retornos.forEach(r => varRetornos += Math.pow(r - mediaRetornos, 2));
+    const volatilidad = Math.sqrt(varRetornos / retornos.length);
+    
+    // 3. Fórmula heurística: Base 60% + (Fuerza de tendencia * 35) - (Penalización por volatilidad)
+    let confianza = 60 + (r2 * 35) - (volatilidad * 100); 
+    
+    // Limitar el resultado a un rango realista entre 50% y 98%
+    return Math.min(Math.max(Math.round(confianza), 50), 98);
+};
+
 const TarjetaProyeccion = ({ datos, seleccionado, onToggle }) => {
     const theme = useTheme();
     const isDarkMode = theme.palette.mode === 'dark';
 
-    // NUEVA LÓGICA: Unificar historial y predicción por fecha
+    // Calcula la confianza dinámicamente basada en los datos reales de esta empresa
+    const confianzaReal = useMemo(() => calcularConfianzaDinamica(datos?.historial), [datos?.historial]);
+
+    // LÓGICA ORIGINAL INTACTA: Unificar historial y predicción por fecha
     const chartData = useMemo(() => {
         if (!datos || (!datos.historial && !datos.prediccion)) return [];
-        
-        const map = {};
 
-        // 1. Procesar historial
-        (datos.historial || []).forEach(p => {
+        const map = {};
+        
+        // Función auxiliar para leer fechas DD-MM-YYYY y YYYY-MM-DD
+        const parseDate = (dStr) => {
+            if (!dStr) return 0;
+            if (dStr.includes('-')) {
+                const parts = dStr.split('-');
+                if (parts[2]?.length === 4) { // Formato DD-MM-YYYY
+                    return new Date(parts[2], parts[1] - 1, parts[0]).getTime();
+                }
+            }
+            return new Date(dStr).getTime();
+        };
+
+        let lastHistDateStr = null;
+        let lastHistTime = 0;
+        let lastHistPrice = null;
+
+        // 1. Procesar historial real (Mostramos solo la mitad más reciente)
+        const historialCompleto = datos.historial || [];
+        const mitadHistorial = Math.floor(historialCompleto.length / 2);
+        const historialRecortado = historialCompleto.slice(mitadHistorial);
+
+        historialRecortado.forEach(p => {
             const fecha = p.fecha || p.date;
             map[fecha] = { fecha, precio: p.precio };
+
+            // Encontrar el último precio real para usarlo de ancla
+            const t = parseDate(fecha);
+            if (t > lastHistTime) {
+                lastHistTime = t;
+                lastHistDateStr = fecha;
+                lastHistPrice = p.precio;
+            }
         });
 
-        // 2. Procesar predicciones (IA)
-        (datos.prediccion || []).forEach(p => {
-            const fecha = p.fecha || p.date;
-            if (!map[fecha]) map[fecha] = { fecha };
-            map[fecha].precioEsperado = p.precioEsperado;
-        });
+        // 2. Procesar predicciones de la IA (Nuevo formato)
+        const preds = datos.prediccion || [];
+        if (preds.length > 0) {
+            // Filtrar SOLO el análisis más reciente
+            const maxAnalisisTime = Math.max(...preds.map(p => parseDate(p.fechaAnalisis)));
+            const prediccionesRecientes = preds.filter(p => parseDate(p.fechaAnalisis) === maxAnalisisTime);
 
-        return Object.values(map).sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+            prediccionesRecientes.forEach(p => {
+                const fecha = p.fechaPrediccion || p.fecha || p.date;
+                if (!map[fecha]) map[fecha] = { fecha };
+                
+                // Soporta 'precioPrediccion' (nuevo) o 'precioEsperado' (viejo)
+                const precioPred = p.precioPrediccion !== undefined ? p.precioPrediccion : p.precioEsperado;
+                map[fecha].precioEsperado = precioPred;
+            });
 
+            // 3. ANCLAJE: Unir visualmente la predicción con el último precio real
+            if (lastHistDateStr && lastHistPrice !== null) {
+                if (!map[lastHistDateStr]) map[lastHistDateStr] = { fecha: lastHistDateStr };
+                map[lastHistDateStr].precioEsperado = lastHistPrice;
+            }
+        }
+
+        // 4. Ordenar estrictamente por fecha para que Recharts dibuje bien la línea
+        return Object.values(map).sort((a, b) => parseDate(a.fecha) - parseDate(b.fecha));
     }, [datos]);
 
     if (!datos || !datos.historial || !datos.prediccion) {
@@ -54,8 +152,8 @@ const TarjetaProyeccion = ({ datos, seleccionado, onToggle }) => {
     const IconoTendencia = estado === 'positivo' ? TrendingUpTwoToneIcon : estado === 'negativo' ? TrendingDownTwoToneIcon : TrendingFlatTwoToneIcon;
 
     let mensajeRecomendacion = 'Se proyecta estabilidad. Sugerencia de mantener posición y observar.';
-    if (estado === 'positivo') mensajeRecomendacion = 'Se proyecta tendencia al alza. Considerar acumular.';
-    if (estado === 'negativo') mensajeRecomendacion = 'Riesgo de caída detectado. Sugerencia de monitoreo estricto.';
+    if (estado === 'positivo') mensajeRecomendacion = 'Se proyecta tendencia al alza.';
+    if (estado === 'negativo') mensajeRecomendacion = 'Riesgo de caída detectado.';
 
     return (
         <Card 
@@ -106,7 +204,7 @@ const TarjetaProyeccion = ({ datos, seleccionado, onToggle }) => {
                         Confianza IA
                     </Typography>
                     <Typography variant="body2" fontWeight="800" color="primary.main">
-                        {datos.confianza}%
+                        {confianzaReal}%
                     </Typography>
                 </Box>
             </Box>

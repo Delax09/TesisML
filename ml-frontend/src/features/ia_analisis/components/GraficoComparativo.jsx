@@ -1,38 +1,92 @@
-// src/features/ia_analisis/components/GraficoComparativo.js
+// src/features/ia_analisis/components/GraficoComparativo.jsx
 import React from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Box, useTheme } from '@mui/material';
 
 const procesarDatosParaGrafico = (datosEntrada, compararModelos) => {
     const datosAgrupados = {};
+    const ordenFechas = new Set(); 
 
-    // 1. Procesar Historiales
+    // Helper para manejar fechas DD-MM-YYYY y ordenarlas de forma segura
+    const parseDate = (dStr) => {
+        if (!dStr) return 0;
+        if (dStr.includes('-')) {
+            const parts = dStr.split('-');
+            if (parts[2]?.length === 4) { // Formato DD-MM-YYYY
+                return new Date(parts[2], parts[1] - 1, parts[0]).getTime();
+            }
+        }
+        return new Date(dStr).getTime();
+    };
+
+    // 1. Procesar Historiales (Mostramos solo la mitad más reciente)
     datosEntrada.forEach(item => {
-        const historial = item.historial || [];
-        historial.forEach(punto => {
+        const historialCompleto = item.historial || [];
+        const mitadHistorial = Math.floor(historialCompleto.length / 2);
+        const historialRecortado = historialCompleto.slice(mitadHistorial);
+
+        let lastHistTime = 0;
+        let lastHistDateStr = null;
+        let lastHistPrice = null;
+
+        historialRecortado.forEach(punto => {
             const fecha = punto.fecha || punto.date;
+            ordenFechas.add(fecha);
+
             if (!datosAgrupados[fecha]) datosAgrupados[fecha] = { fecha };
-            
-            // Si es modo modelos, todos comparten 'precio_real'
+
             const keyReal = compararModelos ? 'precio_real' : `${item.simbolo}_real`;
             datosAgrupados[fecha][keyReal] = punto.precio;
+
+            // Extraer el último punto real
+            const t = parseDate(fecha);
+            if (t > lastHistTime) {
+                lastHistTime = t;
+                lastHistDateStr = fecha;
+                lastHistPrice = punto.precio;
+            }
         });
+        
+        // Guardamos el ancla en el item temporalmente
+        item._lastHistDateStr = lastHistDateStr;
+        item._lastHistPrice = lastHistPrice;
     });
 
-    // 2. Procesar Predicciones (Sin filtrar por fecha para evitar que desaparezcan puntos)
+    // 2. Procesar Predicciones (Solo el análisis más reciente)
     datosEntrada.forEach(item => {
-        const prediccion = item.prediccion || [];
+        const preds = item.prediccion || [];
         const keyPred = `${item.simbolo}_pred`;
+        
+        if (preds.length > 0) {
+            // Filtrar y dejar solo la iteración más reciente del modelo
+            const maxAnalisisTime = Math.max(...preds.map(p => parseDate(p.fechaAnalisis)));
+            const prediccionesRecientes = preds.filter(p => parseDate(p.fechaAnalisis) === maxAnalisisTime);
 
-        prediccion.forEach(punto => {
-            const fecha = punto.fecha || punto.date;
-            if (!datosAgrupados[fecha]) datosAgrupados[fecha] = { fecha };
-            datosAgrupados[fecha][keyPred] = punto.precioEsperado;
-        });
+            prediccionesRecientes.forEach(punto => {
+                const fecha = punto.fechaPrediccion || punto.fecha || punto.date;
+                ordenFechas.add(fecha);
+
+                if (!datosAgrupados[fecha]) datosAgrupados[fecha] = { fecha };
+
+                const precioPred = punto.precioPrediccion !== undefined ? punto.precioPrediccion : punto.precioEsperado;
+                datosAgrupados[fecha][keyPred] = precioPred;
+            });
+            
+            // ANCLAJE: Conectar línea punteada con el último precio real
+            if (item._lastHistDateStr && item._lastHistPrice !== null) {
+                ordenFechas.add(item._lastHistDateStr);
+                if (!datosAgrupados[item._lastHistDateStr]) {
+                    datosAgrupados[item._lastHistDateStr] = { fecha: item._lastHistDateStr };
+                }
+                datosAgrupados[item._lastHistDateStr][keyPred] = item._lastHistPrice;
+            }
+        }
     });
 
-    // Convertir a array y ordenar por fecha para que la línea no "salte"
-    return Object.values(datosAgrupados).sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+    // Retornamos el array ordenándolo cronológicamente de forma estricta
+    return Array.from(ordenFechas)
+        .map(fecha => datosAgrupados[fecha])
+        .sort((a, b) => parseDate(a.fecha) - parseDate(b.fecha));
 };
 
 const GraficoComparativo = ({ datos, compararModelos = false }) => {
