@@ -16,3 +16,5 @@ __pycache__/
 # Entrenamientos offline
 app/ml/models/entrenamientos_offline/
 app/ml/models/versiones
+
+lstm_training.log
