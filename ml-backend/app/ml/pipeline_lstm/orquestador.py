@@ -21,6 +21,7 @@ from app.ml.core.model_versioning import ModelVersionManager
 from app.ml.pipeline_lstm.data_processor import extraer_y_procesar_empresa, preparar_datos_lstm, crear_dataloaders_lstm
 from app.ml.pipeline_lstm.trainer import ejecutar_entrenamiento_lstm, evaluar_modelo_lstm
 from app.ml.core.utils import Timer
+from app.ml.core.pipeline_trainer import fijar_semillas
 
 # Configurar logger
 logger = configurar_logger("ML.Pipeline.LSTM", archivo_log="logs/lstm_pipeline.log")
@@ -83,6 +84,8 @@ def entrenar_pipeline_lstm(id_modelo: int = None):
 
         for mod_db in modelos.all():
             logger.info("Iniciando entrenamiento de modelo", extra={"modelo": mod_db.Nombre, "version": mod_db.Version})
+            
+            fijar_semillas(MLEngine.SEED)
 
             if mod_db.Version == 'v2':
                 modelo_pt = obtener_modelo_v2(dias_pasados = MLEngine.DIAS_MEMORIA_IA, num_features = len(MLEngine.FEATURES))
@@ -94,37 +97,45 @@ def entrenar_pipeline_lstm(id_modelo: int = None):
             modelo_pt.to(device)
 
             resultado_entrenamiento = ejecutar_entrenamiento_lstm(modelo_pt, train_loader, val_loader, device)
+            modelo_pt.load_state_dict(resultado_entrenamiento["pesos"]) # Evaluar estrictamente con los MEJORES pesos
+
+            # Evaluación final en TEST (datos que el modelo nunca vio ni se usaron para ajustar el early stopping)
+            metricas = evaluar_modelo_lstm(modelo_pt, test_loader, device, 
+                                         umbral_decision=resultado_entrenamiento["umbral_optimo"], meta=test_meta)
+            
+            metricas.update({
+                'DiasFuturo': MLEngine.DIAS_PREDICCION,
+                'loss': resultado_entrenamiento['loss'],
+                'epochs': resultado_entrenamiento['epochs'],
+                'mejor_auc_val': resultado_entrenamiento['mejor_auc_val'],
+                'umbral_optimo': resultado_entrenamiento['umbral_optimo'],
+                'umbral_alcista': resultado_entrenamiento['umbral_alcista'],
+                'umbral_bajista': resultado_entrenamiento['umbral_bajista'],
+            })
             mejores_pesos = resultado_entrenamiento["pesos"]
-            umbral_optimo = resultado_entrenamiento["umbral_optimo"]
 
-            # Evaluación y Guardado con umbral optimizado
-            metricas = evaluar_modelo_lstm(modelo_pt, val_loader, device, umbral_decision=umbral_optimo)
-            metricas['DiasFuturo'] = MLEngine.DIAS_PREDICCION
-            metricas['umbral_optimo'] = umbral_optimo
-
-            # Guardar métricas en BD
+            # Guardar métricas en BD (MetricaService ignora silenciosamente los campos nuevos si no existen en la BD)
             db_guardado = SessionLocal()
             try:
                 MetricaService.guardar_metricas(db_guardado, mod_db.IdModelo, metricas)
             finally:
                 db_guardado.close()
 
-            # Guardar modelo con versionamiento
+            # Guardar modelo con versionamiento (incluyendo la configuración)
             ruta_version = version_manager.guardar_modelo_versionado(
-                mejores_pesos,
-                scaler,
-                metricas,
-                f"LSTM_{mod_db.Version}",
-                mod_db.Version,
-                f"Entrenamiento automático - {len(ids_empresas)} empresas"
+                pesos=mejores_pesos,
+                scaler=scaler,
+                metricas=metricas,
+                nombre_modelo=f"LSTM_{mod_db.Version}",
+                version=mod_db.Version,
+                descripcion=f"Entrenamiento automático - {len(ids_empresas)} empresas",
+                configuracion=MLEngine.configuracion()
             )
 
             logger.info("Modelo guardado exitosamente",
                         extra={"version": mod_db.Version, "accuracy": metricas.get('accuracy', 0),
                                 "auc": metricas.get('auc', 0), "ruta": ruta_version})
 
-        # Guardar scaler global (para compatibilidad)
-        joblib.dump(scaler, os.path.join(ruta_modelos, "scaler.pkl"))
         logger.info("Pipeline LSTM finalizado exitosamente")
 
     except Exception as e:

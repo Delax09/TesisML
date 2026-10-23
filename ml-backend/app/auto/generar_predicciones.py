@@ -9,6 +9,7 @@ from app.models.precio_historico import PrecioHistorico
 from app.models.modelo_ia import ModeloIA
 from app.ml.core.engine import MLEngine #Aqui esta el MLEngine 
 from app.services.resultado_service import ResultadoService
+from app.ml.core.data_validation import DataValidator
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +60,8 @@ def ejecutar_analisis_diario(modelo_id = None):
             logger.error(f"❌ Error inicializando MLEngine: {e}")
             return {"status": "error", "mensaje": str(e)}
 
-        LIMITE_DB = engine_temp.DIAS_MEMORIA_IA + 60  # Margen para EMA50 + Feriados
+        LIMITE_DB = MLEngine.WARMUP + MLEngine.DIAS_MEMORIA_IA + 150
+        MINIMO_FILAS = MLEngine.WARMUP + MLEngine.DIAS_MEMORIA_IA + 10
 
         datos_preparados = []
         for emp in empresas:
@@ -67,16 +69,23 @@ def ejecutar_analisis_diario(modelo_id = None):
                 precios = db.query(PrecioHistorico).filter(PrecioHistorico.IdEmpresa == emp.IdEmpresa)\
                             .order_by(PrecioHistorico.Fecha.desc()).limit(LIMITE_DB).all()
 
-                if len(precios) < engine_temp.DIAS_MEMORIA_IA + 50:
-                    print(f"⚠️ Empresa {emp.Ticket}: insuficientes datos ({len(precios)} < {engine_temp.DIAS_MEMORIA_IA + 50})")
+                if len(precios) < MINIMO_FILAS:
+                    print(f"⚠️ Empresa {emp.Ticket}: insuficientes datos ({len(precios)} < {MINIMO_FILAS})")
                     continue
 
-                df = pd.DataFrame([{'Close': float(p.PrecioCierre), 
-                                    'Volume': float(p.Volumen),
-                                    'High': float(p.PrecioMaximo if p.PrecioMaximo else p.PrecioCierre), 
-                                    'Low': float(p.PrecioMinimo if p.PrecioMinimo else p.PrecioCierre)} 
-                                   for p in reversed(precios)])
-
+                # Índice de FECHAS (necesario para el sentimiento) y misma limpieza que en entrenamiento
+                df = pd.DataFrame([{'Date': p.Fecha,
+                                    'Open': float(p.PrecioApertura or p.PrecioCierre),
+                                    'High': float(p.PrecioMaximo or p.PrecioCierre),
+                                    'Low': float(p.PrecioMinimo or p.PrecioCierre),
+                                    'Close': float(p.PrecioCierre),
+                                    'Volume': float(p.Volumen or 0)}
+                                    for p in reversed(precios)])
+                df['Date'] = pd.to_datetime(df['Date'])
+                df = DataValidator.validar_y_limpiar(df.set_index('Date'))
+                if df is None:
+                    continue
+                
                 # ✅ FIX 2: Validar que el método existe
                 if not hasattr(engine_temp, 'calcular_indicadores'):
                     logger.error(f"❌ MLEngine no tiene método calcular_indicadores")

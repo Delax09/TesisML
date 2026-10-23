@@ -26,7 +26,8 @@ class ModelVersionManager:
         metricas: Dict[str, float],
         nombre_modelo: str,
         version: str,
-        descripcion: str = ""
+        descripcion: str = "",
+        configuracion: dict = None
     ) -> str:
         """
         Guarda modelo con versión única
@@ -51,33 +52,23 @@ class ModelVersionManager:
 
         # Metadatos
         metadata = {
-            "version_id": version_id,
-            "nombre_modelo": nombre_modelo,
+            "modelo": nombre_modelo,
             "version": version,
+            "fecha_entrenamiento": datetime.now().isoformat(),
             "descripcion": descripcion,
-            "fecha_creacion": datetime.now().isoformat(),
-            "metricas": metricas,
-            "archivos": {
-                "modelo": str(model_path.relative_to(self.base_path)),
-                "scaler": str(scaler_path.relative_to(self.base_path))
-            }
+            "configuracion": configuracion or {},
+            "metricas": metricas
         }
 
-        metadata_path = version_dir / "metadata.json"
-        with open(metadata_path, 'w', encoding='utf-8') as f:
-            json.dump(metadata, f, indent=2, ensure_ascii=False)
+        with open(metadata_path, "w", encoding="utf-8") as f:
+            json.dump(metadata, f, indent=4, default=float)
 
-        # Crear enlace simbólico al último modelo
-        latest_link = self.base_path / f"modelo_acciones_{version}.pth"
-        if latest_link.exists():
-            latest_link.unlink()
-        try:
-            latest_link.symlink_to(model_path)
-        except OSError:
-            # Windows no soporta symlinks fácilmente, copiar en su lugar
-            shutil.copy(model_path, latest_link)
-
-        return str(version_dir)
+        # 3. REEMPLAZA EL BLOQUE DE ENLACES SIMBÓLICOS (symlinks) POR ESTE:
+        shutil.copy(model_path, self.base_path / f"modelo_acciones_{version}.pth")
+        shutil.copy(scaler_path, self.base_path / f"scaler_{version}.pkl")
+        shutil.copy(metadata_path, self.base_path / f"metadata_{version}.json")
+        
+        return str(model_path)
 
     def cargar_modelo_versionado(self, version_id: str, num_features: int):
         """Carga un modelo específico por versión"""
