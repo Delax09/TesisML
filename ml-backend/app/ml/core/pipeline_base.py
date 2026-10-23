@@ -18,30 +18,31 @@ from app.ml.core.data_validation import DataValidator
 
 def _procesar_dataframe_crudo(df: pd.DataFrame, origen_id: str, empresa_id: int = None, ticker: str = None) -> Optional[pd.DataFrame]:
     """
-    Motor central de procesamiento. Toma un DataFrame crudo estandarizado,
-    aplica indicadores y valida. No le importa si viene de BD o CSV.
+    Motor central: OHLCV crudo (índice = fechas) -> limpieza -> indicadores.
+    No importa si viene de BD o CSV. Guarda el ticker en df.attrs para el split y las métricas.
     """
-    if len(df) < 60:
+    minimo = MLEngine.WARMUP + MLEngine.DIAS_MEMORIA_IA + MLEngine.DIAS_PREDICCION
+    if len(df) < minimo:
         return None
 
-    df = df.astype(float)
-    df.replace([np.inf, -np.inf], np.nan, inplace=True) # Prevenir veneno
+    df = df[['Open', 'High', 'Low', 'Close', 'Volume']].astype(float)
+    df.index = pd.to_datetime(df.index)
+    # Open/High/Low son opcionales en la BD: si faltan se usa el cierre (si no, dropna borraría la fila)
+    for col in ('Open', 'High', 'Low'):
+        df[col] = df[col].fillna(df['Close'])
+    df['Volume'] = df['Volume'].fillna(0)
 
-    # Validar datos antes de procesar
     df_valido = DataValidator.validar_y_limpiar(df)
-
-    if df_valido is None or df_valido.empty:
-        print(f"Datos inválidos para origen {origen_id}")
+    if df_valido is None or len(df_valido) < minimo:
+        print(f"Datos inválidos o insuficientes para {origen_id}")
         return None
 
-    # Calcular indicadores técnicos (SMA, Bandas, RSI, etc.)
     df_procesado = MLEngine.calcular_indicadores(df_valido, empresa_id=empresa_id, ticker=ticker)
-    df_procesado.ffill(inplace=True)
-    df_procesado.bfill(inplace=True)
+    if df_procesado is None or df_procesado.empty:
+        return None
 
-    # Validar datos procesados
-    df_procesado_valido = DataValidator.validar_y_limpiar(df_procesado)
-    return df_procesado_valido if df_procesado_valido is not None and not df_procesado_valido.empty else None
+    df_procesado.attrs['ticker'] = ticker or origen_id
+    return df_procesado
 
 def extraer_y_procesar_empresa(id_empresa: int) -> Optional[pd.DataFrame]:
     """Extrae datos de la Base de Datos en Supabase (Producción)"""

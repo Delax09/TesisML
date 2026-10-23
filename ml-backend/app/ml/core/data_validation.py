@@ -4,7 +4,6 @@ import numpy as np
 import pandas as pd
 from typing import Dict, Any, Optional
 import logging
-from sklearn.preprocessing import MinMaxScaler
 
 
 logger = logging.getLogger(__name__)
@@ -16,35 +15,24 @@ class DataValidator:
     def sanitizar_datos(df: pd.DataFrame,
                         fillna_strategy: str = 'ffill') -> pd.DataFrame:
         """
-        Estrategia única de sanitización
-
-        Args:
-            df: DataFrame a sanitizar
-            fillna_strategy: 'ffill', 'bfill', 'mean', 'zero'
+        Limpieza de OHLCV crudo. NO recorta valores: recortar precios con
+        media ± 3σ de toda la serie congela tramos reales (ej. NVDA, LLY)
+        y además usa información del futuro.
         """
-        # 1. Reemplazar infinitos
         df = df.replace([np.inf, -np.inf], np.nan)
+        df = df[~df.index.duplicated(keep='last')].sort_index()
 
-        # 2. Eliminar filas con muchos NaN
-        df = df.dropna(thresh=len(df.columns) * 0.8)
+        if 'Close' in df.columns:
+            df = df[df['Close'] > 0]
 
-        # 3. Rellenar según estrategia
+        df = df.dropna(thresh=int(len(df.columns) * 0.8))
+
         if fillna_strategy == 'ffill':
-            df = df.ffill().bfill()
-        elif fillna_strategy == 'mean':
-            df = df.fillna(df.mean())
+            df = df.ffill()          # solo hacia adelante: nunca usar datos futuros
         elif fillna_strategy == 'zero':
             df = df.fillna(0)
 
-        # 4. Clip de valores extremos (3 sigmas)
-        for col in df.select_dtypes(include=[np.number]):
-            mean = df[col].mean()
-            std = df[col].std()
-            lower = mean - 3 * std
-            upper = mean + 3 * std
-            df[col] = df[col].clip(lower, upper)
-
-        return df
+        return df.dropna()
 
     @staticmethod
     def validar_dataset_completo(df: pd.DataFrame,
@@ -128,37 +116,31 @@ class DataValidator:
         return outliers
 
     @staticmethod
-    def balancear_dataset(X: np.ndarray,
-                            y_clf: np.ndarray,
-                            method: str = 'smote') -> tuple:
+    def indices_balanceo(y_clf: np.ndarray, method: str = 'undersample', seed: int = 42) -> np.ndarray:
         """
-        Balancea dataset desequilibrado
+        Devuelve los ÍNDICES a conservar, para aplicar la misma selección a X, y_reg e y_clf
+        y no desalinear los objetivos. 'smote' se eliminó: interpolar ventanas de series
+        temporales crea secuencias que nunca existieron.
         """
-        try:
-            if method == 'smote':
-                from imblearn.over_sampling import SMOTE
-                smote = SMOTE(random_state=42)
-                X_bal, y_bal = smote.fit_resample(X.reshape(X.shape[0], -1), y_clf)
-                X_bal = X_bal.reshape(-1, X.shape[1], X.shape[2])
-            elif method == 'undersample':
-                from imblearn.under_sampling import RandomUnderSampler
-                rus = RandomUnderSampler(random_state=42)
-                X_bal, y_bal = rus.fit_resample(X.reshape(X.shape[0], -1), y_clf)
-                X_bal = X_bal.reshape(-1, X.shape[1], X.shape[2])
-            elif method == 'oversample':
-                from imblearn.over_sampling import RandomOverSampler
-                ros = RandomOverSampler(random_state=42)
-                X_bal, y_bal = ros.fit_resample(X.reshape(X.shape[0], -1), y_clf)
-                X_bal = X_bal.reshape(-1, X.shape[1], X.shape[2])
-            else:
-                return X, y_clf
+        n = len(y_clf)
+        if method not in ('undersample', 'oversample'):
+            return np.arange(n)
 
-            logger.info(f"Dataset balanceado: {len(y_clf)} -> {len(y_bal)} muestras")
-            return X_bal, y_bal
+        rng = np.random.default_rng(seed)
+        pos, neg = np.flatnonzero(y_clf == 1), np.flatnonzero(y_clf == 0)
+        if len(pos) == 0 or len(neg) == 0:
+            return np.arange(n)
 
-        except ImportError:
-            logger.warning("imbalanced-learn no instalado, saltando balanceo")
-            return X, y_clf
+        if method == 'undersample':
+            k = min(len(pos), len(neg))
+            idx = np.concatenate([rng.choice(pos, k, replace=False), rng.choice(neg, k, replace=False)])
+        else:
+            menor, mayor = (pos, neg) if len(pos) < len(neg) else (neg, pos)
+            idx = np.concatenate([mayor, rng.choice(menor, len(mayor), replace=True)])
+
+        idx = np.sort(idx)
+        logger.info(f"Balanceo {method}: {n} -> {len(idx)} muestras")
+        return idx
 
     @staticmethod
     def validar_y_limpiar(df: pd.DataFrame,
