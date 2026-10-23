@@ -67,9 +67,10 @@ def entrenar_pipeline_lstm(id_modelo: int = None):
 
         # 3. Preparación de Tensores
         with Timer("Preparación de Tensores"):
-            xt, yrt, yct, xv, yrv, ycv, scaler = preparar_datos_lstm(datos_procesados)
-            train_loader, val_loader = crear_dataloaders_lstm(xt, yrt, yct, xv, yrv, ycv)
-            del datos_procesados, xt, xv
+            datos = preparar_datos_lstm(datos_procesados)
+            scaler, test_meta = datos['scaler'], datos['test_meta']
+            train_loader, val_loader, test_loader = crear_dataloaders_lstm(datos)
+            del datos_procesados, datos
             gc.collect()
 
         # 4. Bucle de Entrenamiento por Arquitectura

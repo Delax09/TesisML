@@ -19,6 +19,7 @@ from app.ml.core.model_versioning import ModelVersionManager
 from app.ml.pipeline_cnn.data_processor import extraer_y_procesar_empresa_cnn, preparar_datos_cnn, crear_dataloaders_cnn
 from app.ml.pipeline_cnn.trainer import ejecutar_entrenamiento_cnn, evaluar_modelo_cnn
 from app.ml.core.utils import Timer
+from app.ml.core.pipeline_trainer import fijar_semillas
 
 # Configurar logger
 logger = configurar_logger("ML.Pipeline.CNN", archivo_log="logs/cnn_pipeline.log")
