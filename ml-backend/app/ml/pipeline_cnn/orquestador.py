@@ -110,7 +110,7 @@ def entrenar_pipeline_cnn(id_modelo: int = None):
             })
             mejores_pesos = resultado_entrenamiento["pesos"]
 
-            # Guardar métricas en BD (MetricaService ignora silenciosamente los campos nuevos si no existen en la BD)
+            # Guardar métricas en BD
             db_guardado = SessionLocal()
             try:
                 MetricaService.guardar_metricas(db_guardado, mod_db.IdModelo, metricas)
@@ -140,7 +140,7 @@ def entrenar_pipeline_cnn(id_modelo: int = None):
         # Cerrar conexión de forma segura
         try:
             if db:
-                db.rollback()  # Limpiar cualquier transacción pendiente
+                db.rollback()
                 db.close()
         except Exception as close_error:
             logger.warning("Error cerrando conexión BD", extra={"error": str(close_error)})
