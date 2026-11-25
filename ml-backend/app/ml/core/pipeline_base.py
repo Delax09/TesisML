@@ -138,6 +138,6 @@ def preparar_datos(lista_dfs: List[pd.DataFrame], batch_size: int = 50):
     # Usa MLEngine.BALANCE_METHOD automáticamente
     return preparar_datos_generico(dfs_validos, batch_size)
 
-def crear_dataloaders(x_t, yr_t, yc_t, x_v, yr_v, yc_v, batch_size=256):
-    """Crea los lotes para PyTorch"""
-    return crear_dataloaders_generico(x_t, yr_t, yc_t, x_v, yr_v, yc_v, batch_size, drop_last=True)
+def crear_dataloaders(datos, batch_size=256):
+    """Crea los lotes para PyTorch a partir de los datos preparados."""
+    return crear_dataloaders_generico(datos, batch_size)

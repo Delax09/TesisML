@@ -92,22 +92,23 @@ class MetricasNormalizadas:
         reporte["ranking"] = [nombre for nombre, _ in ranking]
 
         return json.dumps(reporte, indent=2, ensure_ascii=False)
-    
-    def metricas_cartera(meta, prob, pred_reg, y_reg, min_activos: int = 10) -> Dict[str, float]:
-        df = meta[['fecha']].copy()
-        df['prob'], df['pred'], df['real'] = prob, pred_reg, y_reg
-        ics, spreads = [], []
-        for _, g in df.groupby('fecha'):
-            if len(g) < min_activos:
-                continue
-            ic = spearmanr(g['pred'], g['real'])[0]
-            if ic == ic:   # descarta NaN
-                ics.append(ic)
-            q = g['prob'].rank(pct=True)
-            spreads.append(g.loc[q >= 0.8, 'real'].mean() - g.loc[q <= 0.2, 'real'].mean())
-        ics = np.array(ics)
-        return {
-            'ic_medio': float(ics.mean()) if len(ics) else 0.0,
-            'ic_ir': float(ics.mean() / ics.std()) if len(ics) > 1 and ics.std() > 0 else 0.0,
-            'spread_q5_q1': float(np.nanmean(spreads)) if len(spreads) else 0.0,
-        }
+
+
+def metricas_cartera(meta, prob, pred_reg, y_reg, min_activos: int = 10) -> Dict[str, float]:
+    df = meta[['fecha']].copy()
+    df['prob'], df['pred'], df['real'] = prob, pred_reg, y_reg
+    ics, spreads = [], []
+    for _, g in df.groupby('fecha'):
+        if len(g) < min_activos:
+            continue
+        ic = spearmanr(g['pred'], g['real'])[0]
+        if ic == ic:   # descarta NaN
+            ics.append(ic)
+        q = g['prob'].rank(pct=True)
+        spreads.append(g.loc[q >= 0.8, 'real'].mean() - g.loc[q <= 0.2, 'real'].mean())
+    ics = np.array(ics)
+    return {
+        'ic_medio': float(ics.mean()) if len(ics) else 0.0,
+        'ic_ir': float(ics.mean() / ics.std()) if len(ics) > 1 and ics.std() > 0 else 0.0,
+        'spread_q5_q1': float(np.nanmean(spreads)) if len(spreads) else 0.0,
+    }
