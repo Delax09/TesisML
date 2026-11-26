@@ -21,7 +21,7 @@ class ModelVersionManager:
 
     def guardar_modelo_versionado(
         self,
-        modelo_weights: Dict,
+        pesos: Dict,
         scaler,
         metricas: Dict[str, float],
         nombre_modelo: str,
@@ -44,7 +44,7 @@ class ModelVersionManager:
 
         # Guardar pesos del modelo
         model_path = version_dir / "model.pth"
-        torch.save(modelo_weights, model_path)
+        torch.save(pesos, model_path)
 
         # Guardar scaler
         scaler_path = version_dir / "scaler.pkl"
@@ -52,6 +52,7 @@ class ModelVersionManager:
 
         # Metadatos
         metadata = {
+            "version_id": version_id,
             "modelo": nombre_modelo,
             "version": version,
             "fecha_entrenamiento": datetime.now().isoformat(),
@@ -60,10 +61,11 @@ class ModelVersionManager:
             "metricas": metricas
         }
 
+        metadata_path = version_dir / "metadata.json"
         with open(metadata_path, "w", encoding="utf-8") as f:
             json.dump(metadata, f, indent=4, default=float)
 
-        # 3. REEMPLAZA EL BLOQUE DE ENLACES SIMBÓLICOS (symlinks) POR ESTE:
+        # Copias "latest" que consume MLEngine (Windows no maneja bien los symlinks)
         shutil.copy(model_path, self.base_path / f"modelo_acciones_{version}.pth")
         shutil.copy(scaler_path, self.base_path / f"scaler_{version}.pkl")
         shutil.copy(metadata_path, self.base_path / f"metadata_{version}.json")
@@ -103,11 +105,13 @@ class ModelVersionManager:
                     with open(metadata_path, 'r', encoding='utf-8') as f:
                         metadata = json.load(f)
 
-                    if nombre_modelo is None or metadata.get('nombre_modelo') == nombre_modelo:
+                    # Compatibilidad con metadatos antiguos ('nombre_modelo'/'fecha_creacion')
+                    nombre = metadata.get('modelo', metadata.get('nombre_modelo'))
+                    if nombre_modelo is None or nombre == nombre_modelo:
                         versiones.append(metadata)
 
-        # Ordenar por fecha de creación (más reciente primero)
-        versiones.sort(key=lambda x: x['fecha_creacion'], reverse=True)
+        # Ordenar por fecha (más reciente primero)
+        versiones.sort(key=lambda x: x.get('fecha_entrenamiento', x.get('fecha_creacion', '')), reverse=True)
         return versiones
 
     def comparar_versiones(self, version_ids: list) -> Dict[str, Any]:
@@ -119,7 +123,7 @@ class ModelVersionManager:
                 _, _, metadata = self.cargar_modelo_versionado(vid, 0)  # num_features dummy
                 comparacion["versiones"][vid] = {
                     "metricas": metadata.get("metricas", {}),
-                    "fecha": metadata.get("fecha_creacion", "")
+                    "fecha": metadata.get("fecha_entrenamiento", metadata.get("fecha_creacion", ""))
                 }
             except Exception as e:
                 comparacion["versiones"][vid] = {"error": str(e)}

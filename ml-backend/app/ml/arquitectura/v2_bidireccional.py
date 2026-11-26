@@ -79,5 +79,5 @@ class ModeloBidireccional_v2(nn.Module):
         
         return p_reg, l_clf
 
-def obtener_modelo_v2(dias_pasados, num_features):
-    return ModeloBidireccional_v2(num_features=num_features)
+def obtener_modelo_v2(dias_pasados, num_features, hidden_size=64, num_layers=2):
+    return ModeloBidireccional_v2(num_features=num_features, hidden_size=hidden_size, num_layers=num_layers)

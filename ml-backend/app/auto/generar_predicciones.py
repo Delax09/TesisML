@@ -10,6 +10,7 @@ from app.models.modelo_ia import ModeloIA
 from app.ml.core.engine import MLEngine #Aqui esta el MLEngine 
 from app.services.resultado_service import ResultadoService
 from app.ml.core.data_validation import DataValidator
+from app.ml.core.pipeline_base import cargar_serie_mercado_bd
 
 logger = logging.getLogger(__name__)
 
@@ -63,6 +64,14 @@ def ejecutar_analisis_diario(modelo_id = None):
         LIMITE_DB = MLEngine.WARMUP + MLEngine.DIAS_MEMORIA_IA + 150
         MINIMO_FILAS = MLEngine.WARMUP + MLEngine.DIAS_MEMORIA_IA + 10
 
+        # Serie del mercado de referencia (SPY) para las features Mkt_* / Rel_21, igual que en entrenamiento.
+        # Margen extra: las cripto tienen ~365 filas/año y necesitan más historia de SPY para alinear.
+        try:
+            serie_mercado = cargar_serie_mercado_bd(db, limite=2 * LIMITE_DB)
+        except Exception as e:
+            logger.error(f"❌ No se pudo cargar la serie de mercado {MLEngine.TICKER_MERCADO}: {e}")
+            return {"status": "error", "mensaje": f"Falta serie de mercado {MLEngine.TICKER_MERCADO}"}
+
         datos_preparados = []
         for emp in empresas:
             try:
@@ -96,6 +105,7 @@ def ejecutar_analisis_diario(modelo_id = None):
                     empresa_id=emp.IdEmpresa,
                     ticker=emp.Ticket,
                     db=db,
+                    serie_mercado=serie_mercado,
                 )
                 if df_indicadores is None or df_indicadores.empty:
                     logger.warning(f"⚠️ Indicadores vacíos para {emp.Ticket}")

@@ -21,6 +21,8 @@ def preparar_datos_generico(
     lista_dfs: List[pd.DataFrame],
     fecha_val: str = None,
     fecha_test: str = None,
+    fecha_inicio: str = None,
+    fecha_fin: str = None,
     stride_train: int = None,
     zona_muerta: float = None,
     balance_method: str = None,
@@ -29,9 +31,9 @@ def preparar_datos_generico(
     """
     Construye ventanas y separa train / val / test POR FECHA, igual para todos los tickers.
 
-      train: ventanas cuyo objetivo (hoy + 21 días) termina ANTES de fecha_val  -> purga automática
+      train: ventanas desde fecha_inicio cuyo objetivo (hoy + 21 días) termina ANTES de fecha_val -> purga automática
       val:   ventanas desde fecha_val cuyo objetivo termina antes de fecha_test
-      test:  ventanas desde fecha_test (solo para la evaluación final)
+      test:  ventanas desde fecha_test (y antes de fecha_fin, si se da; lo usa el walk-forward)
 
     Devuelve {'train': [x, y_reg, y_clf], 'val': [...], 'test': [...],
               'train_meta' / 'val_meta' / 'test_meta': DataFrame(fecha, ticker), 'scaler': RobustScaler}
@@ -39,6 +41,8 @@ def preparar_datos_generico(
     M, H, F = MLEngine.DIAS_MEMORIA_IA, MLEngine.DIAS_PREDICCION, MLEngine.FEATURES
     fecha_val = pd.Timestamp(fecha_val or MLEngine.FECHA_VAL)
     fecha_test = pd.Timestamp(fecha_test or MLEngine.FECHA_TEST)
+    fecha_inicio = pd.Timestamp(fecha_inicio or MLEngine.FECHA_INICIO)
+    fecha_fin = pd.Timestamp(fecha_fin) if fecha_fin else None
     stride_train = stride_train or MLEngine.STRIDE_TRAIN
     zona_muerta = MLEngine.ZONA_MUERTA if zona_muerta is None else zona_muerta
     balance_method = balance_method or MLEngine.BALANCE_METHOD
@@ -47,8 +51,8 @@ def preparar_datos_generico(
     if not lista_dfs:
         raise ValueError("No hay DataFrames para preparar")
 
-    # 1) Scaler ajustado SOLO con filas anteriores a la validación
-    filas = [df.loc[df.index < fecha_val, F].values for df in lista_dfs]
+    # 1) Scaler ajustado SOLO con filas del período de entrenamiento
+    filas = [df.loc[(df.index >= fecha_inicio) & (df.index < fecha_val), F].values for df in lista_dfs]
     filas = [f for f in filas if len(f)]
     if not filas:
         raise ValueError(f"No hay datos anteriores a {fecha_val.date()} para ajustar el scaler")
@@ -78,9 +82,11 @@ def preparar_datos_generico(
         ventanas = sliding_window_view(X, M, axis=0).transpose(0, 2, 1)[:len(idx_hoy)]
 
         f_hoy, f_fut = df.index[idx_hoy], df.index[idx_fut]
-        m_train = np.asarray(f_fut < fecha_val)
+        m_train = np.asarray((f_hoy >= fecha_inicio) & (f_fut < fecha_val))
         m_val = np.asarray((f_hoy >= fecha_val) & (f_fut < fecha_test))
         m_test = np.asarray(f_hoy >= fecha_test)
+        if fecha_fin is not None:
+            m_test &= np.asarray(f_hoy < fecha_fin)
 
         # Menos redundancia en train: una ventana cada `stride_train` días
         paso = np.zeros(len(idx_hoy), dtype=bool)

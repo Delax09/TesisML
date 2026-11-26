@@ -13,6 +13,7 @@ from sklearn.metrics import (accuracy_score, precision_score, recall_score, f1_s
                              roc_auc_score, roc_curve, confusion_matrix, mean_absolute_error)
 
 from app.ml.core.engine import MLEngine
+from app.ml.arquitectura import EnsambleModelos
 from app.ml.core.logger import configurar_logger
 from app.ml.core.metrics import metricas_cartera
 from app.ml.core.early_stopping import EarlyStopping
@@ -47,16 +48,21 @@ class PipelineTrainer:
 
     # ------------------------------------------------------------------ entrenamiento
     def ejecutar_entrenamiento(self, model, train_loader, val_loader, device,
-                               epochs=50, lr=1e-3, lambda_reg=0.5, paciencia=8):
+                               epochs=None, lr=None, lambda_reg=0.5, paciencia=None, weight_decay=None):
+        epochs = epochs or MLEngine.EPOCHS
+        lr = lr or MLEngine.LR
+        paciencia = paciencia or MLEngine.PACIENCIA
+        weight_decay = MLEngine.WEIGHT_DECAY if weight_decay is None else weight_decay
+
         # Datos ya balanceados -> BCE simple (sin focal loss ni pos_weight encima)
         criterion_clf = nn.BCEWithLogitsLoss()
         # El objetivo se escala (log_ret / REG_SCALE) para que ambas pérdidas pesen parecido
         criterion_reg = nn.HuberLoss(delta=1.0)
 
-        optimizer = optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-3)
+        optimizer = optim.AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
         scheduler = CosineAnnealingLR(optimizer, T_max=epochs, eta_min=1e-6)
         # Criterio estable e independiente del umbral: AUC de validación
-        early = EarlyStopping(paciencia=paciencia, delta=0.002, modelo_inicial=model, modo='max')
+        early = EarlyStopping(paciencia=paciencia, delta=0.001, modelo_inicial=model, modo='max')
 
         self.logger.info("Iniciando entrenamiento", extra={
             "architecture": self.architecture_name, "device": device.type.upper(),
@@ -101,6 +107,41 @@ class PipelineTrainer:
             "epochs": epoch + 1, "mejor_auc_val": early.mejor_score, **umbrales})
         return {"pesos": early.mejores_pesos, "epochs": epoch + 1, "loss": train_loss,
                 "mejor_auc_val": float(early.mejor_score), **umbrales}
+
+    def entrenar_con_semillas(self, fabrica, train_loader, val_loader, device, n_semillas=None, epochs=None):
+        """
+        Entrena `n_semillas` modelos (fabrica() crea uno nuevo) y los promedia en un EnsambleModelos.
+        Reduce la varianza de un modelo con señal débil. Devuelve (modelo_final, resultado) donde
+        resultado['pesos'] es el state_dict del ensamble (o del modelo único si n_semillas == 1).
+        """
+        n_semillas = n_semillas or MLEngine.N_SEMILLAS
+        miembros, resultados = [], []
+        for i in range(n_semillas):
+            fijar_semillas(MLEngine.SEED + i)
+            modelo = fabrica().to(device)
+            self.logger.info("Entrenando miembro del ensamble", extra={"semilla": MLEngine.SEED + i,
+                                                                       "miembro": i + 1, "total": n_semillas})
+            res = self.ejecutar_entrenamiento(modelo, train_loader, val_loader, device, epochs=epochs)
+            modelo.load_state_dict(res["pesos"])
+            miembros.append(modelo)
+            resultados.append(res)
+
+        modelo_final = miembros[0] if n_semillas == 1 else EnsambleModelos(miembros).to(device)
+        modelo_final.eval()
+        prob, _, yc, _ = self._predecir(modelo_final, val_loader, device)
+        auc_val = float(roc_auc_score(yc, prob)) if len(np.unique(yc)) > 1 else 0.5
+        umbrales = self.calibrar_umbrales(modelo_final, val_loader, device)
+
+        self.logger.info("Ensamble completado", extra={
+            "n_semillas": n_semillas, "auc_val_ensamble": round(auc_val, 4),
+            "auc_val_miembros": [round(float(r["mejor_auc_val"]), 4) for r in resultados], **umbrales})
+        return modelo_final, {
+            "pesos": {k: v.detach().cpu().clone() for k, v in modelo_final.state_dict().items()},
+            "epochs": int(round(np.mean([r["epochs"] for r in resultados]))),
+            "loss": float(np.mean([r["loss"] for r in resultados])),
+            "mejor_auc_val": auc_val,
+            **umbrales,
+        }
 
     # ------------------------------------------------------------------ umbrales
     def calibrar_umbrales(self, model, val_loader, device, frac_alcista=0.3, frac_bajista=0.3):

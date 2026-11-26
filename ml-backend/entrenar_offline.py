@@ -12,19 +12,15 @@ from datetime import datetime
 import torch
 
 from app.ml.core.pipeline_base import extraer_y_procesar_desde_csv, preparar_datos, crear_dataloaders
-from app.ml.core.pipeline_trainer import PipelineTrainer, fijar_semillas
+from app.ml.core.pipeline_trainer import PipelineTrainer
 from app.ml.core.model_versioning import ModelVersionManager
 from app.ml.core.engine import MLEngine
-from app.ml.arquitectura.v1_lstm import obtener_modelo_v1
-from app.ml.arquitectura.v2_bidireccional import obtener_modelo_v2
-from app.ml.arquitectura.v3_cnn import obtener_modelo_v3
-from app.ml.arquitectura.v4_lstm_cnn import obtener_modelo_v4
 
 ARQUITECTURAS = {
-    1: ("LSTM_v1", obtener_modelo_v1),
-    2: ("LSTM_Bidireccional_v2", obtener_modelo_v2),
-    3: ("CNN_v3", obtener_modelo_v3),
-    4: ("LSTMCNN_v4", obtener_modelo_v4),
+    1: "LSTM_v1",
+    2: "LSTM_Bidireccional_v2",
+    3: "CNN_v3",
+    4: "LSTMCNN_v4",
 }
 CARPETA_REPORTES = os.path.join("app", "ml", "models", "entrenamientos_offline")
 
@@ -40,7 +36,7 @@ def cargar_csvs():
     return dfs
 
 
-def iniciar_entrenamiento_csv(modelos=(1, 2, 3, 4), epochs=50):
+def iniciar_entrenamiento_csv(modelos=(1, 2, 3, 4), epochs=None):
     dfs = cargar_csvs()
     if not dfs:
         print("❌ No hay datos válidos para entrenar.")
@@ -64,16 +60,13 @@ def iniciar_entrenamiento_csv(modelos=(1, 2, 3, 4), epochs=50):
         if num not in ARQUITECTURAS:
             print(f"❌ Modelo v{num} no válido (use 1-4)")
             continue
-        nombre, fabrica = ARQUITECTURAS[num]
+        nombre = ARQUITECTURAS[num]
         version = f"v{num}"
-        print(f"\n{'=' * 60}\n📊 Entrenando {nombre}\n{'=' * 60}")
+        print(f"\n{'=' * 60}\n📊 Entrenando {nombre} (ensamble de {MLEngine.N_SEMILLAS} semillas)\n{'=' * 60}")
 
-        fijar_semillas(MLEngine.SEED)
-        modelo = fabrica(MLEngine.DIAS_MEMORIA_IA, len(MLEngine.FEATURES)).to(device)
         trainer = PipelineTrainer(nombre, os.path.join(CARPETA_REPORTES, f"training_{version}.log"))
-
-        res = trainer.ejecutar_entrenamiento(modelo, train_loader, val_loader, device, epochs=epochs)
-        modelo.load_state_dict(res['pesos'])
+        modelo, res = trainer.entrenar_con_semillas(lambda: MLEngine.construir_modelo(version),
+                                                    train_loader, val_loader, device, epochs=epochs)
         metricas = trainer.evaluar_modelo(modelo, test_loader, device,
                                             umbral_decision=res['umbral_optimo'], meta=test_meta)
         metricas.update({k: res[k] for k in ('loss', 'epochs', 'mejor_auc_val',
@@ -86,7 +79,7 @@ def iniciar_entrenamiento_csv(modelos=(1, 2, 3, 4), epochs=50):
         resumen[version] = metricas
 
         print(f"\n✅ {nombre} — métricas en TEST ({test_meta.fecha.min().date()} en adelante)")
-        for k in ('auc', 'accuracy', 'tasa_base_positivos', 'f1_score', 'ic_medio', 'spread_q5_q1', 'mae'):
+        for k in ('auc', 'mejor_auc_val', 'accuracy', 'tasa_base_positivos', 'ic_medio', 'ic_ir', 'spread_q5_q1', 'mae'):
             print(f"   {k:20s}: {metricas.get(k, 0):.4f}")
         print(f"   guardado en {ruta}")
 

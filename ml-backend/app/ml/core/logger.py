@@ -12,6 +12,12 @@ def configurar_logger(nombre: str,
 
     logger = logging.getLogger(nombre)
     logger.setLevel(nivel)
+    if logger.handlers:
+        # Ya configurado: evita handlers duplicados (líneas repetidas en consola y archivo)
+        return logger
+
+    # Atributos estándar de LogRecord; todo lo demás viene de `extra=` y se debe guardar
+    campos_estandar = set(vars(logging.makeLogRecord({}))) | {"message", "asctime"}
 
     # Formatter JSON para logs estructurados
     class JSONFormatter(logging.Formatter):
@@ -25,12 +31,16 @@ def configurar_logger(nombre: str,
                 "function": record.funcName,
                 "line": record.lineno,
             }
+            # Campos de `extra=` (val_auc, train_loss, epoch, etc.)
+            for clave, valor in vars(record).items():
+                if clave not in campos_estandar:
+                    log_obj[clave] = valor
 
             # Agregar excepciones si existen
             if record.exc_info:
                 log_obj["exception"] = self.formatException(record.exc_info)
 
-            return json.dumps(log_obj, ensure_ascii=False)
+            return json.dumps(log_obj, ensure_ascii=False, default=str)
 
     # Handler para consola
     console_handler = logging.StreamHandler(sys.stdout)
@@ -47,7 +57,8 @@ def configurar_logger(nombre: str,
         file_handler = RotatingFileHandler(
             archivo_log,
             maxBytes=10*1024*1024,  # 10MB
-            backupCount=5
+            backupCount=5,
+            encoding="utf-8"
         )
         file_handler.setFormatter(JSONFormatter())
         logger.addHandler(file_handler)

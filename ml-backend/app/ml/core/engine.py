@@ -12,10 +12,7 @@ import torch._dynamo
 torch._dynamo.config.suppress_errors = True
 torch._dynamo.disable()
 
-from app.ml.arquitectura.v1_lstm import ModeloLSTM_v1
-from app.ml.arquitectura.v2_bidireccional import ModeloBidireccional_v2
-from app.ml.arquitectura.v3_cnn import ModeloCNN_v3
-from app.ml.arquitectura.v4_lstm_cnn import ModeloLSTMCNN_v4
+from app.ml.arquitectura import crear_modelo
 
 logger = logging.getLogger(__name__)
 
@@ -25,18 +22,32 @@ MODELS_DIR = Path(__file__).resolve().parents[1] / "models"   # app/ml/models
 class MLEngine:
     """Motor de inferencia. Todas las constantes de configuración viven aquí."""
 
-    DIAS_MEMORIA_IA = 90        # largo de la ventana de entrada
+    DIAS_MEMORIA_IA = 60        # largo de la ventana de entrada (el largo plazo va en Ret_63/Ret_126/Mom_12_1)
     DIAS_PREDICCION = 21        # horizonte del objetivo
-    WARMUP = 60                 # filas iniciales descartadas (indicadores aún incompletos)
+    WARMUP = 260                # filas iniciales descartadas (Mom_12_1 y Dist_Max252 necesitan ~1 año)
     REG_SCALE = 0.1             # el objetivo de regresión se entrena como log_ret / REG_SCALE
     CLIP_SCALER = 10.0          # recorte de valores escalados (igual en train e inferencia)
 
-    BALANCE_METHOD = 'undersample'   # 'undersample', 'oversample' o 'none'
+    # Mercado de referencia para las features de contexto (debe existir en la BD y en data/)
+    TICKER_MERCADO = 'SPY'
+
+    BALANCE_METHOD = 'none'          # 'undersample', 'oversample' o 'none' (el AUC no depende del balance)
     STRIDE_TRAIN = 5                 # paso entre ventanas de entrenamiento
     ZONA_MUERTA = 0.25               # descarta en train |ret| < 0.25 * vol esperada a 21 días
+    FECHA_INICIO = '1994-01-01'      # SPY parte en 1993: antes no hay contexto de mercado
     FECHA_VAL = '2023-01-01'         # inicio de validación
     FECHA_TEST = '2024-07-01'        # inicio de test (no se toca hasta el final)
     SEED = 42
+
+    # Entrenamiento (el modelo sobreajustaba desde la 1ª época: más regularización y menos capacidad)
+    EPOCHS = 50
+    BATCH_SIZE = 256
+    LR = 3e-4
+    WEIGHT_DECAY = 1e-2
+    PACIENCIA = 10
+    N_SEMILLAS = 3              # ensamble: promedio de N modelos entrenados con semillas distintas
+    HIDDEN_SIZE = 32
+    NUM_CAPAS_LSTM = 1
 
     # Valores por defecto; se sobrescriben con los del metadata del modelo
     UMBRAL_ALCISTA = 0.55
@@ -44,10 +55,15 @@ class MLEngine:
 
     # Solo features relativas / estacionarias: significan lo mismo para BTC que para Ford
     FEATURES = [
+        # Corto plazo
         'LogReturn', 'Ret_5', 'Ret_21',
         'Dist_SMA20', 'Dist_EMA50',
         'ATR_pct', 'MACD_pct', 'BB_pctB', 'Z_Score',
         'RSI', 'CMF', 'Volatilidad_10d', 'Vol_z',
+        # Momentum de largo plazo
+        'Ret_63', 'Ret_126', 'Mom_12_1', 'Dist_Max252', 'Vol_63',
+        # Contexto de mercado (TICKER_MERCADO) y fuerza relativa
+        'Mkt_21', 'Mkt_63', 'Mkt_vol21', 'Rel_21',
     ]
 
     @classmethod
@@ -60,13 +76,36 @@ class MLEngine:
             "warmup": cls.WARMUP,
             "reg_scale": cls.REG_SCALE,
             "clip_scaler": cls.CLIP_SCALER,
+            "ticker_mercado": cls.TICKER_MERCADO,
             "balance_method": cls.BALANCE_METHOD,
             "stride_train": cls.STRIDE_TRAIN,
             "zona_muerta": cls.ZONA_MUERTA,
+            "fecha_inicio": cls.FECHA_INICIO,
             "fecha_val": cls.FECHA_VAL,
             "fecha_test": cls.FECHA_TEST,
             "seed": cls.SEED,
+            "epochs": cls.EPOCHS,
+            "batch_size": cls.BATCH_SIZE,
+            "lr": cls.LR,
+            "weight_decay": cls.WEIGHT_DECAY,
+            "paciencia": cls.PACIENCIA,
+            "n_semillas": cls.N_SEMILLAS,
+            "hidden_size": cls.HIDDEN_SIZE,
+            "num_capas_lstm": cls.NUM_CAPAS_LSTM,
         }
+
+    @classmethod
+    def construir_modelo(cls, version: str, cfg: dict = None, n_semillas: int = 1):
+        """Crea la arquitectura con la configuración dada (por defecto, la actual)."""
+        cfg = cfg or cls.configuracion()
+        return crear_modelo(
+            version,
+            num_features=len(cfg["features"]),
+            dias_pasados=cfg["dias_memoria"],
+            hidden_size=cfg.get("hidden_size", cls.HIDDEN_SIZE),
+            num_capas=cfg.get("num_capas_lstm", cls.NUM_CAPAS_LSTM),
+            n_semillas=n_semillas,
+        )
 
     def __init__(self, version="v1"):
         self.version = version.lstrip('v') if version.startswith('vv') else version
@@ -75,18 +114,6 @@ class MLEngine:
         self.scaler = None
         self.metadata = {}
         self._inicializar_recursos()
-
-    def _construir_modelo(self):
-        n = len(self.FEATURES)
-        if self.version == "v1":
-            return ModeloLSTM_v1(num_features=n)
-        if self.version == "v2":
-            return ModeloBidireccional_v2(num_features=n)
-        if self.version == "v3":
-            return ModeloCNN_v3(num_features=n, dias_pasados=self.DIAS_MEMORIA_IA)
-        if self.version == "v4":
-            return ModeloLSTMCNN_v4(num_features=n, dias_pasados=self.DIAS_MEMORIA_IA)
-        raise ValueError(f"Versión de modelo desconocida: {self.version}")
 
     def _inicializar_recursos(self):
         model_path = MODELS_DIR / f"modelo_acciones_{self.version}.pth"
@@ -108,7 +135,8 @@ class MLEngine:
             )
 
         self.scaler = joblib.load(scaler_path)
-        self.model = self._construir_modelo().to(self.device)
+        # La arquitectura se arma con la configuración con que se entrenó (tamaño, n° de semillas)
+        self.model = self.construir_modelo(self.version, cfg, n_semillas=cfg.get("n_semillas", 1)).to(self.device)
         estado = torch.load(model_path, map_location=self.device, weights_only=True)
         self.model.load_state_dict(estado, strict=True)   # falla fuerte si la arquitectura no coincide
         self.model.eval()
@@ -220,8 +248,33 @@ class MLEngine:
         return df
 
     @staticmethod
-    def calcular_indicadores(df: pd.DataFrame, empresa_id: int = None, ticker: str = None, db=None):
-        """Recibe OHLCV con índice de fechas y devuelve features. Misma función en train e inferencia."""
+    def _features_mercado(serie_mercado: pd.Series, indice: pd.DatetimeIndex) -> pd.DataFrame:
+        """
+        Features del mercado de referencia calculadas en SU calendario y luego alineadas a las
+        fechas del activo con el último valor conocido (ffill): nunca mira hacia adelante.
+        Sirve igual para acciones chilenas o cripto, que tienen otros días hábiles.
+        """
+        s = serie_mercado.astype(float)
+        s.index = pd.to_datetime(s.index).normalize()
+        s = s[~s.index.duplicated(keep='last')].sort_index()
+        s = s[s > 0]
+        r = np.log(s / s.shift(1))
+        m = pd.DataFrame({
+            'Mkt_21': np.log(s / s.shift(21)),
+            'Mkt_63': np.log(s / s.shift(63)),
+            'Mkt_vol21': r.rolling(21).std(),
+        })
+        alineado = m.reindex(pd.to_datetime(indice).normalize(), method='ffill')
+        alineado.index = indice
+        return alineado
+
+    @staticmethod
+    def calcular_indicadores(df: pd.DataFrame, empresa_id: int = None, ticker: str = None, db=None,
+                             serie_mercado: pd.Series = None):
+        """
+        Recibe OHLCV con índice de fechas y devuelve features. Misma función en train e inferencia.
+        `serie_mercado`: cierres de MLEngine.TICKER_MERCADO indexados por fecha (para Mkt_* y Rel_21).
+        """
         if df is None or 'Close' not in df.columns or 'Volume' not in df.columns:
             logger.error("❌ Columnas Close o Volume faltantes")
             return None
@@ -268,6 +321,21 @@ class MLEngine:
         d['Z_Score'] = (c - d['SMA20']) / std20.replace(0, np.nan)
         lv = np.log1p(v)
         d['Vol_z'] = (lv - lv.rolling(60).mean()) / lv.rolling(60).std().replace(0, np.nan)
+
+        # Momentum de largo plazo
+        d['Ret_63'] = np.log(c / c.shift(63))
+        d['Ret_126'] = np.log(c / c.shift(126))
+        d['Mom_12_1'] = np.log(c.shift(21) / c.shift(252))      # 12 meses saltando el último
+        d['Dist_Max252'] = c / c.rolling(252).max() - 1
+        d['Vol_63'] = d['LogReturn'].rolling(63).std()
+
+        # Contexto de mercado
+        if serie_mercado is not None and len(serie_mercado):
+            d = d.join(MLEngine._features_mercado(serie_mercado, d.index))
+        else:
+            logger.warning(f"⚠️ Sin serie de mercado ({MLEngine.TICKER_MERCADO}) para {ticker or empresa_id}: Mkt_* = 0")
+            d['Mkt_21'] = d['Mkt_63'] = d['Mkt_vol21'] = np.nan
+        d['Rel_21'] = d['Ret_21'] - d['Mkt_21']
 
         # Sin bfill (traería datos del futuro): se descarta el warm-up y se rellena hacia adelante
         d = d.replace([np.inf, -np.inf], np.nan).iloc[MLEngine.WARMUP:].copy()

@@ -11,17 +11,13 @@ from app.db.sessions import SessionLocal
 from app.models.empresa import Empresa
 from app.models.modelo_ia import ModeloIA
 from app.services.metrica_service import MetricaService
-from app.ml.arquitectura.v1_lstm import obtener_modelo_v1
-from app.ml.arquitectura.v2_bidireccional import obtener_modelo_v2
-from app.ml.arquitectura.v4_lstm_cnn import obtener_modelo_v4
 from app.ml.core.engine import MLEngine
 from app.ml.core.logger import configurar_logger
 from app.ml.core.model_versioning import ModelVersionManager
 
 from app.ml.pipeline_lstm.data_processor import extraer_y_procesar_empresa, preparar_datos_lstm, crear_dataloaders_lstm
-from app.ml.pipeline_lstm.trainer import ejecutar_entrenamiento_lstm, evaluar_modelo_lstm
+from app.ml.pipeline_lstm.trainer import entrenar_ensamble_lstm, evaluar_modelo_lstm
 from app.ml.core.utils import Timer
-from app.ml.core.pipeline_trainer import fijar_semillas
 
 # Configurar logger
 logger = configurar_logger("ML.Pipeline.LSTM", archivo_log="logs/lstm_pipeline.log")
@@ -85,22 +81,12 @@ def entrenar_pipeline_lstm(id_modelo: int = None):
         for mod_db in modelos.all():
             logger.info("Iniciando entrenamiento de modelo", extra={"modelo": mod_db.Nombre, "version": mod_db.Version})
             
-            fijar_semillas(MLEngine.SEED)
-
-            if mod_db.Version == 'v2':
-                modelo_pt = obtener_modelo_v2(dias_pasados = MLEngine.DIAS_MEMORIA_IA, num_features = len(MLEngine.FEATURES))
-            elif mod_db.Version == 'v4':
-                modelo_pt = obtener_modelo_v4(dias_pasados = MLEngine.DIAS_MEMORIA_IA, num_features = len(MLEngine.FEATURES))
-            else:
-                modelo_pt = obtener_modelo_v1(dias_pasados = MLEngine.DIAS_MEMORIA_IA, num_features = len(MLEngine.FEATURES))
-
-            modelo_pt.to(device)
-
-            resultado_entrenamiento = ejecutar_entrenamiento_lstm(modelo_pt, train_loader, val_loader, device)
-            modelo_pt.load_state_dict(resultado_entrenamiento["pesos"]) # Evaluar estrictamente con los MEJORES pesos
+            version_arq = mod_db.Version if mod_db.Version in ('v2', 'v4') else 'v1'
+            modelo_pt, resultado_entrenamiento = entrenar_ensamble_lstm(
+                lambda: MLEngine.construir_modelo(version_arq), train_loader, val_loader, device)
 
             # Evaluación final en TEST (datos que el modelo nunca vio ni se usaron para ajustar el early stopping)
-            metricas = evaluar_modelo_lstm(modelo_pt, test_loader, device, 
+            metricas = evaluar_modelo_lstm(modelo_pt, test_loader, device,
                                          umbral_decision=resultado_entrenamiento["umbral_optimo"], meta=test_meta)
             
             metricas.update({
@@ -112,18 +98,10 @@ def entrenar_pipeline_lstm(id_modelo: int = None):
                 'umbral_alcista': resultado_entrenamiento['umbral_alcista'],
                 'umbral_bajista': resultado_entrenamiento['umbral_bajista'],
             })
-            mejores_pesos = resultado_entrenamiento["pesos"]
 
-            # Guardar métricas en BD (MetricaService ignora silenciosamente los campos nuevos si no existen en la BD)
-            db_guardado = SessionLocal()
-            try:
-                MetricaService.guardar_metricas(db_guardado, mod_db.IdModelo, metricas)
-            finally:
-                db_guardado.close()
-
-            # Guardar modelo con versionamiento (incluyendo la configuración)
+            # 1º el modelo y 2º las métricas: si guardar el modelo falla, no quedan métricas huérfanas en la BD
             ruta_version = version_manager.guardar_modelo_versionado(
-                pesos=mejores_pesos,
+                pesos=resultado_entrenamiento["pesos"],
                 scaler=scaler,
                 metricas=metricas,
                 nombre_modelo=f"LSTM_{mod_db.Version}",
@@ -131,6 +109,12 @@ def entrenar_pipeline_lstm(id_modelo: int = None):
                 descripcion=f"Entrenamiento automático - {len(ids_empresas)} empresas",
                 configuracion=MLEngine.configuracion()
             )
+
+            db_guardado = SessionLocal()
+            try:
+                MetricaService.guardar_metricas(db_guardado, mod_db.IdModelo, metricas)
+            finally:
+                db_guardado.close()
 
             logger.info("Modelo guardado exitosamente",
                         extra={"version": mod_db.Version, "accuracy": metricas.get('accuracy', 0),

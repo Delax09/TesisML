@@ -7,7 +7,7 @@ class ModeloLSTMCNN_v4(nn.Module):
     - CNN con convoluciones dilatadas: Extrae características locales sin destruir la dimensión temporal.
     - BiLSTM: Procesa las dependencias temporales complejas en ambas direcciones de la ventana histórica.
     """
-    def __init__(self, num_features: int, dias_pasados: int, hidden_size: int = 64):
+    def __init__(self, num_features: int, dias_pasados: int, hidden_size: int = 64, num_layers: int = 2):
         super().__init__()
         
         # ============ RAMA CNN (Extracción de Patrones Locales) ============
@@ -27,9 +27,9 @@ class ModeloLSTMCNN_v4(nn.Module):
         self.lstm = nn.LSTM(
             input_size=64,           # Salida de los canales de la conv2
             hidden_size=hidden_size,
-            num_layers=2,
+            num_layers=num_layers,
             batch_first=True,
-            dropout=0.3,
+            dropout=0.3 if num_layers > 1 else 0,
             bidirectional=True       # 🛑 BiLSTM activada para máximo contexto
         )
         
@@ -122,9 +122,8 @@ class ModeloLSTMCNN_v4(nn.Module):
         
         return p_reg, l_clf
 
-def obtener_modelo_v4(dias_pasados: int, num_features: int, hidden_size: int = 64):
+def obtener_modelo_v4(dias_pasados: int, num_features: int, hidden_size: int = 64, num_layers: int = 2):
     """
     Factory function para crear el modelo híbrido v4
     """
-    # Usamos hidden_size = 64 por defecto para darle más capacidad a la red (el original tenía 32)
-    return ModeloLSTMCNN_v4(num_features, dias_pasados, hidden_size)
+    return ModeloLSTMCNN_v4(num_features, dias_pasados, hidden_size, num_layers)
